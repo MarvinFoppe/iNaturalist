@@ -1,0 +1,3423 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌿 Naturbeobachtungen - Marvin Foppe</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2d5a27;
+            --primary-light: #4a7c42;
+            --primary-dark: #1e3d1a;
+            --accent: #8bc34a;
+            --accent-light: #aed581;
+            --accent-glow: rgba(139, 195, 74, 0.4);
+            --bg-dark: #0f1a0d;
+            --bg-medium: #1a2e16;
+            --bg-light: #243520;
+            --bg-card: rgba(45, 90, 39, 0.15);
+            --text-primary: #e8f5e9;
+            --text-secondary: #a5d6a7;
+            --text-muted: #81c784;
+            --border: rgba(139, 195, 74, 0.2);
+            --shadow: rgba(0, 0, 0, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image:
+                radial-gradient(ellipse at top left, rgba(45, 90, 39, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(139, 195, 74, 0.1) 0%, transparent 50%),
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 Q35 15 30 25 Q25 15 30 5' fill='none' stroke='%23234520' stroke-width='0.5' opacity='0.3'/%3E%3C/svg%3E");
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--bg-medium) 0%, var(--primary-dark) 100%);
+            padding: 25px 40px;
+            box-shadow: 0 4px 30px var(--shadow);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-left h1 {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent);
+            font-size: 2.4em;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-left h1 .icon {
+            width: 1em;
+            height: 1em;
+            margin-right: 10px;
+        }
+
+        .header-left p { color: var(--text-secondary); margin-top: 8px; }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(139, 195, 74, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            border: 1px solid var(--accent);
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.3); }
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            color: var(--bg-dark);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px var(--accent-glow);
+        }
+
+        .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .refresh-btn.loading .refresh-icon { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .auto-refresh-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-card);
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            border: 1px solid var(--border);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--bg-light);
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-primary);
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider { background-color: var(--accent); }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(24px); }
+
+        .last-update { font-size: 0.85em; color: var(--text-muted); margin-top: 5px; }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 26, 13, 0.97);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.hidden { display: none; }
+
+        .loading-spinner {
+            width: 70px;
+            height: 70px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            margin-top: 25px;
+            color: var(--accent);
+            font-size: 1.3em;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .loading-progress { margin-top: 10px; color: var(--text-secondary); }
+
+        .loading-leaf {
+            font-size: 3em;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Skeleton Loader */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-medium) 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-card {
+            background: var(--bg-card);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .skeleton-image {
+            width: 100%;
+            height: 200px;
+        }
+
+        .skeleton-text {
+            height: 20px;
+            margin: 15px;
+        }
+
+        .skeleton-text-sm {
+            height: 14px;
+            width: 60%;
+            margin: 10px 15px;
+        }
+
+        /* Lazy Loading Placeholder */
+        .gallery-img.lazy {
+            background: var(--bg-card);
+            min-height: 200px;
+        }
+
+        .gallery-img.lazy::before {
+            content: '🌿';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            opacity: 0.3;
+        }
+
+        /* Lightbox */
+        .lightbox {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .lightbox.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lightbox-content {
+            max-width: 90vw;
+            max-height: 90vh;
+            position: relative;
+        }
+
+        .lightbox-image {
+            max-width: 90vw;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2em;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 2em;
+            padding: 20px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .lightbox-nav:hover { background: rgba(255,255,255,0.3); }
+        .lightbox-prev { left: -60px; }
+        .lightbox-next { right: -60px; }
+
+        .lightbox-info {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .lightbox-title { font-size: 1.3em; font-weight: 600; }
+        .lightbox-meta { color: #aaa; margin-top: 5px; }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 10px 15px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px var(--shadow);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        /* Light Theme */
+        body.light-theme {
+            --bg-dark: #f5f5f5;
+            --bg-medium: #e8e8e8;
+            --bg-card: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #555555;
+            --text-muted: #888888;
+            --border: #dddddd;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Sort Controls */
+        .sort-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .sort-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .sort-btn:hover, .sort-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .sort-btn.active {
+            background: rgba(139, 195, 74, 0.1);
+        }
+
+        /* Statistics Charts */
+        .stats-charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .chart-container {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .chart-title {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent);
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .bar-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bar-label {
+            width: 100px;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bar-wrapper {
+            flex: 1;
+            background: var(--bg-light);
+            border-radius: 10px;
+            height: 24px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent) 0%, var(--primary-light) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            font-size: 0.75em;
+            font-weight: 600;
+            color: var(--bg-dark);
+            transition: width 0.5s ease;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: linear-gradient(180deg, var(--bg-medium) 0%, var(--bg-dark) 100%);
+            padding: 25px 40px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.85em;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .filter-select, .filter-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-select:hover, .filter-input:hover {
+            border-color: var(--accent);
+        }
+
+        .filter-select:focus, .filter-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        /* Date input styling */
+        input[type="date"] {
+            cursor: pointer;
+            position: relative;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            padding: 8px;
+            margin-right: -8px;
+            opacity: 0.7;
+            filter: invert(1);
+            transition: opacity 0.3s;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
+        .search-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            padding-right: 40px;
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4em;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.3s;
+        }
+
+        .search-clear:hover {
+            color: var(--accent);
+        }
+
+        .search-highlight {
+            animation: highlightPulse 2s ease-out;
+            box-shadow: 0 0 20px var(--accent), 0 0 40px var(--accent-glow) !important;
+        }
+
+        @keyframes highlightPulse {
+            0% { box-shadow: 0 0 30px var(--accent), 0 0 60px var(--accent-glow); }
+            100% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); }
+        }
+
+        .filter-select option {
+            background: var(--bg-medium);
+            color: var(--text-primary);
+        }
+
+        /* Multi-select dropdown */
+        .multi-select-container {
+            position: relative;
+        }
+
+        .multi-select-btn {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+        }
+
+        .multi-select-btn:hover {
+            border-color: var(--accent);
+        }
+
+        .multi-select-btn .arrow {
+            transition: transform 0.3s;
+        }
+
+        .multi-select-btn.open .arrow {
+            transform: rotate(180deg);
+        }
+
+        .multi-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-medium);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            margin-top: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 10px 30px var(--shadow);
+        }
+
+        .multi-select-dropdown.show {
+            display: block;
+        }
+
+        .multi-select-option {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+
+        .multi-select-option:hover {
+            background: rgba(139, 195, 74, 0.1);
+        }
+
+        .multi-select-option.selected {
+            background: rgba(139, 195, 74, 0.2);
+        }
+
+        .multi-select-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .multi-select-option.selected .multi-select-checkbox {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .multi-select-checkbox::after {
+            content: '';
+            width: 6px;
+            height: 10px;
+            border: solid var(--bg-dark);
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            opacity: 0;
+        }
+
+        .multi-select-option.selected .multi-select-checkbox::after {
+            opacity: 1;
+        }
+
+        .multi-select-option.no-country-option {
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 5px;
+            padding-bottom: 12px;
+            color: #ff9800;
+        }
+
+        .multi-select-option.no-country-option .multi-select-count {
+            background: #ff9800;
+        }
+
+        .multi-select-count {
+            background: var(--accent);
+            color: var(--bg-dark);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        /* Selection count badge for multi-select */
+        .selection-badge {
+            background: var(--accent);
+            color: var(--bg-dark);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+
+        /* Filter tags with icons */
+        .filter-tag .icon {
+            width: 1em;
+            height: 1em;
+            vertical-align: -0.1em;
+            fill: var(--bg-dark);
+        }
+
+        .filter-reset {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .filter-reset:hover {
+            background: var(--bg-card);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .active-filters {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tag {
+            background: var(--accent);
+            color: var(--bg-dark);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-tag-remove {
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .filter-tag-remove:hover { opacity: 1; }
+
+        /* Stats */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 20px;
+            padding: 30px 40px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--primary-light));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px var(--shadow);
+            border-color: var(--accent);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'Playfair Display', serif;
+        }
+
+        .stat-label { color: var(--text-secondary); margin-top: 8px; font-size: 0.9em; }
+
+        /* Map */
+        #map {
+            height: 550px;
+            width: 100%;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+            background: #a3c8e7;
+        }
+
+        .map-container { padding: 0 40px; }
+
+        .leaflet-popup-content { max-width: 300px; }
+        .popup-img { width: 100%; border-radius: 10px; margin-bottom: 12px; }
+        .popup-title { font-weight: 700; color: var(--primary-dark); font-size: 1.1em; }
+        .popup-scientific { font-style: italic; color: #666; font-size: 0.9em; }
+        .popup-meta { margin-top: 10px; font-size: 0.85em; color: #555; }
+        .popup-link { display: inline-block; margin-top: 12px; color: var(--primary); font-weight: 600; }
+
+        /* Sections */
+        .section { padding: 35px 40px; }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent);
+            font-size: 1.9em;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(90deg, var(--border), transparent);
+        }
+
+        /* Taxa Grid */
+        .taxa-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
+        }
+
+        .taxa-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 18px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .taxa-card:hover, .taxa-card.active {
+            background: rgba(139, 195, 74, 0.15);
+            transform: scale(1.05);
+            border-color: var(--accent);
+            box-shadow: 0 8px 25px var(--shadow);
+        }
+
+        .taxa-icon { font-size: 2.2em; margin-bottom: 10px; }
+        .taxa-name { font-size: 0.85em; color: var(--text-secondary); }
+        .taxa-count {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1.2em;
+            margin-top: 8px;
+        }
+
+        /* Taxa Tooltip */
+        .taxa-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-medium);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            padding: 12px 15px;
+            width: 250px;
+            font-size: 0.8em;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 100;
+            box-shadow: 0 10px 30px var(--shadow);
+            pointer-events: none;
+            margin-bottom: 10px;
+        }
+
+        .taxa-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: var(--accent);
+        }
+
+        .taxa-card:hover .taxa-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Countries Grid */
+        .countries-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+            max-width: 1200px;
+        }
+
+        @media (max-width: 1200px) {
+            .countries-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 800px) {
+            .countries-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 500px) {
+            .countries-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .country-card {
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .country-card:hover, .country-card.active {
+            border-color: var(--accent);
+            background: rgba(139, 195, 74, 0.1);
+        }
+
+        .country-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .country-flag { font-size: 1.3em; }
+
+        .country-count {
+            background: var(--accent);
+            color: var(--bg-dark);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        /* Gallery */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .gallery-item {
+            background: var(--bg-card);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 50px var(--shadow);
+            border-color: var(--accent);
+        }
+
+        .gallery-item.new { border-color: var(--accent-light); }
+
+        .new-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--accent);
+            color: var(--bg-dark);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.75em;
+            font-weight: 700;
+        }
+
+        .gallery-img-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .gallery-item:hover .gallery-img { transform: scale(1.05); }
+
+        .gallery-info { padding: 18px; }
+        .gallery-title { color: var(--accent); font-weight: 600; margin-bottom: 5px; }
+        .gallery-scientific { color: var(--text-muted); font-style: italic; font-size: 0.9em; }
+        .gallery-meta { margin-top: 12px; font-size: 0.85em; color: var(--text-secondary); }
+
+        .gallery-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 12px;
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: gap 0.3s;
+        }
+
+        .gallery-link:hover { gap: 10px; }
+
+        /* Expandable Details */
+        .gallery-expand-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 10px;
+            margin-top: 12px;
+            background: rgba(139, 195, 74, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .gallery-expand-btn:hover {
+            background: rgba(139, 195, 74, 0.2);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .gallery-expand-btn .arrow {
+            transition: transform 0.3s;
+        }
+
+        .gallery-item.expanded .gallery-expand-btn .arrow {
+            transform: rotate(180deg);
+        }
+
+        .gallery-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, padding 0.3s;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0 0 15px 15px;
+        }
+
+        .gallery-item.expanded .gallery-details {
+            max-height: 150px;
+            padding: 18px;
+            overflow-y: auto;
+        }
+
+        .gallery-details::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .gallery-details::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+
+        .gallery-details::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 3px;
+        }
+
+        .detail-section {
+            margin-bottom: 15px;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.85em;
+            margin-bottom: 6px;
+        }
+
+        .detail-text {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .detail-icon {
+            display: none;
+        }
+
+        /* Unified SVG Icons */
+        .icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            vertical-align: -0.125em;
+            fill: var(--accent);
+        }
+
+        .section-title .icon,
+        .filter-label .icon,
+        .detail-label .icon,
+        .author-link .icon,
+        .footer .icon {
+            fill: var(--accent);
+        }
+
+        .refresh-btn .icon {
+            fill: var(--bg-dark);
+        }
+
+        .icon-lg {
+            width: 2em;
+            height: 2em;
+        }
+
+        .icon-xl {
+            width: 2.5em;
+            height: 2.5em;
+        }
+
+        .taxa-icon {
+            font-size: 2.5em;
+            filter: sepia(1) saturate(3) hue-rotate(70deg) brightness(0.9);
+            transition: transform 0.3s, filter 0.3s;
+        }
+
+        .taxa-card:hover .taxa-icon {
+            transform: scale(1.15);
+            filter: sepia(1) saturate(4) hue-rotate(70deg) brightness(1);
+        }
+
+        .taxa-card.active .taxa-icon {
+            filter: sepia(1) saturate(5) hue-rotate(70deg) brightness(1.1);
+        }
+
+        .loading-details {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+        }
+
+        .loading-details::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .filter-container { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .filter-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent);
+            color: var(--bg-dark);
+            border-color: var(--accent);
+        }
+
+        .load-more {
+            display: block;
+            width: 220px;
+            margin: 35px auto;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%);
+            border: none;
+            border-radius: 30px;
+            color: var(--bg-dark);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px var(--accent-glow);
+        }
+
+        .load-more:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 35px var(--accent-glow);
+        }
+
+        /* View Mode Toggle */
+        .view-mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .view-mode-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .view-mode-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .view-mode-btn.active {
+            background: var(--accent);
+            color: var(--bg-dark);
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+
+        .view-mode-count {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 700;
+            margin-left: 5px;
+        }
+
+        .view-mode-btn.active .view-mode-count {
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        /* Species count badge in gallery */
+        .species-count-badge {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(0, 0, 0, 0.85);
+            color: var(--accent);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            backdrop-filter: blur(5px);
+            cursor: pointer;
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+            border: 1px solid transparent;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        .species-count-badge:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            border-color: var(--accent);
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        /* Author Section */
+        .author-section {
+            background: linear-gradient(135deg, var(--bg-medium) 0%, var(--primary-dark) 100%);
+            padding: 60px 40px;
+            margin-top: 50px;
+            border-top: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .author-section::before {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            opacity: 0.03;
+            right: -100px;
+            bottom: -100px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238bc34a'%3E%3Cpath d='M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z'/%3E%3C/svg%3E") no-repeat center;
+            background-size: contain;
+        }
+
+        .author-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 50px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+        }
+
+        .author-image-wrapper { position: relative; }
+
+        .author-image {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--accent);
+            box-shadow: 0 0 40px var(--accent-glow), 0 15px 50px var(--shadow);
+            transition: all 0.3s;
+        }
+
+        .author-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 60px var(--accent-glow), 0 20px 60px var(--shadow);
+        }
+
+        .author-badge {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%);
+            color: var(--bg-dark);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 700;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .author-info { flex: 1; min-width: 280px; }
+
+        .author-title {
+            color: var(--text-muted);
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        .author-name {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent);
+            font-size: 2.4em;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+
+        .author-bio {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        .author-stats {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .author-stat { text-align: center; }
+        .author-stat-value { color: var(--accent); font-size: 1.6em; font-weight: 700; }
+        .author-stat-label { color: var(--text-muted); font-size: 0.85em; }
+
+        .author-links { display: flex; gap: 15px; flex-wrap: wrap; }
+
+        .author-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            padding: 12px 22px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .author-link:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px var(--accent-glow);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--primary-dark);
+            padding: 35px 40px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer a { color: var(--accent); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+        .footer p { margin: 8px 0; color: var(--text-secondary); }
+
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.15);
+            border: 1px solid #f44336;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 40px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .header { flex-direction: column; text-align: center; }
+            .header-left h1 { font-size: 1.8em; }
+            .section, .map-container, .stats-container, .filter-section { padding: 20px; }
+            .filter-row { flex-direction: column; }
+            .author-container { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- SVG Icon Definitions -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="icon-leaf" viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/></symbol>
+        <symbol id="icon-globe" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></symbol>
+        <symbol id="icon-calendar" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></symbol>
+        <symbol id="icon-science" viewBox="0 0 24 24"><path d="M7 2v2h1v14a4 4 0 0 0 4 4 4 4 0 0 0 4-4V4h1V2H7zm6 14c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm-2-4c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm1-7h2v4h-2V5z"/></symbol>
+        <symbol id="icon-map" viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></symbol>
+        <symbol id="icon-butterfly" viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-6.93-2c-.02-.33-.07-.65-.07-1s.05-.67.07-1H3c-.02.33-.07.65-.07 1s.05.67.07 1h2.07zM6 8.83l-1.54-1.54c-.38.43-.72.9-1.01 1.39L5.26 10c.22-.43.47-.84.74-1.17zM6 15.17c-.27-.33-.52-.74-.74-1.17l-1.81 1.32c.29.49.63.96 1.01 1.39L6 15.17zm12.93-3.17H21c.02-.33.07-.65.07-1s-.05-.67-.07-1h-2.07c.02.33.07.65.07 1s-.05.67-.07 1zM18 8.83c.27.33.52.74.74 1.17l1.81-1.32c-.29-.49-.63-.96-1.01-1.39L18 8.83zm0 6.34l1.54 1.54c.38-.43.72-.9 1.01-1.39L18.74 14c-.22.43-.47.84-.74 1.17z"/></symbol>
+        <symbol id="icon-camera" viewBox="0 0 24 24"><path d="M12 15.2c1.77 0 3.2-1.43 3.2-3.2 0-1.77-1.43-3.2-3.2-3.2-1.77 0-3.2 1.43-3.2 3.2 0 1.77 1.43 3.2 3.2 3.2zM9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></symbol>
+        <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></symbol>
+        <symbol id="icon-location" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></symbol>
+        <symbol id="icon-link" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></symbol>
+        <symbol id="icon-bird" viewBox="0 0 24 24"><path d="M21.8 5c-.1-.1-.3-.2-.5-.2H19l-1.4-1.7c-.2-.2-.4-.3-.6-.3-.6 0-1 .4-1 1 0 .3.1.5.3.7l.5.6-2.2 2.2-2.4-1.2c-.2-.1-.4-.2-.6-.2-.6 0-1.1.4-1.3 1l-1.7 4.5L3 17h10.8l4.5-11.7c.2-.4.1-.9-.2-1.2L21.8 5zM5 19c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2v-1H5v1z"/></symbol>
+        <symbol id="icon-mammal" viewBox="0 0 24 24"><path d="M12 3C7.03 3 3 7.03 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-4.97-4.03-9-9-9zm-2 14.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm2-6c-.28 0-.5-.22-.5-.5v-1c0-.28.22-.5.5-.5s.5.22.5.5v1c0 .28-.22.5-.5.5zm-8 0c-.28 0-.5-.22-.5-.5v-1c0-.28.22-.5.5-.5s.5.22.5.5v1c0 .28-.22.5-.5.5z"/></symbol>
+        <symbol id="icon-reptile" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></symbol>
+        <symbol id="icon-frog" viewBox="0 0 24 24"><circle cx="8" cy="8" r="2"/><circle cx="16" cy="8" r="2"/><path d="M12 14c-3.31 0-6 2.69-6 6h12c0-3.31-2.69-6-6-6z"/></symbol>
+        <symbol id="icon-fish" viewBox="0 0 24 24"><path d="M12 2c-4 0-8 2.69-8 8s4 8 8 8c.13 0 .27 0 .4-.02C16.17 17.98 20 14.95 20 10c0-5.31-4-8-8-8zm-2.5 8.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></symbol>
+        <symbol id="icon-spider" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></symbol>
+        <symbol id="icon-snail" viewBox="0 0 24 24"><path d="M12 11c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm0 4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/><path d="M18 14c0 3.31-2.69 6-6 6s-6-2.69-6-6c0-2.22 1.21-4.15 3-5.19V4c0-.55.45-1 1-1s1 .45 1 1v4h2V4c0-.55.45-1 1-1s1 .45 1 1v4.81c1.79 1.04 3 2.97 3 5.19z"/></symbol>
+        <symbol id="icon-plant" viewBox="0 0 24 24"><path d="M12 22c4.97 0 9-4.03 9-9-4.97 0-9 4.03-9 9zM5.6 10.25c0 1.38 1.12 2.5 2.5 2.5.53 0 1.01-.16 1.42-.44l-.02.19c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5l-.02-.19c.4.28.89.44 1.42.44 1.38 0 2.5-1.12 2.5-2.5 0-1-.59-1.85-1.43-2.25.84-.4 1.43-1.25 1.43-2.25 0-1.38-1.12-2.5-2.5-2.5-.53 0-1.01.16-1.42.44l.02-.19C14.5 4.12 13.38 3 12 3S9.5 4.12 9.5 5.5l.02.19c-.4-.28-.89-.44-1.42-.44-1.38 0-2.5 1.12-2.5 2.5 0 1 .59 1.85 1.43 2.25-.84.4-1.43 1.25-1.43 2.25z"/><path d="M12 5.5v10"/></symbol>
+        <symbol id="icon-mushroom" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 5.58 2 10c0 2.21 1.11 4.19 2.86 5.55L6 22h4l.5-4h3l.5 4h4l1.14-6.45C20.89 14.19 22 12.21 22 10c0-4.42-4.48-8-10-8z"/></symbol>
+        <symbol id="icon-crab" viewBox="0 0 24 24"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/><path d="M19 14h-2v2h2v-2zm-12 0H5v2h2v-2z"/></symbol>
+        <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></symbol>
+        <symbol id="icon-food" viewBox="0 0 24 24"><path d="M18.06 22.99h1.66c.84 0 1.53-.64 1.63-1.46L23 5.05l-5 2v5.12c0 .55-.45 1-1 1-.55 0-1-.45-1-1V7.38l-5.08 2.03c-.5.2-.92.57-1.2 1.03l-4.34 7.24c-.29.48-.16 1.1.3 1.41.47.31 1.1.19 1.43-.27l3.79-6.32c.11-.19.36-.24.54-.12.18.12.25.36.14.55l-4.1 6.84c-.28.46-.16 1.06.28 1.38.47.34 1.12.21 1.45-.27l3.79-6.32c.11-.19.36-.24.54-.12.18.12.25.36.14.55l-4.1 6.84c-.28.46-.16 1.06.28 1.38.47.34 1.12.21 1.45-.27l4.5-7.5 1.11 7.34c.13.87.87 1.52 1.76 1.52zM9.5 3C7.57 3 6 4.57 6 6.5S7.57 10 9.5 10 13 8.43 13 6.5 11.43 3 9.5 3z"/></symbol>
+        <symbol id="icon-stats" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></symbol>
+        <symbol id="icon-user" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></symbol>
+    </svg>
+
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-leaf"><svg class="icon icon-xl" style="color: var(--accent);"><use href="#icon-leaf"/></svg></div>
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Naturbeobachtungen werden geladen...</div>
+        <div id="loadingProgress" class="loading-progress">0 / ? geladen</div>
+    </div>
+
+    <div class="header">
+        <div class="header-left">
+            <h1>
+                <svg class="icon"><use href="#icon-leaf"/></svg>
+                Naturbeobachtungen
+                <span class="live-badge">
+                    <span class="live-dot"></span>
+                    LIVE
+                </span>
+            </h1>
+            <p>Wildlife-Fotografie von Marvin Foppe (@marvin12748)</p>
+            <div class="last-update">Letzte Aktualisierung: <span id="lastUpdate">-</span></div>
+        </div>
+        <div class="header-controls">
+            <div class="auto-refresh-toggle">
+                <span>Auto-Refresh</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoRefreshToggle" onchange="toggleAutoRefresh()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <button id="refreshBtn" class="refresh-btn" onclick="refreshData()">
+                <svg class="icon refresh-icon"><use href="#icon-refresh"/></svg>
+                Aktualisieren
+            </button>
+        </div>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-row" style="margin-bottom: 15px;">
+            <div class="filter-group" style="flex: 2;">
+                <label class="filter-label"><svg class="icon"><use href="#icon-eye"/></svg> Suche</label>
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="filter-input search-input" placeholder="Artname oder iNaturalist-URL eingeben..." oninput="handleSearch()">
+                    <button class="search-clear" id="searchClear" onclick="clearSearch()" style="display: none;">×</button>
+                </div>
+            </div>
+        </div>
+        <div class="filter-row">
+            <div class="filter-group">
+                <label class="filter-label"><svg class="icon"><use href="#icon-globe"/></svg> Länder</label>
+                <div class="multi-select-container" id="countryFilterContainer">
+                    <button type="button" class="multi-select-btn" onclick="toggleMultiSelect('country')">
+                        <span id="countryFilterLabel">Alle Länder</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="multi-select-dropdown" id="countryDropdown"></div>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label"><svg class="icon"><use href="#icon-calendar"/></svg> Von Datum</label>
+                <input type="date" id="dateFrom" class="filter-input" onchange="applyFilters()" onclick="this.showPicker()">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label"><svg class="icon"><use href="#icon-calendar"/></svg> Bis Datum</label>
+                <input type="date" id="dateTo" class="filter-input" onchange="applyFilters()" onclick="this.showPicker()">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label"><svg class="icon"><use href="#icon-science"/></svg> Qualität</label>
+                <select id="qualityFilter" class="filter-select" onchange="applyFilters()">
+                    <option value="all">Alle</option>
+                    <option value="research">Research Grade</option>
+                    <option value="needs_id">Needs ID</option>
+                    <option value="casual">Casual</option>
+                </select>
+            </div>
+            <button class="filter-reset" onclick="resetFilters()">× Filter zurücksetzen</button>
+            <button class="filter-reset" onclick="exportUnrecognizedPlaces()" style="background: #ff9800; margin-left: 10px;" title="Exportiert alle Orte ohne erkanntes Land als CSV">📥 Unerkannte Orte</button>
+        </div>
+        <div id="activeFilters" class="active-filters"></div>
+        <div class="filter-hint" style="margin-top: 10px; font-size: 0.8em; color: var(--text-muted);">
+            Tipp: Suche nach Artname oder iNaturalist-URL (z.B. "Amsel" oder "inaturalist.org/observations/12345")
+        </div>
+    </div>
+
+    <div id="errorContainer"></div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-number" id="totalCount">-</div>
+            <div class="stat-label">Beobachtungen</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="filteredCount">-</div>
+            <div class="stat-label">Gefiltert</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="speciesCount">-</div>
+            <div class="stat-label">Arten</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="countryCount">-</div>
+            <div class="stat-label">Länder</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="researchCount">-</div>
+            <div class="stat-label">Research Grade</div>
+        </div>
+    </div>
+
+    <div class="map-container">
+        <h2 class="section-title">🗺️ Weltkarte</h2>
+        <div id="map"></div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title"><svg class="icon"><use href="#icon-globe"/></svg> Länder</h2>
+        <div id="countriesGrid" class="countries-grid"></div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title"><svg class="icon"><use href="#icon-butterfly"/></svg> Taxonomische Gruppen</h2>
+        <div id="taxaGrid" class="taxa-grid"></div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title"><svg class="icon"><use href="#icon-camera"/></svg> Galerie</h2>
+        <div class="view-mode-toggle">
+            <button class="view-mode-btn active" id="viewObservations" onclick="setViewMode('observations')">
+                📷 Beobachtungen <span class="view-mode-count" id="observationsCount">0</span>
+            </button>
+            <button class="view-mode-btn" id="viewSpecies" onclick="setViewMode('species')">
+                🦋 Arten <span class="view-mode-count" id="speciesViewCount">0</span>
+            </button>
+        </div>
+        <div class="sort-controls">
+            <span style="color: var(--text-secondary); font-size: 0.9em;">Sortieren:</span>
+            <button class="sort-btn active" data-sort="date" onclick="setSortMode('date')">📅 Datum</button>
+            <button class="sort-btn" data-sort="name" onclick="setSortMode('name')">🔤 Name</button>
+            <button class="sort-btn" data-sort="country" onclick="setSortMode('country')">🌍 Land</button>
+        </div>
+        <div id="gallery" class="gallery"></div>
+        <button id="loadMore" class="load-more" onclick="loadMoreGallery()">Mehr laden</button>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="section">
+        <h2 class="section-title"><svg class="icon"><use href="#icon-stats"/></svg> Statistiken</h2>
+        <div class="stats-charts">
+            <div class="chart-container">
+                <h3 class="chart-title">Top 10 Arten</h3>
+                <div id="topSpeciesChart" class="bar-chart"></div>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">Beobachtungen pro Jahr</h3>
+                <div id="yearlyChart" class="bar-chart"></div>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">Taxonomische Verteilung</h3>
+                <div id="taxaChart" class="bar-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="author-section">
+        <div class="author-container">
+            <div class="author-image-wrapper">
+                <img src="author.jpg"
+                     onerror="this.src='https://static.inaturalist.org/attachments/users/icons/8968854/medium.jpg'"
+                     alt="Marvin Foppe"
+                     class="author-image">
+                <span class="author-badge"><svg class="icon" style="vertical-align: middle; margin-right: 4px;"><use href="#icon-camera"/></svg> Fotograf</span>
+            </div>
+            <div class="author-info">
+                <div class="author-title">Fotograf</div>
+                <div class="author-name">Marvin Foppe</div>
+                <p class="author-bio">
+                    Naturbegeisterter und leidenschaftlicher Wildlife-Fotograf.
+                    Alle Beobachtungen und Fotos auf dieser Seite wurden von mir persönlich
+                    aufgenommen und dokumentiert. Von Vögeln über Insekten bis hin zu Pflanzen –
+                    die Vielfalt der Natur fasziniert mich jeden Tag aufs Neue.
+                </p>
+                <div id="authorStats" class="author-stats">
+                    <div class="author-stat">
+                        <div class="author-stat-value" id="authorObs">-</div>
+                        <div class="author-stat-label">Beobachtungen</div>
+                    </div>
+                    <div class="author-stat">
+                        <div class="author-stat-value" id="authorSpecies">-</div>
+                        <div class="author-stat-label">Arten</div>
+                    </div>
+                    <div class="author-stat">
+                        <div class="author-stat-value" id="authorCountries">-</div>
+                        <div class="author-stat-label">Länder</div>
+                    </div>
+                </div>
+                <div class="author-links">
+                    <a href="https://www.inaturalist.org/people/marvin12748" target="_blank" class="author-link">
+                        <svg class="icon"><use href="#icon-leaf"/></svg> iNaturalist Profil
+                    </a>
+                    <a href="https://www.inaturalist.org/observations?user_id=marvin12748" target="_blank" class="author-link">
+                        <svg class="icon"><use href="#icon-camera"/></svg> Alle Beobachtungen
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><svg class="icon"><use href="#icon-leaf"/></svg> Live-Daten von <a href="https://www.inaturalist.org" target="_blank">iNaturalist</a></p>
+        <p>© 2026 Marvin Foppe - <a href="https://www.inaturalist.org/people/marvin12748" target="_blank">@marvin12748</a></p>
+    </div>
+
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+        <span id="themeIcon">🌙</span>
+        <span id="themeText">Dark</span>
+    </button>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox">
+        <div class="lightbox-content">
+            <button class="lightbox-close" onclick="closeLightbox()">×</button>
+            <button class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)">❮</button>
+            <img class="lightbox-image" id="lightboxImage" src="" alt="">
+            <button class="lightbox-nav lightbox-next" onclick="navigateLightbox(1)">❯</button>
+            <div class="lightbox-info">
+                <div class="lightbox-title" id="lightboxTitle"></div>
+                <div class="lightbox-meta" id="lightboxMeta"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script>
+        // Configuration
+        const USER_ID = 'marvin12748';
+        const API_BASE = 'https://api.inaturalist.org/v1';
+        const PER_PAGE = 200;
+        const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000;
+
+        // State
+        let allObservations = [];
+        let filteredObservations = [];
+        let autoRefreshTimer = null;
+        let map = null;
+        let markers = null;
+        let selectedCountries = [];  // Array for multi-country selection
+        let selectedTaxa = [];       // Array for multi-taxa selection
+        let searchQuery = '';        // Search query string
+        let galleryDisplayed = 0;
+        let viewMode = 'observations';  // 'observations' or 'species'
+        let selectedSpeciesId = null;   // Filter for specific species (taxonId)
+        let selectedSpeciesName = '';   // Name of selected species for display
+        const GALLERY_BATCH = 24;
+
+        // Complete country database with all variations, codes and flags
+        const countryDatabase = [
+            { name: 'Deutschland', flag: '🇩🇪', patterns: ['germany', 'deutschland', 'alemanha', 'alemania', ', de', 'de,'] },
+            { name: 'Spanien', flag: '🇪🇸', patterns: ['spain', 'spanien', 'españa', 'espana', ', es'] },
+            { name: 'Frankreich', flag: '🇫🇷', patterns: ['france', 'frankreich', ', fr'] },
+            { name: 'Italien', flag: '🇮🇹', patterns: ['italy', 'italien', 'italia', ', it'] },
+            { name: 'Österreich', flag: '🇦🇹', patterns: ['austria', 'österreich', 'oesterreich', ', at'] },
+            { name: 'Schweiz', flag: '🇨🇭', patterns: ['switzerland', 'schweiz', 'suisse', 'svizzera', ', ch', 'lenk', 'simmental', 'bern', 'zürich', 'zurich', 'genf', 'geneva', 'basel', 'luzern', 'lucerne', 'interlaken', 'zermatt', 'graubünden', 'graubunden', 'tessin', 'ticino', 'wallis', 'valais'] },
+            { name: 'Niederlande', flag: '🇳🇱', patterns: ['netherlands', 'niederlande', 'holland', 'nederland', ', nl', 'texel', 'amsterdam', 'rotterdam', 'den haag', 'the hague', 'utrecht', 'eindhoven', 'groningen', 'maastricht', 'friesland', 'zeeland', 'limburg nl', 'brabant', 'gelderland', 'overijssel', 'flevoland', 'drenthe'] },
+            { name: 'Belgien', flag: '🇧🇪', patterns: ['belgium', 'belgien', 'belgique', 'belgië', ', be', 'dinant', 'brüssel', 'brussel', 'brussels', 'bruxelles', 'antwerpen', 'antwerp', 'gent', 'ghent', 'brügge', 'brugge', 'bruges', 'lüttich', 'liège', 'liege', 'namur', 'charleroi', 'wallonien', 'wallonia', 'flandern', 'flanders', 'vlaanderen', 'ardennen', 'ardennes'] },
+            { name: 'Portugal', flag: '🇵🇹', patterns: ['portugal', ', pt'] },
+            { name: 'Griechenland', flag: '🇬🇷', patterns: ['greece', 'griechenland', 'hellas', 'ελλάδα', ', gr'] },
+            { name: 'Kroatien', flag: '🇭🇷', patterns: ['croatia', 'kroatien', 'hrvatska', ', hr'] },
+            { name: 'Polen', flag: '🇵🇱', patterns: ['poland', 'polen', 'polska', ', pl'] },
+            { name: 'Tschechien', flag: '🇨🇿', patterns: ['czech', 'tschechien', 'czechia', 'česko', ', cz'] },
+            { name: 'Ungarn', flag: '🇭🇺', patterns: ['hungary', 'ungarn', 'magyarország', ', hu'] },
+            { name: 'Großbritannien', flag: '🇬🇧', patterns: ['united kingdom', 'großbritannien', 'uk', 'england', 'scotland', 'wales', 'britain', ', gb'] },
+            { name: 'Irland', flag: '🇮🇪', patterns: ['ireland', 'irland', 'éire', ', ie'] },
+            { name: 'Schweden', flag: '🇸🇪', patterns: ['sweden', 'schweden', 'sverige', ', se'] },
+            { name: 'Norwegen', flag: '🇳🇴', patterns: ['norway', 'norwegen', 'norge', ', no'] },
+            { name: 'Dänemark', flag: '🇩🇰', patterns: ['denmark', 'dänemark', 'danmark', ', dk', 'lolland', 'kopenhagen', 'copenhagen', 'københavn', 'aarhus', 'odense', 'aalborg', 'jylland', 'jutland', 'sjælland', 'sjaelland', 'zealand', 'fyn', 'funen', 'bornholm'] },
+            { name: 'Finnland', flag: '🇫🇮', patterns: ['finland', 'finnland', 'suomi', ', fi'] },
+            { name: 'USA', flag: '🇺🇸', patterns: ['united states', 'usa', 'u.s.a', 'america', ', us'] },
+            { name: 'Kanada', flag: '🇨🇦', patterns: ['canada', 'kanada', ', ca'] },
+            { name: 'Mexiko', flag: '🇲🇽', patterns: ['mexico', 'mexiko', 'méxico', ', mx'] },
+            { name: 'Brasilien', flag: '🇧🇷', patterns: ['brazil', 'brasilien', 'brasil', ', br'] },
+            { name: 'Australien', flag: '🇦🇺', patterns: ['australia', 'australien', ', au'] },
+            { name: 'Japan', flag: '🇯🇵', patterns: ['japan', '日本', ', jp'] },
+            { name: 'China', flag: '🇨🇳', patterns: ['china', '中国', ', cn'] },
+            { name: 'Indien', flag: '🇮🇳', patterns: ['india', 'indien', 'भारत', ', in'] },
+            { name: 'Südafrika', flag: '🇿🇦', patterns: ['south africa', 'südafrika', 'suid-afrika', ', za'] },
+            { name: 'Thailand', flag: '🇹🇭', patterns: ['thailand', 'ประเทศไทย', ', th'] },
+            { name: 'Indonesien', flag: '🇮🇩', patterns: ['indonesia', 'indonesien', ', id'] },
+            { name: 'Türkei', flag: '🇹🇷', patterns: ['turkey', 'türkei', 'turkiye', 'türkiye', ', tr'] },
+            { name: 'Ägypten', flag: '🇪🇬', patterns: ['egypt', 'ägypten', 'مصر', ', eg'] },
+            { name: 'Marokko', flag: '🇲🇦', patterns: ['morocco', 'marokko', 'maroc', 'المغرب', ', ma'] },
+            { name: 'Kenia', flag: '🇰🇪', patterns: ['kenya', 'kenia', ', ke'] },
+            { name: 'Tansania', flag: '🇹🇿', patterns: ['tanzania', 'tansania', ', tz'] },
+            { name: 'Costa Rica', flag: '🇨🇷', patterns: ['costa rica', ', cr'] },
+            { name: 'Ecuador', flag: '🇪🇨', patterns: ['ecuador', ', ec'] },
+            { name: 'Peru', flag: '🇵🇪', patterns: ['peru', 'perú', ', pe'] },
+            { name: 'Argentinien', flag: '🇦🇷', patterns: ['argentina', 'argentinien', ', ar'] },
+            { name: 'Chile', flag: '🇨🇱', patterns: ['chile', ', cl'] },
+            { name: 'Kolumbien', flag: '🇨🇴', patterns: ['colombia', 'kolumbien', ', co'] },
+            { name: 'Neuseeland', flag: '🇳🇿', patterns: ['new zealand', 'neuseeland', ', nz'] },
+            { name: 'Singapur', flag: '🇸🇬', patterns: ['singapore', 'singapur', ', sg'] },
+            { name: 'Malaysia', flag: '🇲🇾', patterns: ['malaysia', ', my'] },
+            { name: 'Philippinen', flag: '🇵🇭', patterns: ['philippines', 'philippinen', 'pilipinas', ', ph'] },
+            { name: 'Vietnam', flag: '🇻🇳', patterns: ['vietnam', 'việt nam', ', vn'] },
+            { name: 'Slowenien', flag: '🇸🇮', patterns: ['slovenia', 'slowenien', 'slovenija', ', si'] },
+            { name: 'Slowakei', flag: '🇸🇰', patterns: ['slovakia', 'slowakei', 'slovensko', ', sk'] },
+            { name: 'Rumänien', flag: '🇷🇴', patterns: ['romania', 'rumänien', 'românia', ', ro'] },
+            { name: 'Bulgarien', flag: '🇧🇬', patterns: ['bulgaria', 'bulgarien', 'българия', ', bg'] },
+            { name: 'Luxemburg', flag: '🇱🇺', patterns: ['luxembourg', 'luxemburg', 'lëtzebuerg', ', lu'] },
+            { name: 'Malta', flag: '🇲🇹', patterns: ['malta', ', mt'] },
+            { name: 'Zypern', flag: '🇨🇾', patterns: ['cyprus', 'zypern', 'κύπρος', ', cy'] },
+            { name: 'Island', flag: '🇮🇸', patterns: ['iceland', 'ísland', ', is'] },
+            { name: 'Estland', flag: '🇪🇪', patterns: ['estonia', 'estland', 'eesti', ', ee'] },
+            { name: 'Lettland', flag: '🇱🇻', patterns: ['latvia', 'lettland', 'latvija', ', lv'] },
+            { name: 'Litauen', flag: '🇱🇹', patterns: ['lithuania', 'litauen', 'lietuva', ', lt'] },
+            { name: 'Serbien', flag: '🇷🇸', patterns: ['serbia', 'serbien', 'србија', ', rs'] },
+            { name: 'Montenegro', flag: '🇲🇪', patterns: ['montenegro', ', me'] },
+            { name: 'Albanien', flag: '🇦🇱', patterns: ['albania', 'albanien', 'shqipëri', ', al'] },
+            { name: 'Nordmazedonien', flag: '🇲🇰', patterns: ['north macedonia', 'nordmazedonien', 'северна македонија', ', mk'] },
+            { name: 'Bosnien', flag: '🇧🇦', patterns: ['bosnia', 'bosnien', 'bosna', ', ba'] },
+            { name: 'Ukraine', flag: '🇺🇦', patterns: ['ukraine', 'україна', ', ua'] },
+            { name: 'Russland', flag: '🇷🇺', patterns: ['russia', 'russland', 'россия', ', ru'] },
+            { name: 'Belarus', flag: '🇧🇾', patterns: ['belarus', 'weißrussland', 'беларусь', ', by'] },
+            { name: 'Moldawien', flag: '🇲🇩', patterns: ['moldova', 'moldawien', ', md'] },
+            { name: 'Georgien', flag: '🇬🇪', patterns: ['georgia', 'georgien', 'საქართველო', ', ge'] },
+            { name: 'Armenien', flag: '🇦🇲', patterns: ['armenia', 'armenien', ', am'] },
+            { name: 'Aserbaidschan', flag: '🇦🇿', patterns: ['azerbaijan', 'aserbaidschan', ', az'] },
+            { name: 'Kasachstan', flag: '🇰🇿', patterns: ['kazakhstan', 'kasachstan', ', kz'] },
+            { name: 'Usbekistan', flag: '🇺🇿', patterns: ['uzbekistan', 'usbekistan', ', uz'] },
+            { name: 'Sri Lanka', flag: '🇱🇰', patterns: ['sri lanka', ', lk'] },
+            { name: 'Nepal', flag: '🇳🇵', patterns: ['nepal', ', np'] },
+            { name: 'Bangladesh', flag: '🇧🇩', patterns: ['bangladesh', 'bangladesch', ', bd'] },
+            { name: 'Pakistan', flag: '🇵🇰', patterns: ['pakistan', ', pk'] },
+            { name: 'Afghanistan', flag: '🇦🇫', patterns: ['afghanistan', ', af'] },
+            { name: 'Iran', flag: '🇮🇷', patterns: ['iran', ', ir'] },
+            { name: 'Irak', flag: '🇮🇶', patterns: ['iraq', 'irak', ', iq'] },
+            { name: 'Saudi-Arabien', flag: '🇸🇦', patterns: ['saudi arabia', 'saudi-arabien', ', sa'] },
+            { name: 'VAE', flag: '🇦🇪', patterns: ['united arab emirates', 'vae', 'uae', 'dubai', 'abu dhabi', ', ae'] },
+            { name: 'Israel', flag: '🇮🇱', patterns: ['israel', ', il'] },
+            { name: 'Jordanien', flag: '🇯🇴', patterns: ['jordan', 'jordanien', ', jo'] },
+            { name: 'Libanon', flag: '🇱🇧', patterns: ['lebanon', 'libanon', ', lb'] },
+            { name: 'Katar', flag: '🇶🇦', patterns: ['qatar', 'katar', ', qa'] },
+            { name: 'Kuwait', flag: '🇰🇼', patterns: ['kuwait', ', kw'] },
+            { name: 'Oman', flag: '🇴🇲', patterns: ['oman', ', om'] },
+            { name: 'Bahrain', flag: '🇧🇭', patterns: ['bahrain', ', bh'] },
+            { name: 'Tunesien', flag: '🇹🇳', patterns: ['tunisia', 'tunesien', 'tunisie', ', tn'] },
+            { name: 'Algerien', flag: '🇩🇿', patterns: ['algeria', 'algerien', 'algérie', ', dz'] },
+            { name: 'Libyen', flag: '🇱🇾', patterns: ['libya', 'libyen', ', ly'] },
+            { name: 'Nigeria', flag: '🇳🇬', patterns: ['nigeria', ', ng'] },
+            { name: 'Ghana', flag: '🇬🇭', patterns: ['ghana', ', gh'] },
+            { name: 'Senegal', flag: '🇸🇳', patterns: ['senegal', ', sn'] },
+            { name: 'Elfenbeinküste', flag: '🇨🇮', patterns: ['ivory coast', 'elfenbeinküste', "côte d'ivoire", ', ci'] },
+            { name: 'Kamerun', flag: '🇨🇲', patterns: ['cameroon', 'kamerun', 'cameroun', ', cm'] },
+            { name: 'Äthiopien', flag: '🇪🇹', patterns: ['ethiopia', 'äthiopien', ', et'] },
+            { name: 'Uganda', flag: '🇺🇬', patterns: ['uganda', ', ug'] },
+            { name: 'Ruanda', flag: '🇷🇼', patterns: ['rwanda', 'ruanda', ', rw'] },
+            { name: 'Namibia', flag: '🇳🇦', patterns: ['namibia', ', na'] },
+            { name: 'Botswana', flag: '🇧🇼', patterns: ['botswana', ', bw'] },
+            { name: 'Simbabwe', flag: '🇿🇼', patterns: ['zimbabwe', 'simbabwe', ', zw'] },
+            { name: 'Sambia', flag: '🇿🇲', patterns: ['zambia', 'sambia', ', zm'] },
+            { name: 'Mosambik', flag: '🇲🇿', patterns: ['mozambique', 'mosambik', 'moçambique', ', mz'] },
+            { name: 'Madagaskar', flag: '🇲🇬', patterns: ['madagascar', 'madagaskar', ', mg'] },
+            { name: 'Mauritius', flag: '🇲🇺', patterns: ['mauritius', ', mu'] },
+            { name: 'Seychellen', flag: '🇸🇨', patterns: ['seychelles', 'seychellen', ', sc'] },
+            { name: 'Südkorea', flag: '🇰🇷', patterns: ['south korea', 'südkorea', 'korea', '한국', ', kr'] },
+            { name: 'Taiwan', flag: '🇹🇼', patterns: ['taiwan', '台灣', ', tw'] },
+            { name: 'Hongkong', flag: '🇭🇰', patterns: ['hong kong', 'hongkong', '香港', ', hk'] },
+            { name: 'Kambodscha', flag: '🇰🇭', patterns: ['cambodia', 'kambodscha', ', kh'] },
+            { name: 'Laos', flag: '🇱🇦', patterns: ['laos', ', la'] },
+            { name: 'Myanmar', flag: '🇲🇲', patterns: ['myanmar', 'burma', ', mm'] },
+            { name: 'Mongolei', flag: '🇲🇳', patterns: ['mongolia', 'mongolei', ', mn'] },
+            { name: 'Panama', flag: '🇵🇦', patterns: ['panama', 'panamá', ', pa'] },
+            { name: 'Guatemala', flag: '🇬🇹', patterns: ['guatemala', ', gt'] },
+            { name: 'Honduras', flag: '🇭🇳', patterns: ['honduras', ', hn'] },
+            { name: 'Nicaragua', flag: '🇳🇮', patterns: ['nicaragua', ', ni'] },
+            { name: 'El Salvador', flag: '🇸🇻', patterns: ['el salvador', ', sv'] },
+            { name: 'Belize', flag: '🇧🇿', patterns: ['belize', ', bz'] },
+            { name: 'Kuba', flag: '🇨🇺', patterns: ['cuba', 'kuba', ', cu'] },
+            { name: 'Jamaika', flag: '🇯🇲', patterns: ['jamaica', 'jamaika', ', jm'] },
+            { name: 'Dom. Republik', flag: '🇩🇴', patterns: ['dominican republic', 'dominikanische republik', ', do'] },
+            { name: 'Puerto Rico', flag: '🇵🇷', patterns: ['puerto rico', ', pr'] },
+            { name: 'Trinidad', flag: '🇹🇹', patterns: ['trinidad', ', tt'] },
+            { name: 'Bahamas', flag: '🇧🇸', patterns: ['bahamas', ', bs'] },
+            { name: 'Barbados', flag: '🇧🇧', patterns: ['barbados', ', bb'] },
+            { name: 'Venezuela', flag: '🇻🇪', patterns: ['venezuela', ', ve'] },
+            { name: 'Uruguay', flag: '🇺🇾', patterns: ['uruguay', ', uy'] },
+            { name: 'Paraguay', flag: '🇵🇾', patterns: ['paraguay', ', py'] },
+            { name: 'Bolivien', flag: '🇧🇴', patterns: ['bolivia', 'bolivien', ', bo'] },
+            { name: 'Guyana', flag: '🇬🇾', patterns: ['guyana', ', gy'] },
+            { name: 'Suriname', flag: '🇸🇷', patterns: ['suriname', ', sr'] },
+            { name: 'Fidschi', flag: '🇫🇯', patterns: ['fiji', 'fidschi', ', fj'] },
+            { name: 'Papua-Neuguinea', flag: '🇵🇬', patterns: ['papua new guinea', 'papua-neuguinea', ', pg'] },
+            { name: 'Malediven', flag: '🇲🇻', patterns: ['maldives', 'malediven', ', mv'] },
+            { name: 'Brunei', flag: '🇧🇳', patterns: ['brunei', ', bn'] },
+            { name: 'Osttimor', flag: '🇹🇱', patterns: ['east timor', 'osttimor', 'timor-leste', ', tl'] },
+            { name: 'Bhutan', flag: '🇧🇹', patterns: ['bhutan', ', bt'] },
+            { name: 'Liechtenstein', flag: '🇱🇮', patterns: ['liechtenstein', ', li'] },
+            { name: 'Monaco', flag: '🇲🇨', patterns: ['monaco', ', mc'] },
+            { name: 'San Marino', flag: '🇸🇲', patterns: ['san marino', ', sm'] },
+            { name: 'Andorra', flag: '🇦🇩', patterns: ['andorra', ', ad'] },
+            { name: 'Vatikan', flag: '🇻🇦', patterns: ['vatican', 'vatikan', ', va'] },
+            { name: 'Kap Verde', flag: '🇨🇻', patterns: ['cape verde', 'kap verde', 'cabo verde', ', cv'] },
+            { name: 'Réunion', flag: '🇷🇪', patterns: ['réunion', 'reunion', ', re'] },
+            { name: 'Französisch-Guayana', flag: '🇬🇫', patterns: ['french guiana', 'französisch-guayana', 'guyane', ', gf'] },
+            { name: 'Martinique', flag: '🇲🇶', patterns: ['martinique', ', mq'] },
+            { name: 'Guadeloupe', flag: '🇬🇵', patterns: ['guadeloupe', ', gp'] },
+            { name: 'Neukaledonien', flag: '🇳🇨', patterns: ['new caledonia', 'neukaledonien', ', nc'] },
+            { name: 'Französisch-Polynesien', flag: '🇵🇫', patterns: ['french polynesia', 'französisch-polynesien', 'tahiti', ', pf'] },
+            { name: 'Kanarische Inseln', flag: '🇮🇨', patterns: ['canary islands', 'kanarische inseln', 'canarias', 'tenerife', 'gran canaria', 'lanzarote', 'fuerteventura'] },
+            { name: 'Azoren', flag: '🇵🇹', patterns: ['azores', 'azoren', 'açores'] },
+            { name: 'Madeira', flag: '🇵🇹', patterns: ['madeira'] },
+            { name: 'Balearen', flag: '🇪🇸', patterns: ['balearic', 'balearen', 'mallorca', 'ibiza', 'menorca'] },
+            { name: 'Gibraltar', flag: '🇬🇮', patterns: ['gibraltar', ', gi'] },
+            { name: 'Färöer', flag: '🇫🇴', patterns: ['faroe', 'färöer', 'føroyar', ', fo'] },
+            { name: 'Grönland', flag: '🇬🇱', patterns: ['greenland', 'grönland', 'kalaallit nunaat', ', gl'] },
+            // Panama - specific locations
+            { name: 'Panama', flag: '🇵🇦', patterns: ['coiba', 'bocas del toro', 'chiriquí', 'chiriqui', 'colón', 'colon', 'darién', 'darien', 'veraguas', 'coclé', 'cocle', 'herrera', 'los santos', 'panamá oeste', 'panama oeste', 'guna yala', 'san blas', 'barro colorado', 'gatun', 'gamboa', 'soberanía', 'soberania'] },
+            // Ecuador - Galápagos
+            { name: 'Ecuador', flag: '🇪🇨', patterns: ['galápagos', 'galapagos', 'isabela island', 'santa cruz island', 'san cristóbal', 'san cristobal', 'fernandina', 'floreana', 'genovesa', 'española island', 'marchena'] },
+            // Costa Rica - specific locations
+            { name: 'Costa Rica', flag: '🇨🇷', patterns: ['monteverde', 'arenal', 'tortuguero', 'corcovado', 'manuel antonio', 'guanacaste', 'osa peninsula', 'limón', 'limon', 'puntarenas', 'cartago', 'heredia', 'alajuela'] },
+            // Colombia - specific locations
+            { name: 'Kolumbien', flag: '🇨🇴', patterns: ['bogotá', 'bogota', 'medellín', 'medellin', 'cartagena', 'cali', 'barranquilla', 'santa marta', 'amazonas colombia', 'chocó', 'choco', 'providencia', 'san andrés', 'san andres'] },
+            // Caribbean Sea → nearest major countries
+            { name: 'Panama', flag: '🇵🇦', patterns: ['caribbean sea, pa', 'mar caribe, pa'] },
+            { name: 'Kolumbien', flag: '🇨🇴', patterns: ['caribbean sea, co', 'mar caribe, co'] },
+            // Mexico - specific locations
+            { name: 'Mexiko', flag: '🇲🇽', patterns: ['yucatán', 'yucatan', 'quintana roo', 'cancún', 'cancun', 'playa del carmen', 'cozumel', 'riviera maya', 'chiapas', 'oaxaca', 'baja california', 'jalisco', 'guerrero', 'veracruz', 'tabasco', 'campeche', 'sonora', 'sinaloa', 'nayarit', 'michoacán', 'michoacan', 'puebla', 'morelos', 'tlaxcala', 'hidalgo', 'querétaro', 'queretaro'] },
+            // Peru - specific locations
+            { name: 'Peru', flag: '🇵🇪', patterns: ['lima', 'cusco', 'cuzco', 'arequipa', 'machu picchu', 'iquitos', 'amazonas peru', 'loreto', 'madre de dios', 'puno', 'tacna', 'moquegua', 'ayacucho', 'huancayo', 'trujillo peru'] },
+            // Brazil - specific locations
+            { name: 'Brasilien', flag: '🇧🇷', patterns: ['são paulo', 'sao paulo', 'rio de janeiro', 'bahia', 'minas gerais', 'paraná', 'parana', 'santa catarina', 'rio grande do sul', 'amazonas brazil', 'pará', 'para', 'mato grosso', 'goiás', 'goias', 'ceará', 'ceara', 'pernambuco', 'maranhão', 'maranhao', 'piauí', 'piaui', 'fernando de noronha', 'pantanal'] },
+            // Argentina - specific locations
+            { name: 'Argentinien', flag: '🇦🇷', patterns: ['buenos aires', 'patagonia argentina', 'mendoza', 'córdoba argentina', 'cordoba argentina', 'tierra del fuego', 'ushuaia', 'bariloche', 'iguazú', 'iguazu', 'salta', 'jujuy', 'misiones'] },
+            // Chile - specific locations
+            { name: 'Chile', flag: '🇨🇱', patterns: ['santiago chile', 'valparaíso', 'valparaiso', 'patagonia chile', 'atacama', 'antofagasta', 'araucanía', 'araucania', 'los lagos', 'magallanes', 'aysén', 'aysen', 'easter island', 'isla de pascua', 'rapa nui', 'juan fernández', 'juan fernandez'] },
+            // Spain - specific locations
+            { name: 'Spanien', flag: '🇪🇸', patterns: ['andalucía', 'andalucia', 'cataluña', 'cataluna', 'catalunya', 'madrid', 'valencia', 'galicia', 'país vasco', 'pais vasco', 'euskadi', 'asturias', 'cantabria', 'navarra', 'aragón', 'aragon', 'castilla', 'extremadura', 'murcia', 'la rioja'] },
+            // Portugal - specific locations
+            { name: 'Portugal', flag: '🇵🇹', patterns: ['lisboa', 'lisbon', 'porto', 'algarve', 'alentejo', 'sintra', 'coimbra', 'évora', 'evora', 'faro', 'estói', 'estoi', 'lagos', 'sagres'] },
+            // Italy - specific locations
+            { name: 'Italien', flag: '🇮🇹', patterns: ['roma', 'rome', 'milano', 'milan', 'napoli', 'naples', 'firenze', 'florence', 'venezia', 'venice', 'sicilia', 'sicily', 'sardegna', 'sardinia', 'sardinien', 'toscana', 'tuscany', 'lombardia', 'lombardy', 'piemonte', 'piedmont', 'calabria', 'puglia', 'campania', 'lazio', 'emilia-romagna', 'veneto', 'liguria', 'umbria', 'abruzzo', 'marche', 'friuli', 'trentino', 'alto adige', 'südtirol', 'sudtirol', 'gardasee', 'lago di garda', 'garda', 'como', 'lago maggiore', 'elba', 'capri', 'ischia', 'dolomiten', 'dolomites', 'cinque terre', 'amalfi'] },
+            // France - specific locations
+            { name: 'Frankreich', flag: '🇫🇷', patterns: ['paris', 'provence', 'côte d\'azur', 'cote d\'azur', 'bretagne', 'brittany', 'normandie', 'normandy', 'alsace', 'loire', 'bordeaux', 'marseille', 'lyon', 'toulouse', 'nice', 'nantes', 'strasbourg', 'montpellier', 'lille', 'corsica', 'korsika', 'corse', 'bastia', 'ajaccio', 'calvi', 'porto-vecchio', 'bonifacio'] },
+            // Germany - specific locations
+            { name: 'Deutschland', flag: '🇩🇪', patterns: ['bayern', 'bavaria', 'baden-württemberg', 'baden-wurttemberg', 'nordrhein-westfalen', 'niedersachsen', 'hessen', 'sachsen', 'rheinland-pfalz', 'berlin', 'hamburg', 'münchen', 'munchen', 'munich', 'köln', 'koln', 'cologne', 'frankfurt', 'stuttgart', 'düsseldorf', 'dusseldorf', 'bremen', 'dresden', 'leipzig', 'hannover', 'nürnberg', 'nurnberg', 'nuremberg', 'wermelskirchen', 'niehl', 'nippes', 'rheindorf', 'urbar', 'cochem', 'ohligser heide', 'leichlingen', 'leverkusen'] },
+            // UK - specific locations
+            { name: 'Großbritannien', flag: '🇬🇧', patterns: ['london', 'manchester', 'birmingham', 'liverpool', 'edinburgh', 'glasgow', 'cardiff', 'belfast', 'bristol', 'leeds', 'sheffield', 'cornwall', 'devon', 'kent', 'sussex', 'yorkshire', 'lancashire', 'norfolk', 'suffolk', 'essex', 'surrey', 'hampshire', 'dorset', 'somerset', 'wiltshire', 'gloucestershire', 'oxfordshire', 'cambridgeshire', 'lincolnshire', 'nottinghamshire', 'derbyshire', 'staffordshire', 'warwickshire', 'worcestershire', 'herefordshire', 'shropshire', 'cheshire', 'cumbria', 'northumberland', 'durham', 'isle of wight', 'isle of man', 'channel islands', 'jersey', 'guernsey', 'shetland', 'orkney', 'hebrides', 'isle of skye', 'portree', 'plockton', 'luss', 'alexandria', 'kilmuir', 'choppington', 'kinlochleven', 'st fillans', 'crieff', 'bridge of don', 'aberdeen', 'inverness', 'thurso', 'dunnet', 'canisbay', 'garelochhead', 'helensburgh', 'watten', 'wick', 'lesbury', 'alnwick', 'amble', 'morpeth', 'newcastle upon tyne', 'vereinigtes königreich'] },
+            // Australia - specific locations
+            { name: 'Australien', flag: '🇦🇺', patterns: ['queensland', 'new south wales', 'victoria australia', 'tasmania', 'western australia', 'south australia', 'northern territory', 'australian capital territory', 'sydney', 'melbourne', 'brisbane', 'perth', 'adelaide', 'canberra', 'hobart', 'darwin', 'cairns', 'gold coast', 'great barrier reef'] },
+            // New Zealand - specific locations
+            { name: 'Neuseeland', flag: '🇳🇿', patterns: ['auckland', 'wellington', 'christchurch', 'queenstown', 'rotorua', 'taupo', 'nelson', 'dunedin', 'hamilton nz', 'north island', 'south island', 'stewart island', 'fiordland', 'milford sound', 'abel tasman', 'tongariro', 'coromandel'] },
+            // South Africa - specific locations
+            { name: 'Südafrika', flag: '🇿🇦', patterns: ['cape town', 'kapstadt', 'johannesburg', 'durban', 'pretoria', 'kruger', 'garden route', 'western cape', 'eastern cape', 'kwazulu-natal', 'gauteng', 'mpumalanga', 'limpopo', 'free state', 'north west', 'northern cape'] },
+            // Thailand - specific locations
+            { name: 'Thailand', flag: '🇹🇭', patterns: ['bangkok', 'phuket', 'chiang mai', 'krabi', 'koh samui', 'pattaya', 'ayutthaya', 'sukhothai', 'koh phangan', 'koh tao', 'phi phi', 'railay', 'khao sok', 'khao yai', 'hua hin', 'kanchanaburi'] },
+            // Indonesia - specific locations
+            { name: 'Indonesien', flag: '🇮🇩', patterns: ['bali', 'java', 'sumatra', 'borneo indonesia', 'kalimantan', 'sulawesi', 'lombok', 'komodo', 'flores', 'papua indonesia', 'raja ampat', 'jakarta', 'yogyakarta', 'ubud', 'gili islands'] },
+            // Malaysia - specific locations
+            { name: 'Malaysia', flag: '🇲🇾', patterns: ['kuala lumpur', 'penang', 'langkawi', 'sabah', 'sarawak', 'borneo malaysia', 'malacca', 'melaka', 'johor', 'pahang', 'terengganu', 'kelantan', 'perak', 'kedah', 'perlis', 'selangor', 'negeri sembilan', 'cameron highlands', 'kinabalu', 'sipadan', 'tioman'] },
+            // Philippines - specific locations
+            { name: 'Philippinen', flag: '🇵🇭', patterns: ['manila', 'cebu', 'palawan', 'boracay', 'bohol', 'siargao', 'davao', 'mindanao', 'luzon', 'visayas', 'el nido', 'coron', 'puerto princesa', 'chocolate hills', 'tubbataha'] },
+            // Japan - specific locations
+            { name: 'Japan', flag: '🇯🇵', patterns: ['tokyo', 'kyoto', 'osaka', 'hokkaido', 'okinawa', 'hiroshima', 'nagasaki', 'nara', 'kobe', 'yokohama', 'fukuoka', 'sapporo', 'sendai', 'nagoya', 'kanazawa', 'nikko', 'hakone', 'kamakura', 'miyajima', 'shikoku', 'kyushu', 'honshu', 'fuji'] },
+            // India - specific locations
+            { name: 'Indien', flag: '🇮🇳', patterns: ['delhi', 'mumbai', 'bangalore', 'bengaluru', 'chennai', 'kolkata', 'hyderabad', 'goa', 'kerala', 'rajasthan', 'jaipur', 'udaipur', 'agra', 'varanasi', 'himalaya india', 'kashmir', 'ladakh', 'sikkim', 'darjeeling', 'assam', 'meghalaya', 'andaman', 'nicobar', 'maharashtra', 'karnataka', 'tamil nadu', 'punjab', 'gujarat', 'madhya pradesh', 'uttar pradesh', 'west bengal', 'odisha', 'orissa'] },
+            // USA - specific states and locations
+            { name: 'USA', flag: '🇺🇸', patterns: ['california', 'texas', 'florida', 'new york', 'pennsylvania', 'illinois', 'ohio', 'georgia us', 'michigan', 'arizona', 'washington state', 'oregon', 'colorado', 'nevada', 'utah', 'hawaii', 'alaska', 'massachusetts', 'virginia', 'north carolina', 'tennessee', 'missouri', 'maryland', 'wisconsin', 'minnesota', 'louisiana', 'alabama', 'kentucky', 'south carolina', 'oklahoma', 'connecticut', 'iowa', 'mississippi', 'arkansas', 'kansas', 'nebraska', 'new mexico', 'idaho', 'montana', 'wyoming', 'maine', 'new hampshire', 'vermont', 'rhode island', 'delaware', 'west virginia', 'north dakota', 'south dakota', 'los angeles', 'san francisco', 'san diego', 'chicago', 'houston', 'phoenix', 'seattle', 'denver', 'boston', 'miami', 'atlanta', 'dallas', 'las vegas', 'portland', 'yellowstone', 'yosemite', 'grand canyon', 'everglades', 'death valley', 'joshua tree', 'zion', 'bryce canyon', 'arches', 'rocky mountain', 'great smoky', 'acadia', 'olympic national', 'glacier national', 'big sur', 'cape cod', 'florida keys', 'key west', 'puerto rico'] },
+            // Canada - specific locations
+            { name: 'Kanada', flag: '🇨🇦', patterns: ['ontario', 'quebec', 'british columbia', 'alberta', 'manitoba', 'saskatchewan', 'nova scotia', 'new brunswick', 'newfoundland', 'labrador', 'prince edward island', 'yukon', 'northwest territories', 'nunavut', 'toronto', 'vancouver', 'montreal', 'calgary', 'edmonton', 'ottawa', 'winnipeg', 'halifax', 'victoria bc', 'banff', 'jasper', 'whistler', 'niagara'] }
+        ];
+
+        // Taxa configuration with descriptions and worldwide species counts
+        const taxaConfig = {
+            'Aves': {
+                icon: '🐦',
+                name: 'Vögel',
+                color: '#81c784',
+                desc: 'Warmblütige Wirbeltiere mit Federn, Flügeln und Schnabel. Die einzigen heute lebenden Nachfahren der Dinosaurier.',
+                speciesCount: '~10.000'
+            },
+            'Mammalia': {
+                icon: '🦁',
+                name: 'Säugetiere',
+                color: '#a5d6a7',
+                desc: 'Warmblütige Wirbeltiere, die ihre Jungen mit Milch säugen. Meist mit Fell bedeckt.',
+                speciesCount: '~6.500'
+            },
+            'Reptilia': {
+                icon: '🦎',
+                name: 'Reptilien',
+                color: '#66bb6a',
+                desc: 'Wechselwarme Wirbeltiere mit Schuppen. Dazu gehören Echsen, Schlangen, Schildkröten und Krokodile.',
+                speciesCount: '~11.000'
+            },
+            'Amphibia': {
+                icon: '🐸',
+                name: 'Amphibien',
+                color: '#4caf50',
+                desc: 'Wechselwarme Wirbeltiere, die meist im Wasser geboren werden und später an Land leben. Frösche, Kröten und Molche.',
+                speciesCount: '~8.000'
+            },
+            'Actinopterygii': {
+                icon: '🐟',
+                name: 'Fische',
+                color: '#43a047',
+                desc: 'Wasserlebende Wirbeltiere mit Kiemen und Flossen. Die artenreichste Gruppe der Wirbeltiere.',
+                speciesCount: '~35.000'
+            },
+            'Insecta': {
+                icon: '🦋',
+                name: 'Insekten',
+                color: '#aed581',
+                desc: 'Gliederfüßer mit sechs Beinen und dreigeteiltem Körper. Mit über 1 Million Arten die artenreichste Tierklasse.',
+                speciesCount: '~1.000.000+'
+            },
+            'Arachnida': {
+                icon: '🕷️',
+                name: 'Spinnentiere',
+                color: '#8bc34a',
+                desc: 'Gliederfüßer mit acht Beinen. Dazu gehören Spinnen, Skorpione, Zecken und Milben.',
+                speciesCount: '~100.000'
+            },
+            'Mollusca': {
+                icon: '🐌',
+                name: 'Weichtiere',
+                color: '#7cb342',
+                desc: 'Wirbellose Tiere mit weichem Körper, oft mit Schale. Schnecken, Muscheln und Tintenfische.',
+                speciesCount: '~85.000'
+            },
+            'Plantae': {
+                icon: '🌿',
+                name: 'Pflanzen',
+                color: '#558b2f',
+                desc: 'Vielzellige Organismen, die Photosynthese betreiben. Von Moosen über Farne bis zu Blütenpflanzen.',
+                speciesCount: '~400.000'
+            },
+            'Fungi': {
+                icon: '🍄',
+                name: 'Pilze',
+                color: '#689f38',
+                desc: 'Weder Pflanze noch Tier – Pilze bilden ein eigenes Reich. Sie zersetzen organisches Material und bilden Symbiosen.',
+                speciesCount: '~150.000'
+            },
+            'Animalia': {
+                icon: '🦀',
+                name: 'Andere Tiere',
+                color: '#9ccc65',
+                desc: 'Weitere Tiergruppen wie Krebstiere, Würmer, Quallen, Seesterne und viele mehr.',
+                speciesCount: '~1.500.000+'
+            }
+        };
+
+        // Extract country from place_guess using pattern matching with word boundaries
+        function extractCountry(place) {
+            if (!place) return null;
+            const placeLower = place.toLowerCase();
+
+            // Search through all countries and their patterns
+            for (const country of countryDatabase) {
+                for (const pattern of country.patterns) {
+                    // Patterns starting with ", " are suffix patterns (e.g. ", de" at end)
+                    if (pattern.startsWith(', ')) {
+                        // Check if place ends with this pattern or has it followed by more text
+                        if (placeLower.endsWith(pattern) || placeLower.includes(pattern + ',') || placeLower.includes(pattern + ' ')) {
+                            return country.name;
+                        }
+                    } else {
+                        // For regular patterns, use word boundary matching
+                        // Create regex with word boundaries to avoid partial matches
+                        // e.g. "india" should not match "indiana"
+                        const regex = new RegExp('(^|[^a-zäöüß])' + pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^a-zäöüß])', 'i');
+                        if (regex.test(placeLower)) {
+                            return country.name;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Get country by date (fallback for unrecognized places)
+        function getCountryByDate(dateStr) {
+            if (!dateStr) return null;
+            const dateMappings = {
+                '2011-07-20': 'Kuba',
+                '2011-01-01': 'Indonesien',
+                '2011-01-02': 'Indonesien',
+                '2008-10-05': 'VAE',
+                '2025-03-06': 'Panama',
+                '2025-02-25': 'Panama',
+                '2025-02-28': 'Panama',
+                '2022-06-25': 'Frankreich',
+                '2013-08-06': 'USA',
+                '2013-08-05': 'USA',
+                '2012-07-09': 'Italien',
+                '2012-07-17': 'Italien',
+                '2010-09-10': 'Mexiko',
+                '2010-08-28': 'Mexiko',
+                '2010-08-08': 'Mexiko',
+                '2024-05-29': 'Portugal'
+            };
+            return dateMappings[dateStr] || null;
+        }
+
+        // Get flag for country name
+        function getFlag(countryName) {
+            const country = countryDatabase.find(c => c.name === countryName);
+            return country ? country.flag : '🌍';
+        }
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map', {
+                maxBounds: [[-90, -180], [90, 180]],
+                maxBoundsViscosity: 1.0,
+                minZoom: 2
+            }).setView([30, 0], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap',
+                noWrap: true,
+                bounds: [[-90, -180], [90, 180]]
+            }).addTo(map);
+            markers = L.markerClusterGroup({
+                chunkedLoading: true,
+                maxClusterRadius: 50,
+                iconCreateFunction: function(cluster) {
+                    const count = cluster.getChildCount();
+                    return L.divIcon({
+                        html: `<div style="background:linear-gradient(135deg,#8bc34a,#4caf50);color:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:bold;box-shadow:0 3px 10px rgba(0,0,0,0.3);">${count}</div>`,
+                        className: 'custom-cluster',
+                        iconSize: [40, 40]
+                    });
+                }
+            });
+            map.addLayer(markers);
+        }
+
+        // Fetch all observations
+        async function fetchAllObservations() {
+            const overlay = document.getElementById('loadingOverlay');
+            const progress = document.getElementById('loadingProgress');
+            overlay.classList.remove('hidden');
+
+            try {
+                const countResponse = await fetch(`${API_BASE}/observations?user_id=${USER_ID}&per_page=1&locale=de`);
+                const countData = await countResponse.json();
+                const totalResults = countData.total_results;
+
+                let allResults = [];
+                let page = 1;
+                const totalPages = Math.ceil(totalResults / PER_PAGE);
+
+                while (allResults.length < totalResults) {
+                    progress.textContent = `${allResults.length} / ${totalResults} geladen`;
+
+                    const response = await fetch(
+                        `${API_BASE}/observations?user_id=${USER_ID}&per_page=${PER_PAGE}&page=${page}&order=desc&order_by=created_at&locale=de`
+                    );
+                    const data = await response.json();
+
+                    if (data.results && data.results.length > 0) {
+                        allResults = allResults.concat(data.results);
+                        page++;
+                    } else {
+                        break;
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                allObservations = allResults.map(obs => ({
+                    id: obs.id,
+                    lat: obs.geojson?.coordinates?.[1] || null,
+                    lon: obs.geojson?.coordinates?.[0] || null,
+                    name: obs.taxon?.preferred_common_name || obs.taxon?.name || obs.species_guess || 'Unbekannt',
+                    scientific: obs.taxon?.name || '',
+                    date: obs.observed_on || '',
+                    created: obs.created_at || '',
+                    place: obs.place_guess || '',
+                    country: extractCountry(obs.place_guess) || getCountryByDate(obs.observed_on),
+                    url: `https://www.inaturalist.org/observations/${obs.id}`,
+                    image: obs.photos?.[0]?.url?.replace('square', 'medium') || '',
+                    taxon: obs.taxon?.iconic_taxon_name || '',
+                    quality: obs.quality_grade || '',
+                    taxonId: obs.taxon?.id,
+                    identifications: obs.num_identification_agreements || 0
+                }));
+
+                filteredObservations = [...allObservations];
+
+                // Log unrecognized places to console
+                const unrecognizedPlaces = allObservations
+                    .filter(obs => !obs.country && obs.place)
+                    .map(obs => ({ id: obs.id, place: obs.place, url: obs.url }));
+                if (unrecognizedPlaces.length > 0) {
+                    console.group(`🌍 ${unrecognizedPlaces.length} Beobachtungen ohne erkanntes Land:`);
+                    const uniquePlaces = [...new Set(unrecognizedPlaces.map(p => p.place))].sort();
+                    uniquePlaces.forEach(place => {
+                        const obs = unrecognizedPlaces.find(p => p.place === place);
+                        console.log(`"${place}" → ${obs.url}`);
+                    });
+                    console.groupEnd();
+                }
+
+                populateCountryFilter();
+                updateUI();
+                overlay.classList.add('hidden');
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleString('de-DE');
+
+                // Save to cache
+                saveToCache(allObservations);
+
+                // Generate statistics
+                renderStatisticsCharts();
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                overlay.classList.add('hidden');
+                showError('Fehler beim Laden der Daten.');
+            }
+        }
+
+        // Populate country filter
+        function populateCountryFilter() {
+            const countries = {};
+            let noCountryCount = 0;
+
+            allObservations.forEach(obs => {
+                if (obs.country) {
+                    countries[obs.country] = (countries[obs.country] || 0) + 1;
+                } else {
+                    noCountryCount++;
+                }
+            });
+
+            const sorted = Object.entries(countries).sort((a, b) => a[0].localeCompare(b[0], 'de'));
+            const dropdown = document.getElementById('countryDropdown');
+            dropdown.innerHTML = '';
+
+            // Add "Kein Land" option at the top if there are unassigned observations
+            if (noCountryCount > 0) {
+                const noCountryOption = document.createElement('div');
+                noCountryOption.className = 'multi-select-option no-country-option';
+                noCountryOption.dataset.value = '__NO_COUNTRY__';
+                noCountryOption.innerHTML = `
+                    <span class="multi-select-checkbox"></span>
+                    <span>❓ Kein Land erkannt</span>
+                    <span class="multi-select-count">${noCountryCount}</span>
+                `;
+                noCountryOption.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleCountrySelection('__NO_COUNTRY__');
+                };
+                dropdown.appendChild(noCountryOption);
+            }
+
+            sorted.forEach(([country, count]) => {
+                const option = document.createElement('div');
+                option.className = 'multi-select-option';
+                option.dataset.value = country;
+                option.innerHTML = `
+                    <span class="multi-select-checkbox"></span>
+                    <span>${getFlag(country)} ${country}</span>
+                    <span class="multi-select-count">${count}</span>
+                `;
+                option.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleCountrySelection(country);
+                };
+                dropdown.appendChild(option);
+            });
+
+            updateCountryFilterLabel();
+        }
+
+        // Toggle multi-select dropdown
+        function toggleMultiSelect(type) {
+            const dropdown = document.getElementById(type + 'Dropdown');
+            const btn = dropdown.previousElementSibling;
+            const isOpen = dropdown.classList.contains('show');
+
+            // Close all dropdowns first
+            document.querySelectorAll('.multi-select-dropdown').forEach(d => d.classList.remove('show'));
+            document.querySelectorAll('.multi-select-btn').forEach(b => b.classList.remove('open'));
+
+            if (!isOpen) {
+                dropdown.classList.add('show');
+                btn.classList.add('open');
+            }
+        }
+
+        // Toggle country selection
+        function toggleCountrySelection(country) {
+            const index = selectedCountries.indexOf(country);
+            if (index === -1) {
+                selectedCountries.push(country);
+            } else {
+                selectedCountries.splice(index, 1);
+            }
+            updateCountryFilterLabel();
+            updateCountryDropdownSelection();
+            applyFilters();
+        }
+
+        // Update country filter button label
+        function updateCountryFilterLabel() {
+            const label = document.getElementById('countryFilterLabel');
+            if (selectedCountries.length === 0) {
+                label.textContent = 'Alle Länder';
+            } else if (selectedCountries.length === 1) {
+                if (selectedCountries[0] === '__NO_COUNTRY__') {
+                    label.textContent = '❓ Kein Land erkannt';
+                } else {
+                    label.textContent = `${getFlag(selectedCountries[0])} ${selectedCountries[0]}`;
+                }
+            } else {
+                label.textContent = `${selectedCountries.length} Länder ausgewählt`;
+            }
+        }
+
+        // Update dropdown selection visuals
+        function updateCountryDropdownSelection() {
+            document.querySelectorAll('#countryDropdown .multi-select-option').forEach(opt => {
+                if (selectedCountries.includes(opt.dataset.value)) {
+                    opt.classList.add('selected');
+                } else {
+                    opt.classList.remove('selected');
+                }
+            });
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.multi-select-container')) {
+                document.querySelectorAll('.multi-select-dropdown').forEach(d => d.classList.remove('show'));
+                document.querySelectorAll('.multi-select-btn').forEach(b => b.classList.remove('open'));
+            }
+        });
+
+        // Handle search input
+        function handleSearch() {
+            const input = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('searchClear');
+            searchQuery = input.value.trim();
+
+            // Show/hide clear button
+            clearBtn.style.display = searchQuery ? 'block' : 'none';
+
+            applyFilters();
+
+            // If searching by URL/ID, scroll to and highlight the result
+            if (searchQuery && filteredObservations.length === 1) {
+                setTimeout(() => {
+                    const card = document.querySelector('.gallery-item');
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        card.classList.add('search-highlight');
+                        setTimeout(() => card.classList.remove('search-highlight'), 2000);
+                    }
+                }, 100);
+            }
+        }
+
+        // Clear search
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchClear').style.display = 'none';
+            searchQuery = '';
+            applyFilters();
+        }
+
+        // Check if search matches observation
+        function matchesSearch(obs, query) {
+            if (!query) return true;
+
+            const lowerQuery = query.toLowerCase();
+
+            // Check for iNaturalist URL or ID
+            const urlMatch = query.match(/inaturalist\.org\/observations\/(\d+)/);
+            const idMatch = query.match(/^(\d+)$/);
+
+            if (urlMatch) {
+                return obs.id.toString() === urlMatch[1];
+            }
+            if (idMatch) {
+                return obs.id.toString() === idMatch[1];
+            }
+
+            // Search by name (common name, scientific name)
+            const nameMatch = obs.name?.toLowerCase().includes(lowerQuery);
+            const scientificMatch = obs.scientific?.toLowerCase().includes(lowerQuery);
+
+            return nameMatch || scientificMatch;
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const quality = document.getElementById('qualityFilter').value;
+
+            filteredObservations = allObservations.filter(obs => {
+                // Species filter (from clicking on species card)
+                if (selectedSpeciesId && obs.taxonId !== selectedSpeciesId) return false;
+                // Search filter
+                if (searchQuery && !matchesSearch(obs, searchQuery)) return false;
+                // Country filter - multi-select
+                if (selectedCountries.length > 0) {
+                    const hasNoCountry = selectedCountries.includes('__NO_COUNTRY__');
+                    const regularCountries = selectedCountries.filter(c => c !== '__NO_COUNTRY__');
+
+                    if (hasNoCountry && !obs.country) {
+                        // Match: looking for no-country and this has no country
+                    } else if (regularCountries.length > 0 && obs.country && regularCountries.includes(obs.country)) {
+                        // Match: looking for specific country and this matches
+                    } else {
+                        return false;
+                    }
+                }
+                // Taxa filter - multi-select
+                if (selectedTaxa.length > 0) {
+                    if (!obs.taxon || !selectedTaxa.includes(obs.taxon)) return false;
+                }
+                if (dateFrom && obs.date < dateFrom) return false;
+                if (dateTo && obs.date > dateTo) return false;
+                if (quality !== 'all' && obs.quality !== quality) return false;
+                return true;
+            });
+
+            updateActiveFilters();
+            updateUI();
+            saveFiltersToURL();
+        }
+
+        // Update active filters display
+        function updateActiveFilters() {
+            const container = document.getElementById('activeFilters');
+            container.innerHTML = '';
+
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const quality = document.getElementById('qualityFilter').value;
+
+            // Search tag
+            if (searchQuery) {
+                const displayQuery = searchQuery.length > 25 ? searchQuery.substring(0, 25) + '...' : searchQuery;
+                container.innerHTML += `<span class="filter-tag">🔍 "${displayQuery}" <span class="filter-tag-remove" onclick="clearSearch()">×</span></span>`;
+            }
+
+            // Species filter tag
+            if (selectedSpeciesId) {
+                container.innerHTML += `<span class="filter-tag">🦋 ${selectedSpeciesName} <span class="filter-tag-remove" onclick="clearSpeciesFilter()">×</span></span>`;
+            }
+
+            // Country tags
+            selectedCountries.forEach(country => {
+                if (country === '__NO_COUNTRY__') {
+                    container.innerHTML += `<span class="filter-tag">❓ Kein Land erkannt <span class="filter-tag-remove" onclick="removeCountry('__NO_COUNTRY__')">×</span></span>`;
+                } else {
+                    container.innerHTML += `<span class="filter-tag">${getFlag(country)} ${country} <span class="filter-tag-remove" onclick="removeCountry('${country}')">×</span></span>`;
+                }
+            });
+
+            // Taxa tags
+            selectedTaxa.forEach(taxon => {
+                const config = taxaConfig[taxon];
+                container.innerHTML += `<span class="filter-tag">${config?.icon || ''} ${config?.name || taxon} <span class="filter-tag-remove" onclick="removeTaxon('${taxon}')">×</span></span>`;
+            });
+
+            if (dateFrom) {
+                container.innerHTML += `<span class="filter-tag">Ab ${dateFrom} <span class="filter-tag-remove" onclick="clearFilter('dateFrom')">×</span></span>`;
+            }
+            if (dateTo) {
+                container.innerHTML += `<span class="filter-tag">Bis ${dateTo} <span class="filter-tag-remove" onclick="clearFilter('dateTo')">×</span></span>`;
+            }
+            if (quality !== 'all') {
+                const labels = { research: 'Research Grade', needs_id: 'Needs ID', casual: 'Casual' };
+                container.innerHTML += `<span class="filter-tag">${labels[quality]} <span class="filter-tag-remove" onclick="clearFilter('quality')">×</span></span>`;
+            }
+        }
+
+        // Remove specific country from filter
+        function removeCountry(country) {
+            selectedCountries = selectedCountries.filter(c => c !== country);
+            updateCountryFilterLabel();
+            updateCountryDropdownSelection();
+            applyFilters();
+        }
+
+        // Remove specific taxon from filter
+        function removeTaxon(taxon) {
+            selectedTaxa = selectedTaxa.filter(t => t !== taxon);
+            updateTaxaGrid();
+            applyFilters();
+        }
+
+        // Clear specific filter
+        function clearFilter(type) {
+            switch(type) {
+                case 'countries':
+                    selectedCountries = [];
+                    updateCountryFilterLabel();
+                    updateCountryDropdownSelection();
+                    break;
+                case 'taxa':
+                    selectedTaxa = [];
+                    break;
+                case 'dateFrom': document.getElementById('dateFrom').value = ''; break;
+                case 'dateTo': document.getElementById('dateTo').value = ''; break;
+                case 'quality': document.getElementById('qualityFilter').value = 'all'; break;
+            }
+            applyFilters();
+        }
+
+        // Reset all filters
+        function resetFilters() {
+            selectedCountries = [];
+            selectedTaxa = [];
+            selectedSpeciesId = null;
+            selectedSpeciesName = '';
+            searchQuery = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchClear').style.display = 'none';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            document.getElementById('qualityFilter').value = 'all';
+            updateCountryFilterLabel();
+            updateCountryDropdownSelection();
+            applyFilters();
+        }
+
+        // Export unrecognized places as CSV
+        function exportUnrecognizedPlaces() {
+            const unrecognized = allObservations
+                .filter(obs => !obs.country && obs.place)
+                .map(obs => ({
+                    place: obs.place,
+                    name: obs.name,
+                    scientific: obs.scientific,
+                    id: obs.id,
+                    url: obs.url
+                }));
+
+            if (unrecognized.length === 0) {
+                alert('Alle Orte wurden erkannt! Keine Exporte nötig.');
+                return;
+            }
+
+            // Get unique places with first occurrence
+            const uniquePlaces = {};
+            unrecognized.forEach(obs => {
+                if (!uniquePlaces[obs.place]) {
+                    uniquePlaces[obs.place] = obs;
+                }
+            });
+
+            // Create CSV content
+            const headers = ['Ort (place_guess)', 'Land (eintragen)', 'Beispiel-Art', 'iNaturalist URL'];
+            const rows = Object.values(uniquePlaces).map(obs =>
+                [obs.place, '', obs.name, obs.url].map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(';')
+            );
+
+            const csvContent = '\uFEFF' + headers.join(';') + '\n' + rows.join('\n');
+
+            // Download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'unerkannte_orte.csv';
+            link.click();
+
+            alert(`${Object.keys(uniquePlaces).length} einzigartige Orte exportiert!\n\nÖffne die CSV in Excel und trage in Spalte B das jeweilige Land ein.`);
+        }
+
+        // Update UI
+        function updateUI() {
+            updateStats();
+            updateMap();
+            updateCountriesGrid();
+            updateTaxaGrid();
+            updateViewModeCounts();
+            resetGallery();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const species = new Set(filteredObservations.filter(o => o.taxonId).map(o => o.taxonId));
+            const countries = new Set(filteredObservations.map(o => o.country).filter(c => c));
+            const research = filteredObservations.filter(o => o.quality === 'research').length;
+            const allCountries = new Set(allObservations.map(o => o.country).filter(c => c));
+
+            document.getElementById('totalCount').textContent = allObservations.length.toLocaleString('de-DE');
+            document.getElementById('filteredCount').textContent = filteredObservations.length.toLocaleString('de-DE');
+            document.getElementById('speciesCount').textContent = species.size.toLocaleString('de-DE');
+            document.getElementById('countryCount').textContent = countries.size.toLocaleString('de-DE');
+            document.getElementById('researchCount').textContent = research.toLocaleString('de-DE');
+
+            document.getElementById('authorObs').textContent = allObservations.length.toLocaleString('de-DE');
+            document.getElementById('authorSpecies').textContent = new Set(allObservations.filter(o => o.taxonId).map(o => o.taxonId)).size.toLocaleString('de-DE');
+            document.getElementById('authorCountries').textContent = allCountries.size.toLocaleString('de-DE');
+        }
+
+        // Update map
+        function updateMap() {
+            markers.clearLayers();
+
+            filteredObservations.forEach(obs => {
+                if (obs.lat && obs.lon) {
+                    const color = taxaConfig[obs.taxon]?.color || '#8bc34a';
+                    const marker = L.marker([obs.lat, obs.lon], {
+                        icon: L.divIcon({
+                            className: 'custom-marker',
+                            html: `<div style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4);"></div>`,
+                            iconSize: [14, 14],
+                            iconAnchor: [7, 7]
+                        })
+                    });
+
+                    marker.bindPopup(`
+                        <div>
+                            ${obs.image ? `<img src="${obs.image}" class="popup-img" onerror="this.style.display='none'">` : ''}
+                            <div class="popup-title">${obs.name}</div>
+                            ${obs.scientific ? `<div class="popup-scientific">${obs.scientific}</div>` : ''}
+                            <div class="popup-meta">${obs.date}<br>${obs.place || 'Unbekannt'}</div>
+                            <a href="${obs.url}" target="_blank" class="popup-link">Auf iNaturalist →</a>
+                        </div>
+                    `);
+                    markers.addLayer(marker);
+                }
+            });
+
+            // Fit map to observation bounds (remove gray areas)
+            const validObs = filteredObservations.filter(obs => obs.lat && obs.lon);
+            if (validObs.length > 0) {
+                const bounds = L.latLngBounds(validObs.map(obs => [obs.lat, obs.lon]));
+                map.fitBounds(bounds.pad(0.1), { maxZoom: 10 });
+            }
+        }
+
+        // Update countries grid
+        function updateCountriesGrid() {
+            const countries = {};
+            filteredObservations.forEach(obs => {
+                if (obs.country) {
+                    countries[obs.country] = (countries[obs.country] || 0) + 1;
+                }
+            });
+
+            const sorted = Object.entries(countries).sort((a, b) => a[0].localeCompare(b[0], 'de'));
+            const grid = document.getElementById('countriesGrid');
+
+            grid.innerHTML = sorted.map(([country, count]) => `
+                <div class="country-card ${selectedCountries.includes(country) ? 'active' : ''}"
+                     onclick="toggleCountrySelection('${country}')">
+                    <span class="country-name">
+                        <span class="country-flag">${getFlag(country)}</span>
+                        ${country}
+                    </span>
+                    <span class="country-count">${count}</span>
+                </div>
+            `).join('');
+        }
+
+        // Update taxa grid
+        function updateTaxaGrid() {
+            // Count unique species per taxa group (not observations)
+            const taxaSpecies = {};
+            const baseObservations = selectedTaxa.length === 0 ? filteredObservations : allObservations.filter(obs => {
+                // Apply all filters except taxa
+                if (selectedCountries.length > 0 && (!obs.country || !selectedCountries.includes(obs.country))) return false;
+                const dateFrom = document.getElementById('dateFrom').value;
+                const dateTo = document.getElementById('dateTo').value;
+                const quality = document.getElementById('qualityFilter').value;
+                if (dateFrom && obs.date < dateFrom) return false;
+                if (dateTo && obs.date > dateTo) return false;
+                if (quality !== 'all' && obs.quality !== quality) return false;
+                return true;
+            });
+
+            // Collect unique species (taxonId) per taxonomic group
+            baseObservations.forEach(obs => {
+                if (obs.taxon && obs.taxonId) {
+                    if (!taxaSpecies[obs.taxon]) {
+                        taxaSpecies[obs.taxon] = new Set();
+                    }
+                    taxaSpecies[obs.taxon].add(obs.taxonId);
+                }
+            });
+
+            // Count total unique species
+            const allSpecies = new Set(baseObservations.filter(o => o.taxonId).map(o => o.taxonId));
+
+            const grid = document.getElementById('taxaGrid');
+            grid.innerHTML = `
+                <div class="taxa-card ${selectedTaxa.length === 0 ? 'active' : ''}" onclick="clearTaxaFilter()">
+                    <div class="taxa-icon">🌍</div>
+                    <div class="taxa-name">Alle</div>
+                    <div class="taxa-count">${allSpecies.size}</div>
+                    <div class="taxa-tooltip">Alle taxonomischen Gruppen anzeigen (Filter zurücksetzen)</div>
+                </div>
+            `;
+
+            Object.entries(taxaConfig).forEach(([key, config]) => {
+                const speciesCount = taxaSpecies[key]?.size || 0;
+                if (speciesCount > 0 || selectedTaxa.includes(key)) {
+                    const isSelected = selectedTaxa.includes(key);
+                    grid.innerHTML += `
+                        <div class="taxa-card ${isSelected ? 'active' : ''}" onclick="toggleTaxaFilter('${key}')">
+                            <div class="taxa-icon">${config.icon}</div>
+                            <div class="taxa-name">${config.name}</div>
+                            <div class="taxa-count">${speciesCount}</div>
+                            <div class="taxa-tooltip">
+                                ${config.desc}
+                                <br><br>
+                                <strong><svg class="icon" style="width:1em;height:1em;fill:var(--accent);vertical-align:-0.1em;"><use href="#icon-globe"/></svg> Weltweit: ${config.speciesCount} Arten</strong>
+                                <br><small>Klicken zum ${isSelected ? 'Entfernen' : 'Hinzufügen'}</small>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        // Toggle taxa filter (multi-select)
+        function toggleTaxaFilter(taxon) {
+            const index = selectedTaxa.indexOf(taxon);
+            if (index === -1) {
+                selectedTaxa.push(taxon);
+            } else {
+                selectedTaxa.splice(index, 1);
+            }
+            applyFilters();
+        }
+
+        // Clear all taxa filters
+        function clearTaxaFilter() {
+            selectedTaxa = [];
+            applyFilters();
+        }
+
+        // Set view mode (observations or species)
+        function setViewMode(mode) {
+            viewMode = mode;
+            document.getElementById('viewObservations').classList.toggle('active', mode === 'observations');
+            document.getElementById('viewSpecies').classList.toggle('active', mode === 'species');
+            resetGallery();
+        }
+
+        // Update view mode counts
+        function updateViewModeCounts() {
+            const withImages = filteredObservations.filter(o => o.image);
+            const observationsCount = withImages.length;
+
+            // Count unique species (by taxonId)
+            const uniqueSpecies = new Set(withImages.filter(o => o.taxonId).map(o => o.taxonId));
+            const speciesCount = uniqueSpecies.size;
+
+            document.getElementById('observationsCount').textContent = observationsCount.toLocaleString('de-DE');
+            document.getElementById('speciesViewCount').textContent = speciesCount.toLocaleString('de-DE');
+        }
+
+        // Filter by specific species and switch to observations view
+        function filterBySpecies(taxonId, speciesName) {
+            selectedSpeciesId = taxonId;
+            selectedSpeciesName = speciesName;
+            viewMode = 'observations';
+            document.getElementById('viewObservations').classList.add('active');
+            document.getElementById('viewSpecies').classList.remove('active');
+            applyFilters();
+
+            // Scroll to gallery section
+            document.getElementById('gallery').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Clear species filter
+        function clearSpeciesFilter() {
+            selectedSpeciesId = null;
+            selectedSpeciesName = '';
+            applyFilters();
+        }
+
+        // Get gallery data based on view mode
+        function getGalleryData() {
+            const withImages = filteredObservations.filter(o => o.image);
+
+            if (viewMode === 'observations') {
+                return sortObservations(withImages);
+            }
+
+            // Species mode: group by taxonId and pick best observation
+            const speciesMap = new Map();
+
+            withImages.forEach(obs => {
+                if (!obs.taxonId) return;
+
+                const existing = speciesMap.get(obs.taxonId);
+                if (!existing) {
+                    // Count how many observations of this species
+                    const count = withImages.filter(o => o.taxonId === obs.taxonId).length;
+                    speciesMap.set(obs.taxonId, { ...obs, observationCount: count });
+                } else {
+                    // Keep the one with more identifications
+                    if (obs.identifications > existing.identifications) {
+                        const count = existing.observationCount;
+                        speciesMap.set(obs.taxonId, { ...obs, observationCount: count });
+                    }
+                }
+            });
+
+            // Convert to array and sort by observation count (most observed first)
+            return Array.from(speciesMap.values()).sort((a, b) => b.observationCount - a.observationCount);
+        }
+
+        // Reset gallery
+        function resetGallery() {
+            galleryDisplayed = 0;
+            document.getElementById('gallery').innerHTML = '';
+            loadMoreGallery();
+        }
+
+        // Cache for taxon details
+        const taxonDetailsCache = {};
+
+        // IUCN Red List status mapping
+        const iucnStatusMap = {
+            'LC': { name: 'Nicht gefährdet', color: '#4caf50', icon: '✓' },
+            'NT': { name: 'Potenziell gefährdet', color: '#8bc34a', icon: '○' },
+            'VU': { name: 'Gefährdet', color: '#ffc107', icon: '⚠' },
+            'EN': { name: 'Stark gefährdet', color: '#ff9800', icon: '⚠' },
+            'CR': { name: 'Vom Aussterben bedroht', color: '#f44336', icon: '⛔' },
+            'EW': { name: 'In der Natur ausgestorben', color: '#9c27b0', icon: '†' },
+            'EX': { name: 'Ausgestorben', color: '#000000', icon: '✗' },
+            'DD': { name: 'Unzureichende Datenlage', color: '#9e9e9e', icon: '?' },
+            'NE': { name: 'Nicht bewertet', color: '#607d8b', icon: '—' }
+        };
+
+        // Fetch taxon details from API
+        async function fetchTaxonDetails(taxonId) {
+            if (taxonDetailsCache[taxonId]) {
+                return taxonDetailsCache[taxonId];
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/taxa/${taxonId}?locale=de`);
+                const data = await response.json();
+                const taxon = data.results?.[0];
+
+                if (taxon) {
+                    // Extract IUCN conservation status
+                    let conservationStatus = null;
+                    if (taxon.conservation_statuses && taxon.conservation_statuses.length > 0) {
+                        // Prefer IUCN status
+                        const iucn = taxon.conservation_statuses.find(s => s.authority === 'IUCN Red List');
+                        if (iucn) {
+                            conservationStatus = iucn.status;
+                        } else {
+                            conservationStatus = taxon.conservation_statuses[0].status;
+                        }
+                    } else if (taxon.conservation_status) {
+                        conservationStatus = taxon.conservation_status.status;
+                    }
+
+                    const details = {
+                        description: taxon.wikipedia_summary || null,
+                        wikipedia_url: taxon.wikipedia_url || null,
+                        conservationStatus: conservationStatus
+                    };
+                    taxonDetailsCache[taxonId] = details;
+                    return details;
+                }
+            } catch (error) {
+                console.error('Error fetching taxon details:', error);
+            }
+            return null;
+        }
+
+        // Generate species content - extract from Wikipedia summary
+        function generateSpeciesContent(obs, wikiSummary) {
+            const name = obs.name;
+            const scientific = obs.scientific;
+
+            let description = null;
+            let distribution = null;
+
+            // Try to extract specific info from Wikipedia summary
+            if (wikiSummary) {
+                const cleanSummary = wikiSummary
+                    .replace(/<[^>]*>/g, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                // Use full summary as description (first 3 sentences)
+                const sentences = cleanSummary.match(/[^.!?]+[.!?]+/g) || [];
+                if (sentences.length > 0) {
+                    description = sentences.slice(0, 3).join(' ').trim();
+                }
+
+                // Try to find distribution info
+                const distributionKeywords = ['verbreitet', 'vorkomm', 'heimisch', 'beheimatet', 'lebt in', 'leben in', 'findet sich', 'anzutreffen', 'europa', 'asien', 'afrika', 'amerika', 'australien', 'mittelmeer', 'tropen', 'subtropen'];
+                for (const sentence of sentences) {
+                    const lowerSentence = sentence.toLowerCase();
+                    if (distributionKeywords.some(kw => lowerSentence.includes(kw))) {
+                        distribution = sentence.trim();
+                        break;
+                    }
+                }
+            }
+
+            // Fallback messages if no specific info found
+            if (!description) {
+                description = scientific
+                    ? `${name} (${scientific}) – Wikipedia-Beschreibung nicht verfügbar.`
+                    : `${name} – Wikipedia-Beschreibung nicht verfügbar.`;
+            }
+
+            if (!distribution) {
+                distribution = null; // Will be hidden if not found
+            }
+
+            return { description, distribution };
+        }
+
+        // Format conservation status for display
+        function formatConservationStatus(status) {
+            if (!status) {
+                return { html: '<span style="color: #607d8b;">— Nicht bewertet</span>', color: '#607d8b' };
+            }
+            const statusInfo = iucnStatusMap[status.toUpperCase()] || iucnStatusMap['NE'];
+            return {
+                html: `<span style="color: ${statusInfo.color}; font-weight: 600;">${statusInfo.icon} ${statusInfo.name}</span>`,
+                color: statusInfo.color
+            };
+        }
+
+        // Toggle gallery item details
+        async function toggleDetails(cardElement, obs) {
+            const isExpanded = cardElement.classList.contains('expanded');
+
+            // Close all other expanded cards
+            document.querySelectorAll('.gallery-item.expanded').forEach(el => {
+                if (el !== cardElement) {
+                    el.classList.remove('expanded');
+                }
+            });
+
+            if (isExpanded) {
+                cardElement.classList.remove('expanded');
+                return;
+            }
+
+            cardElement.classList.add('expanded');
+            const detailsContainer = cardElement.querySelector('.gallery-details');
+
+            // Show loading state
+            detailsContainer.innerHTML = '<div class="loading-details">Lade Details</div>';
+
+            // Fetch details if we have a taxonId
+            let wikiSummary = null;
+            let conservationStatus = null;
+            if (obs.taxonId) {
+                const taxonDetails = await fetchTaxonDetails(obs.taxonId);
+                if (taxonDetails) {
+                    wikiSummary = taxonDetails.description;
+                    conservationStatus = taxonDetails.conservationStatus;
+                }
+            }
+
+            const content = generateSpeciesContent(obs, wikiSummary);
+            const statusInfo = formatConservationStatus(conservationStatus);
+
+            // Build distribution section only if we have specific info
+            const distributionSection = content.distribution ? `
+                <div class="detail-section">
+                    <div class="detail-label"><svg class="icon"><use href="#icon-globe"/></svg> Verbreitung</div>
+                    <div class="detail-text">${content.distribution}</div>
+                </div>
+            ` : '';
+
+            detailsContainer.innerHTML = `
+                <div class="detail-section">
+                    <div class="detail-label"><svg class="icon"><use href="#icon-eye"/></svg> Beschreibung</div>
+                    <div class="detail-text">${content.description}</div>
+                </div>
+                ${distributionSection}
+                <div class="detail-section">
+                    <div class="detail-label"><svg class="icon"><use href="#icon-stats"/></svg> Gefährdungsstatus (IUCN)</div>
+                    <div class="detail-text">${statusInfo.html}</div>
+                </div>
+            `;
+        }
+
+        // Load more gallery items
+        function loadMoreGallery() {
+            const galleryData = getGalleryData();
+            const batch = galleryData.slice(galleryDisplayed, galleryDisplayed + GALLERY_BATCH);
+            const gallery = document.getElementById('gallery');
+
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            batch.forEach(obs => {
+                const isNew = new Date(obs.created) > yesterday;
+                const card = document.createElement('div');
+                card.className = `gallery-item ${isNew ? 'new' : ''}`;
+                card.dataset.obsId = obs.id;
+
+                // Show observation count badge in species mode (clickable to show all observations)
+                const countBadge = viewMode === 'species' && obs.observationCount
+                    ? `<span class="species-count-badge" onclick="event.stopPropagation(); filterBySpecies(${obs.taxonId}, '${obs.name.replace(/'/g, "\\'")}')">📷 ${obs.observationCount}× beobachtet</span>`
+                    : '';
+
+                const imgIndex = galleryDisplayed + batch.indexOf(obs);
+                const largeImage = obs.image.replace('medium', 'large');
+                const metaText = `${obs.date} · ${(obs.place || 'Unbekannt').substring(0, 50)}`;
+
+                card.innerHTML = `
+                    <div class="gallery-img-container">
+                        ${isNew ? '<span class="new-badge">NEU</span>' : ''}
+                        ${countBadge}
+                        <img src="${obs.image}" class="gallery-img"
+                             data-full-url="${largeImage}"
+                             data-meta="${metaText}"
+                             onclick="openLightbox('${largeImage}', '${obs.name.replace(/'/g, "\\'")}', '${metaText.replace(/'/g, "\\'")}', ${imgIndex})"
+                             onerror="this.parentElement.parentElement.style.display='none'"
+                             alt="${obs.name}">
+                    </div>
+                    <div class="gallery-info">
+                        <div class="gallery-title">${obs.name}</div>
+                        ${obs.scientific ? `<div class="gallery-scientific">${obs.scientific}</div>` : ''}
+                        <div class="gallery-meta">${obs.date} · ${(obs.place || 'Unbekannt').substring(0, 35)}</div>
+                        <button class="gallery-expand-btn" onclick="event.stopPropagation(); toggleDetails(this.closest('.gallery-item'), ${JSON.stringify(obs).replace(/"/g, '&quot;')})">
+                            <span>Mehr erfahren</span>
+                            <span class="arrow">▼</span>
+                        </button>
+                        <a href="${obs.url}" target="_blank" class="gallery-link">Auf iNaturalist ansehen →</a>
+                    </div>
+                    <div class="gallery-details"></div>
+                `;
+                gallery.appendChild(card);
+            });
+
+            galleryDisplayed += GALLERY_BATCH;
+            document.getElementById('loadMore').style.display = galleryDisplayed >= galleryData.length ? 'none' : 'block';
+
+            // Setup lazy loading for new images
+            setupLazyLoading();
+        }
+
+        // Refresh data
+        async function refreshData() {
+            const btn = document.getElementById('refreshBtn');
+            btn.disabled = true;
+            btn.classList.add('loading');
+            await fetchAllObservations();
+            btn.disabled = false;
+            btn.classList.remove('loading');
+        }
+
+        // Toggle auto-refresh
+        function toggleAutoRefresh() {
+            const toggle = document.getElementById('autoRefreshToggle');
+            if (toggle.checked) {
+                autoRefreshTimer = setInterval(refreshData, AUTO_REFRESH_INTERVAL);
+            } else {
+                if (autoRefreshTimer) {
+                    clearInterval(autoRefreshTimer);
+                    autoRefreshTimer = null;
+                }
+            }
+        }
+
+        // Show error
+        function showError(message) {
+            document.getElementById('errorContainer').innerHTML = `
+                <div class="error-message">⚠️ ${message}</div>
+            `;
+        }
+
+        // ========== SORTING ==========
+        let currentSortMode = 'date';
+        let sortAscending = false;
+
+        function setSortMode(mode) {
+            if (currentSortMode === mode) {
+                sortAscending = !sortAscending;
+            } else {
+                currentSortMode = mode;
+                sortAscending = false;
+            }
+
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.sort === mode);
+            });
+
+            sortAndDisplayGallery();
+            saveFiltersToURL();
+        }
+
+        function sortObservations(obs) {
+            const sorted = [...obs].sort((a, b) => {
+                let comparison = 0;
+                switch (currentSortMode) {
+                    case 'date':
+                        comparison = new Date(b.date || '1900-01-01') - new Date(a.date || '1900-01-01');
+                        break;
+                    case 'name':
+                        const nameA = (a.name || '').toLowerCase();
+                        const nameB = (b.name || '').toLowerCase();
+                        comparison = nameA.localeCompare(nameB, 'de');
+                        break;
+                    case 'country':
+                        const countryA = a.country || 'ZZZ';
+                        const countryB = b.country || 'ZZZ';
+                        comparison = countryA.localeCompare(countryB, 'de');
+                        break;
+                }
+                return sortAscending ? -comparison : comparison;
+            });
+            return sorted;
+        }
+
+        function sortAndDisplayGallery() {
+            galleryDisplayed = 0;
+            displayGallery(sortObservations(filteredObservations));
+        }
+
+        // ========== LIGHTBOX ==========
+        let lightboxImages = [];
+        let currentLightboxIndex = 0;
+
+        function openLightbox(imageUrl, title, meta, index) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightboxImage');
+            const lightboxTitle = document.getElementById('lightboxTitle');
+            const lightboxMeta = document.getElementById('lightboxMeta');
+
+            // Build list of all visible images
+            lightboxImages = [];
+            document.querySelectorAll('.gallery-img').forEach((img, i) => {
+                lightboxImages.push({
+                    url: img.dataset.fullUrl || img.src.replace('medium', 'large'),
+                    title: img.alt,
+                    meta: img.dataset.meta || ''
+                });
+            });
+
+            currentLightboxIndex = index;
+            updateLightboxContent();
+
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function updateLightboxContent() {
+            const current = lightboxImages[currentLightboxIndex];
+            if (!current) return;
+
+            document.getElementById('lightboxImage').src = current.url;
+            document.getElementById('lightboxTitle').textContent = current.title;
+            document.getElementById('lightboxMeta').textContent = current.meta;
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function navigateLightbox(direction) {
+            currentLightboxIndex += direction;
+            if (currentLightboxIndex < 0) currentLightboxIndex = lightboxImages.length - 1;
+            if (currentLightboxIndex >= lightboxImages.length) currentLightboxIndex = 0;
+            updateLightboxContent();
+        }
+
+        // Keyboard navigation for lightbox
+        document.addEventListener('keydown', (e) => {
+            const lightbox = document.getElementById('lightbox');
+            if (!lightbox.classList.contains('active')) return;
+
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') navigateLightbox(-1);
+            if (e.key === 'ArrowRight') navigateLightbox(1);
+        });
+
+        // Click outside to close lightbox
+        document.getElementById('lightbox').addEventListener('click', (e) => {
+            if (e.target.id === 'lightbox') closeLightbox();
+        });
+
+        // ========== THEME TOGGLE ==========
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('themeIcon');
+            const text = document.getElementById('themeText');
+
+            body.classList.toggle('light-theme');
+            const isLight = body.classList.contains('light-theme');
+
+            icon.textContent = isLight ? '☀️' : '🌙';
+            text.textContent = isLight ? 'Light' : 'Dark';
+
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+                document.getElementById('themeIcon').textContent = '☀️';
+                document.getElementById('themeText').textContent = 'Light';
+            }
+        }
+
+        // ========== URL PARAMETERS ==========
+        function saveFiltersToURL() {
+            const params = new URLSearchParams();
+
+            if (selectedCountries.length > 0) params.set('countries', selectedCountries.join(','));
+            if (selectedTaxa.length > 0) params.set('taxa', selectedTaxa.join(','));
+            if (searchQuery) params.set('search', searchQuery);
+            if (document.getElementById('dateFrom').value) params.set('dateFrom', document.getElementById('dateFrom').value);
+            if (document.getElementById('dateTo').value) params.set('dateTo', document.getElementById('dateTo').value);
+            if (currentSortMode !== 'date') params.set('sort', currentSortMode);
+            if (sortAscending) params.set('asc', '1');
+
+            const newURL = params.toString() ? `${location.pathname}?${params}` : location.pathname;
+            history.replaceState(null, '', newURL);
+        }
+
+        function loadFiltersFromURL() {
+            const params = new URLSearchParams(location.search);
+
+            if (params.get('countries')) {
+                selectedCountries = params.get('countries').split(',');
+            }
+            if (params.get('taxa')) {
+                selectedTaxa = params.get('taxa').split(',');
+            }
+            if (params.get('search')) {
+                searchQuery = params.get('search');
+                document.getElementById('searchInput').value = searchQuery;
+            }
+            if (params.get('dateFrom')) {
+                document.getElementById('dateFrom').value = params.get('dateFrom');
+            }
+            if (params.get('dateTo')) {
+                document.getElementById('dateTo').value = params.get('dateTo');
+            }
+            if (params.get('sort')) {
+                currentSortMode = params.get('sort');
+                document.querySelectorAll('.sort-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.sort === currentSortMode);
+                });
+            }
+            if (params.get('asc') === '1') {
+                sortAscending = true;
+            }
+        }
+
+        // ========== LOCALSTORAGE CACHING ==========
+        const CACHE_KEY = 'inat_observations_cache';
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+        function saveToCache(data) {
+            const cacheData = {
+                timestamp: Date.now(),
+                observations: data
+            };
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+            } catch (e) {
+                console.warn('Cache save failed:', e);
+            }
+        }
+
+        function loadFromCache() {
+            try {
+                const cached = localStorage.getItem(CACHE_KEY);
+                if (!cached) return null;
+
+                const cacheData = JSON.parse(cached);
+                const age = Date.now() - cacheData.timestamp;
+
+                if (age < CACHE_DURATION) {
+                    console.log('Loading from cache (age: ' + Math.round(age/1000) + 's)');
+                    return cacheData.observations;
+                }
+            } catch (e) {
+                console.warn('Cache load failed:', e);
+            }
+            return null;
+        }
+
+        // ========== LAZY LOADING ==========
+        function setupLazyLoading() {
+            const lazyImages = document.querySelectorAll('.gallery-img[data-src]');
+
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.removeAttribute('data-src');
+                        observer.unobserve(img);
+                    }
+                });
+            }, { rootMargin: '50px 0px' });
+
+            lazyImages.forEach(img => imageObserver.observe(img));
+        }
+
+        // ========== SKELETON LOADING ==========
+        function showSkeletonLoading() {
+            const gallery = document.getElementById('gallery');
+            let skeletons = '';
+            for (let i = 0; i < 12; i++) {
+                skeletons += `
+                    <div class="skeleton-card">
+                        <div class="skeleton skeleton-image"></div>
+                        <div class="skeleton skeleton-text"></div>
+                        <div class="skeleton skeleton-text-sm"></div>
+                    </div>
+                `;
+            }
+            gallery.innerHTML = skeletons;
+        }
+
+        // ========== STATISTICS SECTION ==========
+        function renderStatisticsCharts() {
+            // Top species chart
+            const speciesCount = {};
+            allObservations.forEach(obs => {
+                const name = obs.name || 'Unbekannt';
+                speciesCount[name] = (speciesCount[name] || 0) + 1;
+            });
+
+            const topSpecies = Object.entries(speciesCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            const maxSpeciesCount = topSpecies[0]?.[1] || 1;
+            const speciesChart = document.getElementById('topSpeciesChart');
+            speciesChart.innerHTML = topSpecies.map(([name, count]) => `
+                <div class="bar-item">
+                    <span class="bar-label" title="${name}">${name.length > 15 ? name.substring(0, 15) + '...' : name}</span>
+                    <div class="bar-wrapper">
+                        <div class="bar-fill" style="width: ${(count / maxSpeciesCount * 100)}%">${count}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Yearly observations chart
+            const yearlyData = {};
+            allObservations.forEach(obs => {
+                if (obs.date) {
+                    const year = obs.date.substring(0, 4);
+                    yearlyData[year] = (yearlyData[year] || 0) + 1;
+                }
+            });
+
+            const yearlyEntries = Object.entries(yearlyData).sort((a, b) => a[0].localeCompare(b[0]));
+            const maxYearlyCount = Math.max(...yearlyEntries.map(e => e[1])) || 1;
+            const yearlyChart = document.getElementById('yearlyChart');
+            yearlyChart.innerHTML = yearlyEntries.map(([year, count]) => `
+                <div class="bar-item">
+                    <span class="bar-label">${year}</span>
+                    <div class="bar-wrapper">
+                        <div class="bar-fill" style="width: ${(count / maxYearlyCount * 100)}%">${count}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Taxa distribution chart
+            const taxaCount = {};
+            const taxaNames = {
+                'Aves': '🐦 Vögel',
+                'Insecta': '🦋 Insekten',
+                'Plantae': '🌿 Pflanzen',
+                'Mammalia': '🦊 Säugetiere',
+                'Reptilia': '🦎 Reptilien',
+                'Amphibia': '🐸 Amphibien',
+                'Fungi': '🍄 Pilze',
+                'Arachnida': '🕷️ Spinnentiere',
+                'Mollusca': '🐌 Weichtiere',
+                'Actinopterygii': '🐟 Fische'
+            };
+
+            allObservations.forEach(obs => {
+                const taxa = obs.taxon || 'Andere';
+                taxaCount[taxa] = (taxaCount[taxa] || 0) + 1;
+            });
+
+            const taxaEntries = Object.entries(taxaCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 8);
+
+            const maxTaxaCount = taxaEntries[0]?.[1] || 1;
+            const taxaChart = document.getElementById('taxaChart');
+            taxaChart.innerHTML = taxaEntries.map(([taxa, count]) => `
+                <div class="bar-item">
+                    <span class="bar-label">${taxaNames[taxa] || taxa}</span>
+                    <div class="bar-wrapper">
+                        <div class="bar-fill" style="width: ${(count / maxTaxaCount * 100)}%">${count}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            console.log('Statistics rendered:', topSpecies.length, 'species,', yearlyEntries.length, 'years,', taxaEntries.length, 'taxa');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTheme();
+            loadFiltersFromURL();
+            initMap();
+
+            // Check cache first
+            const cached = loadFromCache();
+            if (cached) {
+                allObservations = cached;
+                updateUI();
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+
+            // Always fetch fresh data
+            fetchAllObservations();
+        });
+    </script>
+</body>
+</html>
