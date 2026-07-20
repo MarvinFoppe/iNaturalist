@@ -1769,6 +1769,15 @@
                 <label class="filter-label"><svg class="icon"><use href="#icon-calendar"/></svg> Bis</label>
                 <input type="date" id="fsTo" class="filter-input" onclick="this.showPicker()">
             </div>
+            <div class="filter-group">
+                <label class="filter-label"><svg class="icon"><use href="#icon-science"/></svg> Qualität</label>
+                <select id="fsQuality" class="filter-select" onchange="onFsQualityChange()">
+                    <option value="all">Alle</option>
+                    <option value="research">Research Grade</option>
+                    <option value="needs_id">Needs ID</option>
+                    <option value="casual">Casual</option>
+                </select>
+            </div>
             <button class="fs-btn" onclick="computeFirstSeen()">Erstbeobachtungen anzeigen</button>
             <button id="fsExportCsv" class="fs-btn fs-btn-secondary" onclick="exportFirstSeenCSV()" style="display:none;">📥 CSV</button>
             <button id="fsCopyList" class="fs-btn fs-btn-secondary" onclick="copyFirstSeenList()" style="display:none;">📋 Liste kopieren</button>
@@ -2811,9 +2820,17 @@
             if (from || to) computeFirstSeen(); else saveFiltersToURL();
         }
 
+        // Qualitätsfilter im Erstbeobachtungen-Panel
+        function onFsQualityChange() {
+            const from = document.getElementById('fsFrom').value;
+            const to = document.getElementById('fsTo').value;
+            if (from || to) computeFirstSeen(); else saveFiltersToURL();
+        }
+
         function computeFirstSeen() {
             const from = document.getElementById('fsFrom').value;
             const to = document.getElementById('fsTo').value;
+            const quality = document.getElementById('fsQuality').value;
             const summary = document.getElementById('fsSummary');
             const results = document.getElementById('fsResults');
 
@@ -2837,9 +2854,11 @@
             }
 
             // Für jede Art (taxonId) die früheste Beobachtung der gesamten Historie bestimmen
+            // (optional beschränkt auf die gewählte Qualitätsstufe)
             const firstByTaxon = {};
             allObservations.forEach(obs => {
                 if (!isSpeciesOrBelow(obs) || !obs.date) return;
+                if (quality !== 'all' && obs.quality !== quality) return;
                 const existing = firstByTaxon[obs.taxonId];
                 if (!existing || obs.date < existing.date) firstByTaxon[obs.taxonId] = obs;
             });
@@ -2860,10 +2879,12 @@
             const taxaText = fsSelectedTaxa.length > 0
                 ? ' – ' + fsSelectedTaxa.map(t => taxaConfig[t]?.name || t).join(', ')
                 : '';
+            const qualityLabels = { research: 'Research Grade', needs_id: 'Needs ID', casual: 'Casual' };
+            const qualityText = quality !== 'all' ? ' – ' + qualityLabels[quality] : '';
             const rangeText = (from && to)
                 ? `${formatDateDE(from)} – ${formatDateDE(to)}`
                 : from ? `ab ${formatDateDE(from)}` : `bis ${formatDateDE(to)}`;
-            summary.innerHTML = `<strong>${inRange.length}</strong> ${inRange.length === 1 ? 'Art' : 'Arten'} erstmalig beobachtet (${rangeText}${taxaText}).`;
+            summary.innerHTML = `<strong>${inRange.length}</strong> ${inRange.length === 1 ? 'Art' : 'Arten'} erstmalig beobachtet (${rangeText}${taxaText}${qualityText}).`;
 
             if (!inRange.length) {
                 results.innerHTML = '<div class="fs-empty">Keine erstmalig beobachteten Arten in diesem Zeitraum.</div>';
@@ -2893,6 +2914,7 @@
         function resetFirstSeen() {
             document.getElementById('fsFrom').value = '';
             document.getElementById('fsTo').value = '';
+            document.getElementById('fsQuality').value = 'all';
             fsSelectedTaxa = [];
             renderFsTaxaChips();
             document.getElementById('fsSummary').innerHTML = '';
@@ -3696,6 +3718,8 @@
             if (fsFromVal) params.set('fsFrom', fsFromVal);
             if (fsToVal) params.set('fsTo', fsToVal);
             if (fsSelectedTaxa.length > 0) params.set('fsTaxa', fsSelectedTaxa.join(','));
+            const fsQualityVal = document.getElementById('fsQuality')?.value;
+            if (fsQualityVal && fsQualityVal !== 'all') params.set('fsQuality', fsQualityVal);
 
             const newURL = params.toString() ? `${location.pathname}?${params}` : location.pathname;
             history.replaceState(null, '', newURL);
@@ -3733,6 +3757,7 @@
             if (params.get('fsFrom')) document.getElementById('fsFrom').value = params.get('fsFrom');
             if (params.get('fsTo')) document.getElementById('fsTo').value = params.get('fsTo');
             if (params.get('fsTaxa')) fsSelectedTaxa = params.get('fsTaxa').split(',');
+            if (params.get('fsQuality')) document.getElementById('fsQuality').value = params.get('fsQuality');
         }
 
         // ========== LOCALSTORAGE CACHING ==========
