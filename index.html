@@ -1321,6 +1321,42 @@
             overflow: hidden;
         }
 
+        /* Nutzer-Umschalter im Header */
+        .user-switcher {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .user-input {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 0.9em;
+            min-width: 190px;
+        }
+        .user-input:focus { outline: none; border-color: var(--accent); }
+        .user-switch-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent) 100%);
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .user-switch-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 14px var(--accent-glow); }
+        .user-switch-btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
+        .user-error {
+            color: #ff8a80;
+            font-size: 0.82em;
+            flex-basis: 100%;
+        }
+
         .author-section::before {
             content: '';
             position: absolute;
@@ -1668,10 +1704,16 @@
                     LIVE
                 </span>
             </h1>
-            <p>Wildlife-Fotografie von Marvin Foppe (@marvin12748)</p>
+            <p id="headerSubtitle">Wildlife-Fotografie von Marvin Foppe (@marvin12748)</p>
             <div class="last-update">Letzte Aktualisierung: <span id="lastUpdate">-</span></div>
         </div>
         <div class="header-controls">
+            <div class="user-switcher">
+                <input type="text" id="userInput" class="user-input" placeholder="iNaturalist-Nutzername"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); switchUser(this.value);}">
+                <button class="user-switch-btn" onclick="switchUser(document.getElementById('userInput').value)">Anzeigen</button>
+                <span id="userError" class="user-error"></span>
+            </div>
             <div class="auto-refresh-toggle">
                 <span>Auto-Refresh</span>
                 <label class="toggle-switch">
@@ -1826,7 +1868,7 @@
         <button id="loadMore" class="load-more" onclick="loadMoreGallery()">Mehr laden</button>
     </div>
 
-    <div class="author-section">
+    <div class="author-section" id="authorSection">
         <div class="author-container">
             <div class="author-image-wrapper">
                 <img src="author.jpg"
@@ -1872,7 +1914,7 @@
 
     <div class="footer">
         <p><svg class="icon"><use href="#icon-leaf"/></svg> Live-Daten von <a href="https://www.inaturalist.org" target="_blank">iNaturalist</a></p>
-        <p>© 2026 Marvin Foppe - <a href="https://www.inaturalist.org/people/marvin12748" target="_blank">@marvin12748</a></p>
+        <p id="footerCredit">© 2026 Marvin Foppe - <a href="https://www.inaturalist.org/people/marvin12748" target="_blank">@marvin12748</a></p>
     </div>
 
     <!-- Theme Toggle Button -->
@@ -1899,7 +1941,8 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <script>
         // Configuration
-        const USER_ID = 'marvin12748';
+        const DEFAULT_USER = 'marvin12748';   // Standard-Nutzer (Seiten-Eigentümer)
+        let USER_ID = DEFAULT_USER;            // Aktuell angezeigter Nutzer (per URL/Eingabe wechselbar)
         const API_BASE = 'https://api.inaturalist.org/v1';
         const PER_PAGE = 200;
         const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000;
@@ -2252,6 +2295,7 @@
         // Get country by date (fallback for unrecognized places)
         function getCountryByDate(dateStr) {
             if (!dateStr) return null;
+            if (USER_ID !== DEFAULT_USER) return null;  // Reise-Datumsliste ist nutzerspezifisch (nur Eigentümer)
             const dateMappings = {
                 '2011-07-20': 'Kuba',
                 '2011-01-01': 'Indonesien',
@@ -3536,6 +3580,120 @@
         }
 
         // Refresh data
+        // ========== MULTI-USER ==========
+        // Profil eines Nutzers laden (dient zugleich der Validierung)
+        async function loadUserProfile(name) {
+            try {
+                const d = await (await fetch(`${API_BASE}/users/${encodeURIComponent(name)}`)).json();
+                return (d.results && d.results[0]) || null;
+            } catch (e) {
+                console.warn('Profil laden fehlgeschlagen:', e);
+                return null;
+            }
+        }
+
+        // Titel/Header/Footer an aktuellen Nutzer anpassen; Autoren-Sektion nur beim Eigentümer zeigen
+        function applyUserChrome(user, name) {
+            const login = (user && user.login) || name;
+            const displayName = (user && user.name) || login;
+            const isOwner = login === DEFAULT_USER;
+
+            document.title = `🌿 Naturbeobachtungen - ${displayName}`;
+            const sub = document.getElementById('headerSubtitle');
+            if (sub) sub.textContent = isOwner
+                ? `Wildlife-Fotografie von ${displayName} (@${login})`
+                : `Naturbeobachtungen von ${displayName} (@${login})`;
+
+            const footer = document.getElementById('footerCredit');
+            if (footer) footer.innerHTML = `© 2026 ${displayName} - <a href="https://www.inaturalist.org/people/${login}" target="_blank">@${login}</a>`;
+
+            // Autoren-Sektion (Foto/Bio) nur für den Seiten-Eigentümer
+            const authorSection = document.getElementById('authorSection');
+            if (authorSection) authorSection.style.display = isOwner ? '' : 'none';
+
+            // Eingabefeld mit aktuellem Login vorbelegen
+            const input = document.getElementById('userInput');
+            if (input) input.value = login;
+        }
+
+        function setUserError(msg) {
+            const el = document.getElementById('userError');
+            if (el) el.textContent = msg || '';
+        }
+
+        // Filter-/Ansichtszustand beim Nutzerwechsel zurücksetzen
+        function resetStateForUserSwitch() {
+            selectedCountries = [];
+            selectedTaxa = [];
+            selectedSpeciesId = null;
+            selectedSpeciesName = '';
+            searchQuery = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchClear').style.display = 'none';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            document.getElementById('qualityFilter').value = 'all';
+            // Erstbeobachtungen-Panel
+            document.getElementById('fsFrom').value = '';
+            document.getElementById('fsTo').value = '';
+            document.getElementById('fsQuality').value = 'all';
+            fsSelectedTaxa = [];
+            fsLastResults = [];
+            fsAutoRan = false;
+            document.getElementById('fsSummary').innerHTML = '';
+            document.getElementById('fsResults').innerHTML = '';
+            updateFsExportButtons();
+            updateCountryFilterLabel();
+            updateCountryDropdownSelection();
+        }
+
+        // Nutzer wechseln (validieren -> laden)
+        async function switchUser(rawName) {
+            const name = (rawName || '').trim().replace(/^@/, '');
+            if (!name) { setUserError('Bitte einen Nutzernamen eingeben.'); return; }
+            if (name.toLowerCase() === USER_ID.toLowerCase()) { setUserError(''); return; }
+
+            const btn = document.querySelector('.user-switch-btn');
+            if (btn) { btn.disabled = true; btn.textContent = 'Lädt…'; }
+            setUserError('');
+
+            const user = await loadUserProfile(name);
+            if (!user) {
+                setUserError(`Nutzer „${name}" nicht gefunden.`);
+                if (btn) { btn.disabled = false; btn.textContent = 'Anzeigen'; }
+                return;
+            }
+
+            USER_ID = user.login;
+            localStorage.setItem('inat_current_user', USER_ID);
+            resetStateForUserSwitch();
+            applyUserChrome(user, USER_ID);
+            saveFiltersToURL();
+
+            // Daten neu laden
+            allObservations = [];
+            filteredObservations = [];
+            document.getElementById('loadingProgress').textContent = '0 / ? geladen';
+            await loadUser(true);
+
+            if (btn) { btn.disabled = false; btn.textContent = 'Anzeigen'; }
+        }
+
+        // Daten des aktuellen Nutzers laden (Cache -> frisch)
+        async function loadUser(skipProfile) {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            if (!skipProfile) {
+                loadUserProfile(USER_ID).then(u => applyUserChrome(u, USER_ID));
+            }
+            const cached = loadFromCache();
+            if (cached) {
+                allObservations = cached;
+                updateUI();
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+            await fetchAllObservations();
+        }
+
         async function refreshData() {
             const btn = document.getElementById('refreshBtn');
             btn.disabled = true;
@@ -3704,6 +3862,7 @@
         function saveFiltersToURL() {
             const params = new URLSearchParams();
 
+            if (USER_ID && USER_ID !== DEFAULT_USER) params.set('user', USER_ID);
             if (selectedCountries.length > 0) params.set('countries', selectedCountries.join(','));
             if (selectedTaxa.length > 0) params.set('taxa', selectedTaxa.join(','));
             if (searchQuery) params.set('search', searchQuery);
@@ -3761,8 +3920,9 @@
         }
 
         // ========== LOCALSTORAGE CACHING ==========
-        const CACHE_KEY = 'inat_observations_cache';
+        const CACHE_KEY_BASE = 'inat_observations_cache';
         const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+        function cacheKey() { return `${CACHE_KEY_BASE}_${USER_ID}`; }  // Cache pro Nutzer
 
         function saveToCache(data) {
             const cacheData = {
@@ -3770,7 +3930,7 @@
                 observations: data
             };
             try {
-                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+                localStorage.setItem(cacheKey(), JSON.stringify(cacheData));
             } catch (e) {
                 console.warn('Cache save failed:', e);
             }
@@ -3778,7 +3938,7 @@
 
         function loadFromCache() {
             try {
-                const cached = localStorage.getItem(CACHE_KEY);
+                const cached = localStorage.getItem(cacheKey());
                 if (!cached) return null;
 
                 const cacheData = JSON.parse(cached);
@@ -3831,19 +3991,21 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadTheme();
+
+            // Nutzer bestimmen: URL (?user=) > localStorage > Default
+            const urlUser = new URLSearchParams(location.search).get('user');
+            USER_ID = ((urlUser || localStorage.getItem('inat_current_user') || DEFAULT_USER) + '').trim().replace(/^@/, '') || DEFAULT_USER;
+            localStorage.setItem('inat_current_user', USER_ID);
+
             loadFiltersFromURL();
             initMap();
 
-            // Check cache first
-            const cached = loadFromCache();
-            if (cached) {
-                allObservations = cached;
-                updateUI();
-                document.getElementById('loadingOverlay').classList.add('hidden');
-            }
+            // Sofort provisorisch anpassen (verhindert Aufblitzen des Eigentümer-Profils),
+            // wird nach dem Laden des Profils mit dem echten Namen verfeinert.
+            applyUserChrome(null, USER_ID);
 
-            // Always fetch fresh data
-            fetchAllObservations();
+            // Profil + Daten des aktuellen Nutzers laden
+            loadUser();
         });
     </script>
 </body>
