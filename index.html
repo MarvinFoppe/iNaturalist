@@ -1453,6 +1453,166 @@
             text-align: center;
         }
 
+        /* ===== Erstbeobachtungen im Zeitraum ===== */
+        .fs-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .fs-btn {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent) 100%);
+            color: #fff;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 10px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 2px 12px var(--accent-glow);
+        }
+        .fs-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 18px var(--accent-glow); }
+        .fs-btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            box-shadow: none;
+        }
+        .fs-btn-secondary:hover {
+            color: var(--text-primary);
+            border-color: var(--accent);
+            box-shadow: 0 2px 10px var(--accent-glow);
+        }
+        .fs-taxa {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .fs-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .fs-chip:hover { border-color: var(--accent); color: var(--text-primary); }
+        .fs-chip.active {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent) 100%);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 2px 10px var(--accent-glow);
+        }
+        .fs-summary {
+            font-size: 1.05em;
+            color: var(--text-secondary);
+            margin: 10px 0 18px;
+            min-height: 1.2em;
+        }
+        .fs-summary strong { color: var(--accent); font-size: 1.15em; }
+        .fs-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        .fs-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        .fs-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .fs-card a { text-decoration: none; color: inherit; display: block; }
+        .fs-card-img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            background: var(--bg-light);
+            display: block;
+        }
+        .fs-card-noimg {
+            width: 100%;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+            background: var(--bg-light);
+        }
+        .fs-card-body { padding: 12px 14px; }
+        .fs-card-name { font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+        .fs-card-sci { font-style: italic; color: var(--text-muted); font-size: 0.85em; margin-bottom: 8px; }
+        .fs-card-date {
+            font-size: 0.82em;
+            color: var(--accent-light);
+            display: inline-block;
+            background: rgba(139, 195, 74, 0.12);
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+        .fs-card-rank {
+            font-size: 0.72em;
+            color: var(--text-muted);
+            text-transform: capitalize;
+            margin-left: 6px;
+        }
+        .fs-empty { color: var(--text-muted); padding: 10px 0; }
+
+        /* #10: Karte ↔ Galerie */
+        .popup-gallery-btn {
+            display: block;
+            width: 100%;
+            margin: 8px 0 4px;
+            padding: 6px 10px;
+            background: var(--primary-light);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .popup-gallery-btn:hover { background: var(--accent); }
+        .gallery-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .gallery-map-btn {
+            background: var(--bg-light);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.82em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .gallery-map-btn:hover { color: var(--text-primary); border-color: var(--accent); }
+        .gallery-item.gallery-highlight {
+            outline: 3px solid var(--accent);
+            outline-offset: 2px;
+            box-shadow: 0 0 25px var(--accent-glow);
+            animation: galleryPulse 1s ease-in-out 2;
+        }
+        @keyframes galleryPulse {
+            0%, 100% { outline-color: var(--accent); }
+            50% { outline-color: var(--accent-light); }
+        }
+
         @media (max-width: 768px) {
             .header { flex-direction: column; text-align: center; }
             .header-left h1 { font-size: 1.8em; }
@@ -1598,6 +1758,30 @@
         </div>
     </div>
 
+    <div class="section" id="firstSeenSection">
+        <h2 class="section-title">🆕 Erstbeobachtungen im Zeitraum</h2>
+        <div class="fs-controls">
+            <div class="filter-group">
+                <label class="filter-label"><svg class="icon"><use href="#icon-calendar"/></svg> Von</label>
+                <input type="date" id="fsFrom" class="filter-input" onclick="this.showPicker()">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label"><svg class="icon"><use href="#icon-calendar"/></svg> Bis</label>
+                <input type="date" id="fsTo" class="filter-input" onclick="this.showPicker()">
+            </div>
+            <button class="fs-btn" onclick="computeFirstSeen()">Erstbeobachtungen anzeigen</button>
+            <button id="fsExportCsv" class="fs-btn fs-btn-secondary" onclick="exportFirstSeenCSV()" style="display:none;">📥 CSV</button>
+            <button id="fsCopyList" class="fs-btn fs-btn-secondary" onclick="copyFirstSeenList()" style="display:none;">📋 Liste kopieren</button>
+            <button class="filter-reset" onclick="resetFirstSeen()">× Zurücksetzen</button>
+        </div>
+        <div id="fsTaxa" class="fs-taxa"></div>
+        <div id="fsSummary" class="fs-summary"></div>
+        <div id="fsResults" class="fs-results"></div>
+        <div class="filter-hint" style="margin-top: 12px; font-size: 0.8em; color: var(--text-muted);">
+            Zeigt Arten (nur Artenebene &amp; darunter – Art, Unterart, Varietät, Form), deren <strong>allererste</strong> Beobachtung in deiner Historie in diesen Zeitraum fällt.
+        </div>
+    </div>
+
     <div class="map-container">
         <h2 class="section-title">🗺️ Weltkarte</h2>
         <div id="map"></div>
@@ -1631,25 +1815,6 @@
         </div>
         <div id="gallery" class="gallery"></div>
         <button id="loadMore" class="load-more" onclick="loadMoreGallery()">Mehr laden</button>
-    </div>
-
-    <!-- Statistics Section -->
-    <div class="section">
-        <h2 class="section-title"><svg class="icon"><use href="#icon-stats"/></svg> Statistiken</h2>
-        <div class="stats-charts">
-            <div class="chart-container">
-                <h3 class="chart-title">Top 10 Arten</h3>
-                <div id="topSpeciesChart" class="bar-chart"></div>
-            </div>
-            <div class="chart-container">
-                <h3 class="chart-title">Beobachtungen pro Jahr</h3>
-                <div id="yearlyChart" class="bar-chart"></div>
-            </div>
-            <div class="chart-container">
-                <h3 class="chart-title">Taxonomische Verteilung</h3>
-                <div id="taxaChart" class="bar-chart"></div>
-            </div>
-        </div>
     </div>
 
     <div class="author-section">
@@ -1736,8 +1901,12 @@
         let autoRefreshTimer = null;
         let map = null;
         let markers = null;
+        let markerById = {};   // #10: Beobachtungs-ID -> Leaflet-Marker (Karte ↔ Galerie)
         let selectedCountries = [];  // Array for multi-country selection
         let selectedTaxa = [];       // Array for multi-taxa selection
+        let fsSelectedTaxa = [];     // Taxa-Filter im Erstbeobachtungen-Panel
+        let fsLastResults = [];      // Letzte Ergebnisliste (für Export/Kopieren)
+        let fsAutoRan = false;       // Auto-Berechnung aus URL nur einmal ausführen
         let searchQuery = '';        // Search query string
         let galleryDisplayed = 0;
         let viewMode = 'observations';  // 'observations' or 'species'
@@ -2135,31 +2304,38 @@
             overlay.classList.remove('hidden');
 
             try {
-                const countResponse = await fetch(`${API_BASE}/observations?user_id=${USER_ID}&per_page=1&locale=de`);
-                const countData = await countResponse.json();
-                const totalResults = countData.total_results;
+                const pageUrl = (p) => `${API_BASE}/observations?user_id=${USER_ID}&per_page=${PER_PAGE}&page=${p}&order=desc&order_by=created_at&locale=de`;
 
-                let allResults = [];
-                let page = 1;
-                const totalPages = Math.ceil(totalResults / PER_PAGE);
+                // Erste Seite holen (liefert zugleich total_results -> keine Extra-Zählabfrage nötig)
+                const firstData = await (await fetch(pageUrl(1))).json();
+                const totalResults = firstData.total_results || 0;
+                let allResults = firstData.results || [];
+                progress.textContent = `${allResults.length} / ${totalResults} geladen`;
 
-                while (allResults.length < totalResults) {
-                    progress.textContent = `${allResults.length} / ${totalResults} geladen`;
-
-                    const response = await fetch(
-                        `${API_BASE}/observations?user_id=${USER_ID}&per_page=${PER_PAGE}&page=${page}&order=desc&order_by=created_at&locale=de`
-                    );
-                    const data = await response.json();
-
-                    if (data.results && data.results.length > 0) {
-                        allResults = allResults.concat(data.results);
-                        page++;
-                    } else {
-                        break;
-                    }
-
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                // iNaturalist begrenzt page*per_page auf 10.000 -> nur erreichbare Seiten anfragen
+                const maxPage = Math.floor(10000 / PER_PAGE);
+                const totalPages = Math.min(Math.ceil(totalResults / PER_PAGE), maxPage);
+                if (Math.ceil(totalResults / PER_PAGE) > maxPage) {
+                    console.warn(`Über ${maxPage * PER_PAGE} Beobachtungen: API-Paginierung deckt nicht alle ab.`);
                 }
+
+                // Restliche Seiten PARALLEL laden (mit begrenzter Gleichzeitigkeit)
+                const pending = [];
+                for (let p = 2; p <= totalPages; p++) pending.push(p);
+                const CONCURRENCY = 5;
+                const worker = async () => {
+                    while (pending.length) {
+                        const p = pending.shift();
+                        try {
+                            const d = await (await fetch(pageUrl(p))).json();
+                            if (d.results && d.results.length) allResults = allResults.concat(d.results);
+                        } catch (e) {
+                            console.warn(`Seite ${p} fehlgeschlagen:`, e);
+                        }
+                        progress.textContent = `${allResults.length} / ${totalResults} geladen`;
+                    }
+                };
+                await Promise.all(Array.from({ length: Math.min(CONCURRENCY, pending.length) }, worker));
 
                 allObservations = allResults.map(obs => ({
                     id: obs.id,
@@ -2170,12 +2346,15 @@
                     date: obs.observed_on || '',
                     created: obs.created_at || '',
                     place: obs.place_guess || '',
+                    placeIds: obs.place_ids || [],
                     country: extractCountry(obs.place_guess) || getCountryByDate(obs.observed_on),
                     url: `https://www.inaturalist.org/observations/${obs.id}`,
                     image: obs.photos?.[0]?.url?.replace('square', 'medium') || '',
                     taxon: obs.taxon?.iconic_taxon_name || '',
                     quality: obs.quality_grade || '',
                     taxonId: obs.taxon?.id,
+                    rank: obs.taxon?.rank || '',
+                    rankLevel: obs.taxon?.rank_level ?? null,
                     identifications: obs.num_identification_agreements || 0
                 }));
 
@@ -2203,13 +2382,76 @@
                 // Save to cache
                 saveToCache(allObservations);
 
-                // Generate statistics
-                renderStatisticsCharts();
+                // Länder über echte API-Ortsdaten präzisieren (im Hintergrund, blockiert UI nicht)
+                enrichCountriesFromPlaces();
 
             } catch (error) {
                 console.error('Error fetching data:', error);
                 overlay.classList.add('hidden');
                 showError('Fehler beim Laden der Daten.');
+            }
+        }
+
+        // ===== #2 Robuste Länder-Erkennung über echte API-Ortsdaten =====
+        // Auflösung von place_ids -> Land (admin_level 0), in localStorage zwischengespeichert.
+        const PLACES_CACHE_KEY = 'inat_places_cache_v1';
+
+        function loadPlacesCache() {
+            try { return JSON.parse(localStorage.getItem(PLACES_CACHE_KEY)) || {}; }
+            catch (e) { return {}; }
+        }
+        function savePlacesCache(map) {
+            try { localStorage.setItem(PLACES_CACHE_KEY, JSON.stringify(map)); }
+            catch (e) { console.warn('Places-Cache speichern fehlgeschlagen:', e); }
+        }
+
+        async function enrichCountriesFromPlaces() {
+            try {
+                const needed = new Set();
+                allObservations.forEach(o => (o.placeIds || []).forEach(id => needed.add(id)));
+                if (!needed.size) return;
+
+                const cache = loadPlacesCache(); // id -> { lvl: admin_level, country: deutscher Name|null }
+                const unknown = [...needed].filter(id => !(id in cache));
+
+                const BATCH = 50;
+                for (let i = 0; i < unknown.length; i += BATCH) {
+                    const ids = unknown.slice(i, i + BATCH);
+                    try {
+                        const d = await (await fetch(`${API_BASE}/places/${ids.join(',')}`)).json();
+                        (d.results || []).forEach(p => {
+                            const german = p.admin_level === 0 ? (extractCountry(p.name) || p.name) : null;
+                            cache[p.id] = { lvl: p.admin_level ?? null, country: german };
+                        });
+                    } catch (e) {
+                        console.warn('Places-Abfrage fehlgeschlagen:', e);
+                    }
+                    // Nicht gelieferte IDs markieren, damit sie nicht endlos neu abgefragt werden
+                    ids.forEach(id => { if (!(id in cache)) cache[id] = { lvl: null, country: null }; });
+                }
+                savePlacesCache(cache);
+
+                // Land je Beobachtung setzen: erstes place mit admin_level 0
+                let changed = 0;
+                allObservations.forEach(o => {
+                    for (const id of (o.placeIds || [])) {
+                        const info = cache[id];
+                        if (info && info.lvl === 0 && info.country) {
+                            if (o.country !== info.country) changed++;
+                            o.country = info.country;
+                            break;
+                        }
+                    }
+                });
+
+                if (changed) {
+                    console.log(`🌍 ${changed} Länder über API-Ortsdaten präzisiert.`);
+                    saveToCache(allObservations);
+                    populateCountryFilter();
+                    applyFilters();
+                }
+            } catch (e) {
+                console.warn('Länder-Anreicherung fehlgeschlagen:', e);
             }
         }
 
@@ -2522,6 +2764,192 @@
             applyFilters();
         }
 
+        // ===== Erstbeobachtungen im Zeitraum =====
+        // Nur Artenebene & darunter: Art, Unterart, Varietät, Form (rank_level <= 10)
+        function isSpeciesOrBelow(obs) {
+            if (!obs.taxonId) return false;
+            if (obs.rankLevel != null) return obs.rankLevel <= 10;
+            // Fallback, falls Rang (noch) nicht im Cache steht
+            const speciesRanks = ['species', 'hybrid', 'subspecies', 'variety', 'form', 'subvariety', 'subform', 'infrahybrid'];
+            return obs.rank ? speciesRanks.includes(obs.rank.toLowerCase()) : false;
+        }
+
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function formatDateDE(iso) {
+            if (!iso) return '';
+            const p = iso.split('-');
+            return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : iso;
+        }
+
+        // Baut die Taxa-Filter-Chips im Erstbeobachtungen-Panel (nur vorhandene Gruppen)
+        function renderFsTaxaChips() {
+            const container = document.getElementById('fsTaxa');
+            if (!container) return;
+            const groups = [...new Set(allObservations.filter(o => o.taxon).map(o => o.taxon))]
+                .sort((a, b) => (taxaConfig[a]?.name || a).localeCompare(taxaConfig[b]?.name || b));
+            // Nicht mehr vorhandene Gruppen aus der Auswahl entfernen
+            fsSelectedTaxa = fsSelectedTaxa.filter(t => groups.includes(t));
+            container.innerHTML = groups.map(t => {
+                const cfg = taxaConfig[t];
+                const active = fsSelectedTaxa.includes(t) ? ' active' : '';
+                return `<span class="fs-chip${active}" onclick="toggleFsTaxa('${t}')">${cfg?.icon || '🌿'} ${cfg?.name || t}</span>`;
+            }).join('');
+        }
+
+        function toggleFsTaxa(taxon) {
+            const i = fsSelectedTaxa.indexOf(taxon);
+            if (i === -1) fsSelectedTaxa.push(taxon); else fsSelectedTaxa.splice(i, 1);
+            renderFsTaxaChips();
+            // Ergebnis nur neu berechnen, wenn bereits ein Zeitraum ausgewählt ist
+            const from = document.getElementById('fsFrom').value;
+            const to = document.getElementById('fsTo').value;
+            if (from || to) computeFirstSeen(); else saveFiltersToURL();
+        }
+
+        function computeFirstSeen() {
+            const from = document.getElementById('fsFrom').value;
+            const to = document.getElementById('fsTo').value;
+            const summary = document.getElementById('fsSummary');
+            const results = document.getElementById('fsResults');
+
+            if (!allObservations.length) {
+                summary.innerHTML = '';
+                results.innerHTML = '<div class="fs-empty">Daten werden noch geladen …</div>';
+                fsLastResults = []; updateFsExportButtons();
+                return;
+            }
+            if (from && to && from > to) {
+                summary.innerHTML = '';
+                results.innerHTML = '<div class="fs-empty">„Von" liegt nach „Bis" – bitte Zeitraum prüfen.</div>';
+                fsLastResults = []; updateFsExportButtons();
+                return;
+            }
+            if (!from && !to) {
+                summary.innerHTML = '';
+                results.innerHTML = '<div class="fs-empty">Bitte einen Zeitraum wählen (Von und/oder Bis).</div>';
+                fsLastResults = []; updateFsExportButtons();
+                return;
+            }
+
+            // Für jede Art (taxonId) die früheste Beobachtung der gesamten Historie bestimmen
+            const firstByTaxon = {};
+            allObservations.forEach(obs => {
+                if (!isSpeciesOrBelow(obs) || !obs.date) return;
+                const existing = firstByTaxon[obs.taxonId];
+                if (!existing || obs.date < existing.date) firstByTaxon[obs.taxonId] = obs;
+            });
+
+            // Nur Arten behalten, deren Erstbeobachtung im gewählten Zeitraum liegt
+            // (und optional zur gewählten taxonomischen Gruppe gehört)
+            const inRange = Object.values(firstByTaxon).filter(obs => {
+                if (from && obs.date < from) return false;
+                if (to && obs.date > to) return false;
+                if (fsSelectedTaxa.length > 0 && !fsSelectedTaxa.includes(obs.taxon)) return false;
+                return true;
+            }).sort((a, b) => a.date.localeCompare(b.date));
+
+            fsLastResults = inRange;
+            updateFsExportButtons();
+            saveFiltersToURL();
+
+            const taxaText = fsSelectedTaxa.length > 0
+                ? ' – ' + fsSelectedTaxa.map(t => taxaConfig[t]?.name || t).join(', ')
+                : '';
+            const rangeText = (from && to)
+                ? `${formatDateDE(from)} – ${formatDateDE(to)}`
+                : from ? `ab ${formatDateDE(from)}` : `bis ${formatDateDE(to)}`;
+            summary.innerHTML = `<strong>${inRange.length}</strong> ${inRange.length === 1 ? 'Art' : 'Arten'} erstmalig beobachtet (${rangeText}${taxaText}).`;
+
+            if (!inRange.length) {
+                results.innerHTML = '<div class="fs-empty">Keine erstmalig beobachteten Arten in diesem Zeitraum.</div>';
+                return;
+            }
+
+            results.innerHTML = inRange.map(obs => {
+                const img = obs.image
+                    ? `<img class="fs-card-img" src="${obs.image}" alt="${escapeHtml(obs.name)}" loading="lazy">`
+                    : `<div class="fs-card-noimg">${taxaConfig[obs.taxon]?.icon || '🌿'}</div>`;
+                const rankTag = (obs.rank && obs.rank.toLowerCase() !== 'species')
+                    ? `<span class="fs-card-rank">${escapeHtml(obs.rank)}</span>` : '';
+                return `
+                    <div class="fs-card">
+                        <a href="${obs.url}" target="_blank" rel="noopener">
+                            ${img}
+                            <div class="fs-card-body">
+                                <div class="fs-card-name">${escapeHtml(obs.name)}</div>
+                                <div class="fs-card-sci">${escapeHtml(obs.scientific)}</div>
+                                <span class="fs-card-date">📅 ${formatDateDE(obs.date)}</span>${rankTag}
+                            </div>
+                        </a>
+                    </div>`;
+            }).join('');
+        }
+
+        function resetFirstSeen() {
+            document.getElementById('fsFrom').value = '';
+            document.getElementById('fsTo').value = '';
+            fsSelectedTaxa = [];
+            renderFsTaxaChips();
+            document.getElementById('fsSummary').innerHTML = '';
+            document.getElementById('fsResults').innerHTML = '';
+            fsLastResults = [];
+            updateFsExportButtons();
+            saveFiltersToURL();
+        }
+
+        // #9: Export-Buttons nur zeigen, wenn Ergebnisse vorliegen
+        function updateFsExportButtons() {
+            const show = fsLastResults.length > 0 ? 'inline-flex' : 'none';
+            document.getElementById('fsExportCsv').style.display = show;
+            document.getElementById('fsCopyList').style.display = show;
+        }
+
+        function exportFirstSeenCSV() {
+            if (!fsLastResults.length) return;
+            const headers = ['Name', 'Wissenschaftlich', 'Rang', 'Erstbeobachtung', 'Gruppe', 'Land', 'iNaturalist URL'];
+            const rows = fsLastResults.map(o => [
+                o.name, o.scientific, o.rank, formatDateDE(o.date),
+                taxaConfig[o.taxon]?.name || o.taxon, o.country || '', o.url
+            ].map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';'));
+            const csv = '﻿' + headers.join(';') + '\n' + rows.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const from = document.getElementById('fsFrom').value || 'anfang';
+            const to = document.getElementById('fsTo').value || 'ende';
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `erstbeobachtungen_${from}_bis_${to}.csv`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        async function copyFirstSeenList() {
+            if (!fsLastResults.length) return;
+            const lines = fsLastResults.map(o =>
+                `${o.name}${o.scientific ? ` (${o.scientific})` : ''} – ${formatDateDE(o.date)}`
+            );
+            const header = document.getElementById('fsSummary').textContent.trim();
+            const text = (header ? header + '\n\n' : '') + lines.join('\n');
+            const btn = document.getElementById('fsCopyList');
+            const original = btn.textContent;
+            try {
+                await navigator.clipboard.writeText(text);
+                btn.textContent = '✓ Kopiert';
+            } catch (e) {
+                // Fallback ohne Clipboard-API
+                const ta = document.createElement('textarea');
+                ta.value = text; document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); btn.textContent = '✓ Kopiert'; }
+                catch (e2) { btn.textContent = '⚠ Fehler'; }
+                document.body.removeChild(ta);
+            }
+            setTimeout(() => { btn.textContent = original; }, 1500);
+        }
+
         // Export unrecognized places as CSV
         function exportUnrecognizedPlaces() {
             const unrecognized = allObservations
@@ -2572,6 +3000,12 @@
             updateCountriesGrid();
             updateTaxaGrid();
             updateViewModeCounts();
+            renderFsTaxaChips();
+            // #8: Aus URL geladenen Zeitraum einmalig automatisch auswerten
+            if (!fsAutoRan && (document.getElementById('fsFrom').value || document.getElementById('fsTo').value)) {
+                fsAutoRan = true;
+                computeFirstSeen();
+            }
             resetGallery();
         }
 
@@ -2596,6 +3030,7 @@
         // Update map
         function updateMap() {
             markers.clearLayers();
+            markerById = {};
 
             filteredObservations.forEach(obs => {
                 if (obs.lat && obs.lon) {
@@ -2615,10 +3050,12 @@
                             <div class="popup-title">${obs.name}</div>
                             ${obs.scientific ? `<div class="popup-scientific">${obs.scientific}</div>` : ''}
                             <div class="popup-meta">${obs.date}<br>${obs.place || 'Unbekannt'}</div>
+                            <button class="popup-gallery-btn" onclick="showInGallery(${obs.id})">🖼️ In Galerie zeigen</button>
                             <a href="${obs.url}" target="_blank" class="popup-link">Auf iNaturalist →</a>
                         </div>
                     `);
                     markers.addLayer(marker);
+                    markerById[obs.id] = marker;
                 }
             });
 
@@ -2809,6 +3246,40 @@
             galleryDisplayed = 0;
             document.getElementById('gallery').innerHTML = '';
             loadMoreGallery();
+        }
+
+        // #10: Galerie-Karte -> Beobachtung auf der Karte zeigen
+        function showOnMap(id) {
+            document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const marker = markerById[id];
+            if (!marker) return;
+            const openIt = () => marker.openPopup();
+            setTimeout(() => {
+                map.invalidateSize();
+                if (markers.zoomToShowLayer) markers.zoomToShowLayer(marker, openIt);
+                else { map.setView(marker.getLatLng(), Math.max(map.getZoom(), 12)); openIt(); }
+            }, 350);
+        }
+
+        // #10: Karten-Popup -> passende Galerie-Karte finden, hervorheben, dorthin scrollen
+        function showInGallery(id) {
+            if (map) map.closePopup();
+            if (viewMode !== 'observations') setViewMode('observations');
+
+            let card = document.querySelector(`.gallery-item[data-obs-id="${id}"]`);
+            let guard = 0;
+            while (!card && document.getElementById('loadMore').style.display !== 'none' && guard < 300) {
+                loadMoreGallery();
+                card = document.querySelector(`.gallery-item[data-obs-id="${id}"]`);
+                guard++;
+            }
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.add('gallery-highlight');
+                setTimeout(() => card.classList.remove('gallery-highlight'), 2500);
+            } else {
+                document.getElementById('gallery').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         // Cache for taxon details
@@ -3025,7 +3496,10 @@
                             <span>Mehr erfahren</span>
                             <span class="arrow">▼</span>
                         </button>
-                        <a href="${obs.url}" target="_blank" class="gallery-link">Auf iNaturalist ansehen →</a>
+                        <div class="gallery-actions">
+                            ${obs.lat && obs.lon ? `<button class="gallery-map-btn" onclick="event.stopPropagation(); showOnMap(${obs.id})">📍 Auf Karte</button>` : ''}
+                            <a href="${obs.url}" target="_blank" class="gallery-link">Auf iNaturalist ansehen →</a>
+                        </div>
                     </div>
                     <div class="gallery-details"></div>
                 `;
@@ -3216,6 +3690,13 @@
             if (currentSortMode !== 'date') params.set('sort', currentSortMode);
             if (sortAscending) params.set('asc', '1');
 
+            // Erstbeobachtungen-Panel (#8)
+            const fsFromVal = document.getElementById('fsFrom')?.value;
+            const fsToVal = document.getElementById('fsTo')?.value;
+            if (fsFromVal) params.set('fsFrom', fsFromVal);
+            if (fsToVal) params.set('fsTo', fsToVal);
+            if (fsSelectedTaxa.length > 0) params.set('fsTaxa', fsSelectedTaxa.join(','));
+
             const newURL = params.toString() ? `${location.pathname}?${params}` : location.pathname;
             history.replaceState(null, '', newURL);
         }
@@ -3248,6 +3729,10 @@
             if (params.get('asc') === '1') {
                 sortAscending = true;
             }
+            // Erstbeobachtungen-Panel (#8)
+            if (params.get('fsFrom')) document.getElementById('fsFrom').value = params.get('fsFrom');
+            if (params.get('fsTo')) document.getElementById('fsTo').value = params.get('fsTo');
+            if (params.get('fsTaxa')) fsSelectedTaxa = params.get('fsTaxa').split(',');
         }
 
         // ========== LOCALSTORAGE CACHING ==========
@@ -3316,89 +3801,6 @@
                 `;
             }
             gallery.innerHTML = skeletons;
-        }
-
-        // ========== STATISTICS SECTION ==========
-        function renderStatisticsCharts() {
-            // Top species chart
-            const speciesCount = {};
-            allObservations.forEach(obs => {
-                const name = obs.name || 'Unbekannt';
-                speciesCount[name] = (speciesCount[name] || 0) + 1;
-            });
-
-            const topSpecies = Object.entries(speciesCount)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10);
-
-            const maxSpeciesCount = topSpecies[0]?.[1] || 1;
-            const speciesChart = document.getElementById('topSpeciesChart');
-            speciesChart.innerHTML = topSpecies.map(([name, count]) => `
-                <div class="bar-item">
-                    <span class="bar-label" title="${name}">${name.length > 15 ? name.substring(0, 15) + '...' : name}</span>
-                    <div class="bar-wrapper">
-                        <div class="bar-fill" style="width: ${(count / maxSpeciesCount * 100)}%">${count}</div>
-                    </div>
-                </div>
-            `).join('');
-
-            // Yearly observations chart
-            const yearlyData = {};
-            allObservations.forEach(obs => {
-                if (obs.date) {
-                    const year = obs.date.substring(0, 4);
-                    yearlyData[year] = (yearlyData[year] || 0) + 1;
-                }
-            });
-
-            const yearlyEntries = Object.entries(yearlyData).sort((a, b) => a[0].localeCompare(b[0]));
-            const maxYearlyCount = Math.max(...yearlyEntries.map(e => e[1])) || 1;
-            const yearlyChart = document.getElementById('yearlyChart');
-            yearlyChart.innerHTML = yearlyEntries.map(([year, count]) => `
-                <div class="bar-item">
-                    <span class="bar-label">${year}</span>
-                    <div class="bar-wrapper">
-                        <div class="bar-fill" style="width: ${(count / maxYearlyCount * 100)}%">${count}</div>
-                    </div>
-                </div>
-            `).join('');
-
-            // Taxa distribution chart
-            const taxaCount = {};
-            const taxaNames = {
-                'Aves': '🐦 Vögel',
-                'Insecta': '🦋 Insekten',
-                'Plantae': '🌿 Pflanzen',
-                'Mammalia': '🦊 Säugetiere',
-                'Reptilia': '🦎 Reptilien',
-                'Amphibia': '🐸 Amphibien',
-                'Fungi': '🍄 Pilze',
-                'Arachnida': '🕷️ Spinnentiere',
-                'Mollusca': '🐌 Weichtiere',
-                'Actinopterygii': '🐟 Fische'
-            };
-
-            allObservations.forEach(obs => {
-                const taxa = obs.taxon || 'Andere';
-                taxaCount[taxa] = (taxaCount[taxa] || 0) + 1;
-            });
-
-            const taxaEntries = Object.entries(taxaCount)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 8);
-
-            const maxTaxaCount = taxaEntries[0]?.[1] || 1;
-            const taxaChart = document.getElementById('taxaChart');
-            taxaChart.innerHTML = taxaEntries.map(([taxa, count]) => `
-                <div class="bar-item">
-                    <span class="bar-label">${taxaNames[taxa] || taxa}</span>
-                    <div class="bar-wrapper">
-                        <div class="bar-fill" style="width: ${(count / maxTaxaCount * 100)}%">${count}</div>
-                    </div>
-                </div>
-            `).join('');
-
-            console.log('Statistics rendered:', topSpecies.length, 'species,', yearlyEntries.length, 'years,', taxaEntries.length, 'taxa');
         }
 
         // Initialize
