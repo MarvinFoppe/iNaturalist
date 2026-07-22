@@ -1723,6 +1723,291 @@
             .refresh-btn { width: 100%; }
             .author-image { width: 150px; height: 150px; }
         }
+
+        /* ===== Belohnungs-Badges ===== */
+        .badges-section { padding: 0 40px; margin: 10px 0 20px; }
+        .badges-details {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .badges-summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 22px 28px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5em;
+            color: var(--accent);
+            user-select: none;
+        }
+        .badges-summary::-webkit-details-marker { display: none; }
+        .badges-summary .badges-chevron {
+            margin-left: auto;
+            font-size: 0.7em;
+            color: var(--text-muted);
+            transition: transform 0.3s;
+        }
+        .badges-details[open] .badges-summary .badges-chevron { transform: rotate(180deg); }
+        .badges-summary .badges-hint {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 0.55em;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+        .badges-body { padding: 5px 28px 28px; }
+        .badges-subtitle {
+            font-family: 'Playfair Display', serif;
+            color: var(--text-secondary);
+            font-size: 1.2em;
+            margin: 26px 0 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 16px;
+        }
+        .bcard {
+            background: rgba(15, 26, 13, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 16px 16px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+        }
+        .bcard:hover { transform: translateY(-4px); box-shadow: 0 12px 30px var(--shadow); border-color: var(--accent); }
+        .bcard.bcard-locked { opacity: 0.55; }
+        .bcard.bcard-max {
+            border-color: var(--accent);
+            box-shadow: 0 0 22px var(--accent-glow);
+            background: linear-gradient(160deg, rgba(139,195,74,0.14), rgba(15,26,13,0.5));
+        }
+        .bcard.bcard-max::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+            box-shadow: inset 0 0 30px var(--accent-glow);
+            pointer-events: none;
+            animation: bcardGlow 2.8s ease-in-out infinite;
+        }
+        @keyframes bcardGlow { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+        .bcard-icon { font-size: 2.6em; line-height: 1; margin-bottom: 6px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); }
+        .bcard-cat { font-size: 0.82em; color: var(--text-secondary); font-weight: 600; }
+        .bcard-cat .bcard-groupicon { margin-right: 4px; }
+        .bcard-rank {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15em;
+            color: var(--accent);
+            margin: 4px 0 2px;
+            font-weight: 700;
+        }
+        .bcard-rank.bcard-rank-none { color: var(--text-muted); font-style: italic; }
+        .bcard-value { font-size: 1.4em; font-weight: 700; color: var(--text-primary); font-family: 'Playfair Display', serif; }
+        .bcard-value small { font-size: 0.55em; color: var(--text-muted); font-weight: 400; }
+        .bcard-bar { height: 7px; background: rgba(255,255,255,0.08); border-radius: 6px; overflow: hidden; margin: 12px 0 8px; }
+        .bcard-bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary-light), var(--accent)); border-radius: 6px; transition: width 0.8s ease; }
+        .bcard-next { font-size: 0.72em; color: var(--text-muted); min-height: 1em; }
+        .bcard-dots { display: flex; justify-content: center; gap: 5px; margin-top: 10px; }
+        .bcard-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.12); }
+        .bcard-dot.on { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+        .bcard-maptoggle {
+            margin-top: 12px;
+            width: 100%;
+            padding: 7px;
+            background: rgba(139,195,74,0.15);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.75em;
+            cursor: pointer;
+            font-family: 'Open Sans', sans-serif;
+            transition: background 0.2s;
+        }
+        .bcard-maptoggle:hover { background: rgba(139,195,74,0.3); color: var(--text-primary); }
+
+        /* Länder-Karte */
+        #countryMap {
+            height: 460px;
+            width: 100%;
+            border-radius: 14px;
+            margin-top: 18px;
+            border: 1px solid var(--border);
+            background: #0c140a;
+            display: none;
+        }
+        #countryMap.visible { display: block; }
+        .countrymap-legend {
+            display: none;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            align-items: center;
+        }
+        .countrymap-legend.visible { display: flex; flex-wrap: wrap; }
+        .countrymap-legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .cml-swatch { width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); }
+
+        /* Manuelle Länder-Zuordnung */
+        .mc-section { padding: 0 40px; margin: 0 0 20px; }
+        .mc-details { background: var(--bg-card); border: 1px solid var(--border); border-radius: 15px; overflow: hidden; }
+        .mc-summary {
+            list-style: none; cursor: pointer; padding: 20px 28px;
+            display: flex; align-items: center; gap: 12px;
+            font-family: 'Playfair Display', serif; font-size: 1.3em; color: var(--accent); user-select: none;
+        }
+        .mc-summary::-webkit-details-marker { display: none; }
+        .mc-summary .badges-chevron { margin-left: auto; font-size: 0.65em; color: var(--text-muted); transition: transform 0.3s; }
+        .mc-details[open] .mc-summary .badges-chevron { transform: rotate(180deg); }
+        .mc-summary .badges-hint { font-family: 'Open Sans', sans-serif; font-size: 0.6em; color: var(--text-secondary); font-weight: 400; }
+        .mc-body { padding: 0 28px 24px; }
+        .mc-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0 16px; }
+        .mc-btn {
+            padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(139,195,74,0.15); color: var(--text-secondary); cursor: pointer;
+            font-size: 0.85em; font-family: 'Open Sans', sans-serif; transition: background 0.2s;
+        }
+        .mc-btn:hover { background: rgba(139,195,74,0.3); color: var(--text-primary); }
+        .mc-list { display: flex; flex-direction: column; gap: 8px; max-height: 520px; overflow-y: auto; }
+        .mc-row {
+            display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;
+            padding: 10px 14px; background: rgba(15,26,13,0.5); border: 1px solid var(--border); border-radius: 10px;
+        }
+        .mc-row.assigned { border-color: var(--accent); }
+        .mc-place { font-size: 0.88em; color: var(--text-primary); word-break: break-word; }
+        .mc-place small { color: var(--text-muted); }
+        .mc-place a { color: var(--text-muted); text-decoration: none; }
+        .mc-count { font-size: 0.8em; color: var(--text-muted); white-space: nowrap; }
+        .mc-select {
+            padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--bg-light); color: var(--text-primary); font-size: 0.85em; min-width: 170px;
+        }
+        .mc-empty { color: var(--text-muted); padding: 12px 0; font-style: italic; }
+
+        @media (max-width: 768px) {
+            .badges-section, .mc-section { padding: 0 15px; }
+            .badges-body { padding: 5px 16px 20px; }
+            .mc-body { padding: 0 16px 20px; }
+            .badges-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+            .badges-summary { font-size: 1.2em; padding: 18px 18px; }
+            .mc-row { grid-template-columns: 1fr; }
+            .mc-select { width: 100%; }
+        }
+
+        /* ===== Reiter-Navigation ===== */
+        .main-tabs {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            padding: 26px 20px 6px;
+            flex-wrap: wrap;
+        }
+        .main-tab {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-family: 'Open Sans', sans-serif;
+            font-weight: 600;
+            font-size: 1.02em;
+            padding: 12px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .main-tab:hover { color: var(--text-primary); background: rgba(45,90,39,0.3); transform: translateY(-2px); }
+        .main-tab.active {
+            color: var(--bg-dark);
+            background: linear-gradient(180deg, var(--accent-light), var(--accent));
+            border-color: var(--accent);
+            box-shadow: 0 6px 18px var(--accent-glow);
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: tabFade 0.35s ease; }
+        @keyframes tabFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        .badges-intro { color: var(--text-secondary); font-size: 0.95em; margin: -8px 0 22px; text-align: center; }
+
+        /* ===== Hexagon-Medaille ===== */
+        .hexm {
+            position: relative;
+            width: 92px;
+            height: 102px;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 6px;
+            filter: drop-shadow(0 8px 14px rgba(0,0,0,0.5));
+        }
+        .hexm .plate {
+            position: absolute; inset: 0;
+            background: var(--rim, #4a564c);
+            clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+        }
+        .hexm .inner {
+            position: absolute; inset: 7px;
+            background: radial-gradient(circle at 40% 30%, #24361f, #0f1a0d 80%);
+            clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
+        }
+        .hexm .ico { position: relative; z-index: 2; font-size: 1.95em; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); }
+        .hexm .sheen {
+            position: absolute; inset: 0; z-index: 3; pointer-events: none;
+            clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+            background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,0.5) 48%, transparent 58%);
+            background-size: 250% 250%;
+            animation: hexSweep 4.2s linear infinite;
+        }
+        @keyframes hexSweep { 0% { background-position: 150% 0; } 100% { background-position: -90% 0; } }
+        .hexm.htier7 { animation: hexPulse 2.6s ease-in-out infinite; }
+        @keyframes hexPulse {
+            0%,100% { filter: drop-shadow(0 8px 14px rgba(0,0,0,0.5)); }
+            50% { filter: drop-shadow(0 8px 24px var(--accent-glow)); }
+        }
+        /* Metall-Töne je Rang */
+        .htier0 { --rim: conic-gradient(from 210deg,#3a463c,#5c6a5e,#788577,#4a564c,#3a463c,#68746a,#3a463c); }
+        .htier0 .ico { opacity: 0.5; }
+        .htier0 .sheen { display: none; }
+        .htier1 { --rim: conic-gradient(from 210deg,#6b4423,#c8813f,#f0b46a,#a5642e,#6b4423,#d18b46,#6b4423); }
+        .htier2 { --rim: conic-gradient(from 210deg,#5c3f18,#a9762f,#e4c07a,#8a5f22,#5c3f18,#c39a4e,#5c3f18); }
+        .htier3 { --rim: conic-gradient(from 210deg,#5c666c,#c3ccd2,#ffffff,#9aa3a9,#5c666c,#d6dde1,#5c666c); }
+        .htier4 { --rim: conic-gradient(from 210deg,#7d6412,#d9bb52,#f8ea9e,#b89a34,#7d6412,#ecd06a,#7d6412); }
+        .htier5 { --rim: conic-gradient(from 210deg,#7a560a,#d4af37,#fbe196,#b58e22,#7a560a,#e6c34e,#7a560a); }
+        .htier6 { --rim: conic-gradient(from 210deg,#4e6155,#bfe0cb,#ffffff,#9cc0a8,#4e6155,#d8efdf,#4e6155); }
+        .htier7 { --rim: conic-gradient(from 210deg,#166b34,#33c95a,#d6ffe2,#e6c34e,#1f8f45,#f8ea9e,#166b34); }
+        .htier7 .inner { background: radial-gradient(circle at 40% 30%, #123a20, #06120a 80%); }
+        .bcard-pips { display: flex; justify-content: center; gap: 4px; margin-top: 8px; }
+        .bcard-pips span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.13); }
+        .bcard-pips span.on { background: var(--accent); box-shadow: 0 0 5px var(--accent-glow); }
+
+        /* Aufklappbare Stufen-Liste je Badge */
+        .bcard { cursor: pointer; }
+        .bcard-expand-hint { font-size: 0.68em; color: var(--text-muted); margin-top: 10px; transition: color 0.2s; }
+        .bcard:hover .bcard-expand-hint { color: var(--accent); }
+        .bcard.expanded .bcard-expand-hint { color: var(--accent); }
+        .bcard-detail { display: none; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px; text-align: left; }
+        .bcard.expanded .bcard-detail { display: block; animation: tabFade 0.25s ease; }
+        .brow { display: flex; align-items: flex-start; gap: 8px; padding: 6px 4px; font-size: 0.76em; border-radius: 6px; }
+        .brow.cur { background: rgba(139,195,74,0.14); }
+        .brow:not(.done) { opacity: 0.5; }
+        .brow-hex { width: 14px; height: 16px; flex: none; margin-top: 2px; clip-path: polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%); background: var(--rim, #4a564c); }
+        .brow-main { flex: 1; min-width: 0; }
+        .brow-name { font-weight: 600; color: var(--text-primary); }
+        .brow-sub { color: var(--text-muted); font-size: 0.9em; margin-top: 1px; }
+        .brow-status { white-space: nowrap; }
+        .brow.done .brow-status { color: var(--accent); }
+
+        @media (max-width: 768px) {
+            .main-tab { padding: 10px 22px; font-size: 0.92em; }
+            .hexm { width: 78px; height: 86px; }
+            .hexm .ico { font-size: 1.6em; }
+        }
     </style>
 </head>
 <body>
@@ -1795,6 +2080,12 @@
         </div>
     </div>
 
+    <div class="main-tabs">
+        <button class="main-tab active" id="tabBtnOverview" onclick="switchMainTab('overview')">🌍 Übersicht</button>
+        <button class="main-tab" id="tabBtnBadges" onclick="switchMainTab('badges')">🏅 Badges</button>
+    </div>
+
+    <div id="tab-overview" class="tab-panel active">
     <div class="filter-section">
         <div class="filter-row" style="margin-bottom: 15px;">
             <div class="filter-group" style="flex: 2;">
@@ -1934,6 +2225,45 @@
         <div id="gallery" class="gallery"></div>
         <button id="loadMore" class="load-more" onclick="loadMoreGallery()">Mehr laden</button>
     </div>
+    </div><!-- /tab-overview -->
+
+    <div id="tab-badges" class="tab-panel">
+        <div class="section">
+            <h2 class="section-title">🏅 Badges <span style="font-size:0.5em;color:var(--text-muted);font-weight:400;">nur Research Grade</span></h2>
+            <div class="badges-intro" id="badgesHint"></div>
+
+            <div class="badges-subtitle">🌟 Sammel-Ränge</div>
+            <div class="badges-grid" id="badgesOverview"></div>
+
+            <div id="countryMap"></div>
+            <div class="countrymap-legend" id="countryMapLegend">
+                <span><span class="cml-swatch" style="background:#8bc34a;"></span> besucht (Research Grade)</span>
+                <span><span class="cml-swatch" style="background:#2a3a26;"></span> noch nicht</span>
+                <span id="countryMapNote" style="color:var(--text-muted);"></span>
+            </div>
+
+            <div class="badges-subtitle">🧬 Arten je Gruppe <span style="font-size:0.6em;color:var(--text-muted);font-weight:400;">(Staffelung nach weltweiter Artenzahl)</span></div>
+            <div class="badges-grid" id="badgesGroups"></div>
+        </div>
+
+        <div class="mc-section" id="mcSection" style="display:none;">
+            <details class="mc-details" id="mcDetails">
+                <summary class="mc-summary">
+                    <span>🌍 Länder manuell zuordnen</span>
+                    <span class="badges-hint" id="mcHint"></span>
+                    <span class="badges-chevron">▼</span>
+                </summary>
+                <div class="mc-body">
+                    <p style="color:var(--text-secondary);font-size:0.88em;margin:4px 0 4px;">Beobachtungen ohne erkanntes Land. Ordne ein Land zu – die Zuordnung wird sofort gespeichert und hat Vorrang vor der automatischen Erkennung.</p>
+                    <div class="mc-actions">
+                        <button class="mc-btn" onclick="exportManualCountries()">📋 Als Code exportieren</button>
+                        <button class="mc-btn" onclick="renderManualCountryPanel()">🔄 Aktualisieren</button>
+                    </div>
+                    <div class="mc-list" id="mcList"></div>
+                </div>
+            </details>
+        </div>
+    </div><!-- /tab-badges -->
 
     <div class="author-section" id="authorSection">
         <div class="author-container">
@@ -2478,6 +2808,7 @@
                     identifications: obs.num_identification_agreements || 0
                 }));
 
+                reapplyCountries();  // manuelle Zuordnungen + Ortscache berücksichtigen
                 filteredObservations = [...allObservations];
 
                 // Log unrecognized places to console
@@ -2551,24 +2882,17 @@
                 }
                 savePlacesCache(cache);
 
-                // Land je Beobachtung setzen: erstes place mit admin_level 0
-                let changed = 0;
-                allObservations.forEach(o => {
-                    for (const id of (o.placeIds || [])) {
-                        const info = cache[id];
-                        if (info && info.lvl === 0 && info.country) {
-                            if (o.country !== info.country) changed++;
-                            o.country = info.country;
-                            break;
-                        }
-                    }
-                });
+                // Länder deterministisch neu bestimmen (manuell > place_ids > Ortstext > Datum)
+                const before = allObservations.map(o => o.country);
+                reapplyCountries();
+                const changed = allObservations.reduce((n, o, i) => n + (o.country !== before[i] ? 1 : 0), 0);
 
                 if (changed) {
                     console.log(`🌍 ${changed} Länder über API-Ortsdaten präzisiert.`);
                     saveToCache(allObservations);
                     populateCountryFilter();
                     applyFilters();
+                    renderBadges();
                 }
             } catch (e) {
                 console.warn('Länder-Anreicherung fehlgeschlagen:', e);
@@ -3133,6 +3457,8 @@
             updateCountriesGrid();
             updateTaxaGrid();
             updateViewModeCounts();
+            renderBadges();
+            renderManualCountryPanel();
             renderFsTaxaChips();
             // #8: Aus URL geladenen Zeitraum einmalig automatisch auswerten
             if (!fsAutoRan && (document.getElementById('fsFrom').value || document.getElementById('fsTo').value)) {
@@ -3158,6 +3484,541 @@
             document.getElementById('authorObs').textContent = allObservations.length.toLocaleString('de-DE');
             document.getElementById('authorSpecies').textContent = new Set(allObservations.filter(o => o.taxonId).map(o => o.taxonId)).size.toLocaleString('de-DE');
             document.getElementById('authorCountries').textContent = allCountries.size.toLocaleString('de-DE');
+        }
+
+        // ========================================================================
+        // ===== BELOHNUNGS-BADGES ================================================
+        // ========================================================================
+
+        // Land (deutsch) -> [ISO_A3 für Weltkarte, Kontinent]
+        const COUNTRY_META = {
+            'Deutschland': ['DEU', 'Europa'],
+            'Spanien': ['ESP', 'Europa'],
+            'Frankreich': ['FRA', 'Europa'],
+            'Italien': ['ITA', 'Europa'],
+            'Österreich': ['AUT', 'Europa'],
+            'Schweiz': ['CHE', 'Europa'],
+            'Niederlande': ['NLD', 'Europa'],
+            'Belgien': ['BEL', 'Europa'],
+            'Portugal': ['PRT', 'Europa'],
+            'Griechenland': ['GRC', 'Europa'],
+            'Kroatien': ['HRV', 'Europa'],
+            'Polen': ['POL', 'Europa'],
+            'Tschechien': ['CZE', 'Europa'],
+            'Ungarn': ['HUN', 'Europa'],
+            'Großbritannien': ['GBR', 'Europa'],
+            'Irland': ['IRL', 'Europa'],
+            'Schweden': ['SWE', 'Europa'],
+            'Norwegen': ['NOR', 'Europa'],
+            'Dänemark': ['DNK', 'Europa'],
+            'Finnland': ['FIN', 'Europa'],
+            'USA': ['USA', 'Nordamerika'],
+            'Kanada': ['CAN', 'Nordamerika'],
+            'Mexiko': ['MEX', 'Nordamerika'],
+            'Brasilien': ['BRA', 'Südamerika'],
+            'Australien': ['AUS', 'Ozeanien'],
+            'Japan': ['JPN', 'Asien'],
+            'China': ['CHN', 'Asien'],
+            'Indien': ['IND', 'Asien'],
+            'Südafrika': ['ZAF', 'Afrika'],
+            'Thailand': ['THA', 'Asien'],
+            'Indonesien': ['IDN', 'Asien'],
+            'Türkei': ['TUR', 'Asien'],
+            'Ägypten': ['EGY', 'Afrika'],
+            'Marokko': ['MAR', 'Afrika'],
+            'Kenia': ['KEN', 'Afrika'],
+            'Tansania': ['TZA', 'Afrika'],
+            'Costa Rica': ['CRI', 'Nordamerika'],
+            'Ecuador': ['ECU', 'Südamerika'],
+            'Peru': ['PER', 'Südamerika'],
+            'Argentinien': ['ARG', 'Südamerika'],
+            'Chile': ['CHL', 'Südamerika'],
+            'Kolumbien': ['COL', 'Südamerika'],
+            'Neuseeland': ['NZL', 'Ozeanien'],
+            'Singapur': ['SGP', 'Asien'],
+            'Malaysia': ['MYS', 'Asien'],
+            'Philippinen': ['PHL', 'Asien'],
+            'Vietnam': ['VNM', 'Asien'],
+            'Slowenien': ['SVN', 'Europa'],
+            'Slowakei': ['SVK', 'Europa'],
+            'Rumänien': ['ROU', 'Europa'],
+            'Bulgarien': ['BGR', 'Europa'],
+            'Luxemburg': ['LUX', 'Europa'],
+            'Malta': ['MLT', 'Europa'],
+            'Zypern': ['CYP', 'Europa'],
+            'Island': ['ISL', 'Europa'],
+            'Estland': ['EST', 'Europa'],
+            'Lettland': ['LVA', 'Europa'],
+            'Litauen': ['LTU', 'Europa'],
+            'Serbien': ['SRB', 'Europa'],
+            'Montenegro': ['MNE', 'Europa'],
+            'Albanien': ['ALB', 'Europa'],
+            'Nordmazedonien': ['MKD', 'Europa'],
+            'Bosnien': ['BIH', 'Europa'],
+            'Ukraine': ['UKR', 'Europa'],
+            'Russland': ['RUS', 'Europa'],
+            'Belarus': ['BLR', 'Europa'],
+            'Moldawien': ['MDA', 'Europa'],
+            'Georgien': ['GEO', 'Asien'],
+            'Armenien': ['ARM', 'Asien'],
+            'Aserbaidschan': ['AZE', 'Asien'],
+            'Kasachstan': ['KAZ', 'Asien'],
+            'Usbekistan': ['UZB', 'Asien'],
+            'Sri Lanka': ['LKA', 'Asien'],
+            'Nepal': ['NPL', 'Asien'],
+            'Bangladesh': ['BGD', 'Asien'],
+            'Pakistan': ['PAK', 'Asien'],
+            'Afghanistan': ['AFG', 'Asien'],
+            'Iran': ['IRN', 'Asien'],
+            'Irak': ['IRQ', 'Asien'],
+            'Saudi-Arabien': ['SAU', 'Asien'],
+            'VAE': ['ARE', 'Asien'],
+            'Israel': ['ISR', 'Asien'],
+            'Jordanien': ['JOR', 'Asien'],
+            'Libanon': ['LBN', 'Asien'],
+            'Katar': ['QAT', 'Asien'],
+            'Kuwait': ['KWT', 'Asien'],
+            'Oman': ['OMN', 'Asien'],
+            'Bahrain': ['BHR', 'Asien'],
+            'Tunesien': ['TUN', 'Afrika'],
+            'Algerien': ['DZA', 'Afrika'],
+            'Libyen': ['LBY', 'Afrika'],
+            'Nigeria': ['NGA', 'Afrika'],
+            'Ghana': ['GHA', 'Afrika'],
+            'Senegal': ['SEN', 'Afrika'],
+            'Elfenbeinküste': ['CIV', 'Afrika'],
+            'Kamerun': ['CMR', 'Afrika'],
+            'Äthiopien': ['ETH', 'Afrika'],
+            'Uganda': ['UGA', 'Afrika'],
+            'Ruanda': ['RWA', 'Afrika'],
+            'Namibia': ['NAM', 'Afrika'],
+            'Botswana': ['BWA', 'Afrika'],
+            'Simbabwe': ['ZWE', 'Afrika'],
+            'Sambia': ['ZMB', 'Afrika'],
+            'Mosambik': ['MOZ', 'Afrika'],
+            'Madagaskar': ['MDG', 'Afrika'],
+            'Mauritius': ['MUS', 'Afrika'],
+            'Seychellen': ['SYC', 'Afrika'],
+            'Südkorea': ['KOR', 'Asien'],
+            'Taiwan': ['TWN', 'Asien'],
+            'Hongkong': ['HKG', 'Asien'],
+            'Kambodscha': ['KHM', 'Asien'],
+            'Laos': ['LAO', 'Asien'],
+            'Myanmar': ['MMR', 'Asien'],
+            'Mongolei': ['MNG', 'Asien'],
+            'Panama': ['PAN', 'Nordamerika'],
+            'Guatemala': ['GTM', 'Nordamerika'],
+            'Honduras': ['HND', 'Nordamerika'],
+            'Nicaragua': ['NIC', 'Nordamerika'],
+            'El Salvador': ['SLV', 'Nordamerika'],
+            'Belize': ['BLZ', 'Nordamerika'],
+            'Kuba': ['CUB', 'Nordamerika'],
+            'Jamaika': ['JAM', 'Nordamerika'],
+            'Dom. Republik': ['DOM', 'Nordamerika'],
+            'Puerto Rico': ['PRI', 'Nordamerika'],
+            'Trinidad': ['TTO', 'Nordamerika'],
+            'Bahamas': ['BHS', 'Nordamerika'],
+            'Barbados': ['BRB', 'Nordamerika'],
+            'Venezuela': ['VEN', 'Südamerika'],
+            'Uruguay': ['URY', 'Südamerika'],
+            'Paraguay': ['PRY', 'Südamerika'],
+            'Bolivien': ['BOL', 'Südamerika'],
+            'Guyana': ['GUY', 'Südamerika'],
+            'Suriname': ['SUR', 'Südamerika'],
+            'Fidschi': ['FJI', 'Ozeanien'],
+            'Papua-Neuguinea': ['PNG', 'Ozeanien'],
+            'Malediven': ['MDV', 'Asien'],
+            'Brunei': ['BRN', 'Asien'],
+            'Osttimor': ['TLS', 'Asien'],
+            'Bhutan': ['BTN', 'Asien'],
+            'Liechtenstein': ['LIE', 'Europa'],
+            'Monaco': ['MCO', 'Europa'],
+            'San Marino': ['SMR', 'Europa'],
+            'Andorra': ['AND', 'Europa'],
+            'Vatikan': ['VAT', 'Europa'],
+            'Kap Verde': ['CPV', 'Afrika'],
+            'Réunion': ['REU', 'Afrika'],
+            'Französisch-Guayana': ['GUF', 'Südamerika'],
+            'Martinique': ['MTQ', 'Nordamerika'],
+            'Guadeloupe': ['GLP', 'Nordamerika'],
+            'Neukaledonien': ['NCL', 'Ozeanien'],
+            'Französisch-Polynesien': ['PYF', 'Ozeanien'],
+            'Kanarische Inseln': ['ESP', 'Europa'],
+            'Azoren': ['PRT', 'Europa'],
+            'Madeira': ['PRT', 'Europa'],
+            'Balearen': ['ESP', 'Europa'],
+            'Gibraltar': ['GBR', 'Europa'],
+            'Färöer': ['DNK', 'Europa'],
+            'Grönland': ['GRL', 'Nordamerika']
+        };
+
+        // Natur-Ränge (aufsteigend)
+        const BADGE_RANKS = [
+            { name: 'Keimling', icon: '🌱' },
+            { name: 'Spross',   icon: '🌿' },
+            { name: 'Blatt',    icon: '🍃' },
+            { name: 'Halm',     icon: '🌾' },
+            { name: 'Baum',     icon: '🌳' },
+            { name: 'Hain',     icon: '🌲' },
+            { name: 'Urwald',   icon: '🏆' }
+        ];
+
+        // Kategoriespezifische Rang-Namen (7 Stufen, Tier 1 → 7)
+        const RANK_NAMES = {
+            total:          ['Spürnase', 'Beobachter', 'Sammler', 'Kenner', 'Forscher', 'Experte', 'Meister'],
+            laender:        ['Daheim', 'Grenzgänger', 'Reisender', 'Vielreisender', 'Globetrotter', 'Kosmopolit', 'Weltenbummler'],
+            kontinente:     ['Heimat', 'Nachbar', 'Entdecker', 'Fernreisender', 'Erdumrunder', 'Kontinentsammler', 'Weltreisender'],
+            kalender:       ['Auftakt', 'Wochenlauf', 'Monatslauf', 'Jahreszeit', 'Halbjahr', 'Fast rund', 'Ewiger Kalender'],
+            bioblitz:       ['Auftakt', 'Guter Tag', 'Sammeltag', 'Bioblitz', 'Glückstag', 'Traumtag', 'Sternstunde'],
+            'Aves':           ['Ei', 'Küken', 'Nestling', 'Ästling', 'Flügge', 'Vogel', 'Schwarm'],
+            'Mammalia':       ['Säugling', 'Welpe', 'Jungtier', 'Halbstark', 'Ausgewachsen', 'Leittier', 'Rudel'],
+            'Reptilia':       ['Gelege', 'Schlüpfling', 'Jungtier', 'Häuter', 'Schuppenträger', 'Sonnenkönig', 'Drache'],
+            'Amphibia':       ['Laich', 'Kaulquappe', 'Landgänger', 'Springer', 'Lurch', 'Quaker', 'Froschkönig'],
+            'Actinopterygii': ['Laich', 'Larve', 'Brütling', 'Jungfisch', 'Fisch', 'Schwarm', 'Großschwarm'],
+            'Insecta':        ['Ei', 'Larve', 'Puppe', 'Imago', 'Flieger', 'Schwarm', 'Volk'],
+            'Arachnida':      ['Kokon', 'Jungspinne', 'Häuter', 'Netzbauer', 'Spinne', 'Jägerin', 'Kolonie'],
+            'Mollusca':       ['Gelege', 'Larve', 'Jungtier', 'Schalenträger', 'Weichtier', 'Perlträger', 'Kolonie'],
+            'Plantae':        ['Samen', 'Keimling', 'Setzling', 'Spross', 'Pflanze', 'Blüte', 'Dickicht'],
+            'Fungi':          ['Spore', 'Myzel', 'Knopf', 'Fruchtkörper', 'Pilz', 'Hexenring', 'Pilzwald'],
+            'Animalia':       ['Ei', 'Larve', 'Jungtier', 'Krabbler', 'Wirbelloses', 'Gruppe', 'Kolonie']
+        };
+        // Icons der Sammel-Ränge (Gruppen nutzen ihr taxaConfig-Icon)
+        const OVERVIEW_ICON = { total: '🐾', laender: '🌍', kontinente: '🗺️', kalender: '📅', bioblitz: '☀️' };
+
+        // Schwellen je Kategorie
+        const LADDERS = {
+            total:      [100, 500, 1000, 2500, 5000, 10000, 20000],
+            laender:    [1, 3, 7, 15, 25, 40, 60],
+            kontinente: [1, 2, 3, 4, 5, 6, 7],
+            kalender:   [30, 90, 180, 270, 320, 355, 366],
+            bioblitz:   [5, 15, 30, 50, 75, 110, 150]
+        };
+        // Gruppen-Ladders (Staffelung nach weltweiter Artenzahl)
+        const GROUP_LADDER_A  = [10, 25, 50, 100, 250, 500, 1000];        // artenarm (<15k): Vögel, Säuger, Reptilien, Amphibien
+        const GROUP_LADDER_BC = [25, 100, 500, 1000, 2500, 5000, 10000];  // alle übrigen
+        const GROUP_LADDERS = {
+            'Aves': GROUP_LADDER_A, 'Mammalia': GROUP_LADDER_A, 'Reptilia': GROUP_LADDER_A, 'Amphibia': GROUP_LADDER_A,
+            'Actinopterygii': GROUP_LADDER_BC, 'Insecta': GROUP_LADDER_BC, 'Arachnida': GROUP_LADDER_BC,
+            'Mollusca': GROUP_LADDER_BC, 'Plantae': GROUP_LADDER_BC, 'Fungi': GROUP_LADDER_BC, 'Animalia': GROUP_LADDER_BC
+        };
+
+        // Rang für einen Wert bestimmen
+        function rankFor(value, ladder) {
+            let level = 0;
+            for (let i = 0; i < ladder.length; i++) if (value >= ladder[i]) level = i + 1;
+            const prevThreshold = level > 0 ? ladder[level - 1] : 0;
+            const next = level < ladder.length ? ladder[level] : null;
+            const progress = next === null ? 1 : Math.max(0, Math.min(1, (value - prevThreshold) / (next - prevThreshold)));
+            return {
+                level,
+                rank: level > 0 ? BADGE_RANKS[level - 1] : null,
+                next,
+                nextRank: level < ladder.length ? BADGE_RANKS[level] : null,
+                progress
+            };
+        }
+
+        // Kennzahlen aus allen Research-Grade-Beobachtungen berechnen
+        function computeBadgeMetrics() {
+            const research = allObservations.filter(o => o.quality === 'research');
+            const totalSpecies = new Set(research.filter(o => o.taxonId).map(o => o.taxonId)).size;
+
+            const groupSpecies = {};
+            research.forEach(o => {
+                if (o.taxon && o.taxonId) (groupSpecies[o.taxon] ||= new Set()).add(o.taxonId);
+            });
+
+            const countries = new Set(research.map(o => o.country).filter(Boolean));
+            const continents = new Set([...countries].map(c => COUNTRY_META[c]?.[1]).filter(Boolean));
+
+            const days = new Set(research.map(o => (o.date && o.date.length >= 10) ? o.date.slice(5, 10) : null).filter(Boolean));
+
+            const perDay = {};
+            research.forEach(o => { if (o.date && o.taxonId) (perDay[o.date] ||= new Set()).add(o.taxonId); });
+            let bioblitz = 0;
+            Object.values(perDay).forEach(s => { if (s.size > bioblitz) bioblitz = s.size; });
+
+            return { totalSpecies, groupSpecies, countries, continents, days, bioblitz };
+        }
+
+        // Wann wurde welche Stufe erreicht? (kumulativ zählende Kategorien)
+        function reachedDistinct(research, keyFn, ladder) {
+            const events = research.map(o => ({ date: o.date || null, key: keyFn(o) })).filter(e => e.key != null);
+            events.sort((a, b) => (a.date && b.date) ? (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) : (a.date ? -1 : b.date ? 1 : 0));
+            const seen = new Set();
+            const res = ladder.map(t => ({ threshold: t, reached: false, date: null }));
+            for (const e of events) {
+                const before = seen.size;
+                seen.add(e.key);
+                if (seen.size !== before) {
+                    for (const r of res) if (!r.reached && seen.size >= r.threshold) { r.reached = true; r.date = e.date; }
+                }
+            }
+            return res;
+        }
+        // Wann wurde welche Stufe erreicht? (Bester Tag = laufendes Maximum)
+        function reachedMax(research, ladder) {
+            const perDay = {};
+            research.forEach(o => { if (o.date && o.taxonId) (perDay[o.date] ||= new Set()).add(o.taxonId); });
+            const days = Object.entries(perDay).map(([date, s]) => ({ date, count: s.size })).sort((a, b) => a.date < b.date ? -1 : 1);
+            let mx = 0;
+            const res = ladder.map(t => ({ threshold: t, reached: false, date: null }));
+            for (const d of days) {
+                if (d.count > mx) {
+                    mx = d.count;
+                    for (const r of res) if (!r.reached && mx >= r.threshold) { r.reached = true; r.date = d.date; }
+                }
+            }
+            return res;
+        }
+
+        // HTML einer einzelnen Badge-Karte
+        function badgeCardHTML(label, value, ladder, opts = {}) {
+            const r = rankFor(value, ladder);
+            const locked = r.level === 0;
+            const maxed = r.level === ladder.length;
+            const names = opts.names || BADGE_RANKS.map(x => x.name);
+            const icon = opts.icon || '🌿';
+            const rankName = locked ? 'Noch kein Rang' : names[r.level - 1];
+            const nextName = r.level < ladder.length ? names[r.level] : null;
+            const displayVal = (opts.max ? `${value.toLocaleString('de-DE')}<small> / ${opts.max}</small>` : value.toLocaleString('de-DE'));
+            const nextText = maxed ? 'Höchstrang erreicht 🎉' : `noch ${(r.next - value).toLocaleString('de-DE')} bis ${nextName}`;
+
+            const pips = BADGE_RANKS.map((_, i) => `<span class="${i < r.level ? 'on' : ''}"></span>`).join('');
+
+            const unit = opts.unit || '';
+            const detailRows = (opts.reached || ladder.map(t => ({ threshold: t, reached: value >= t, date: null }))).map((t, i) => {
+                const cur = (i + 1) === r.level;
+                const status = t.reached ? (t.date ? '✓ ' + formatDateDE(t.date) : '✓ erreicht') : `🔒 noch ${(t.threshold - value).toLocaleString('de-DE')}`;
+                return `<div class="brow ${t.reached ? 'done' : ''} ${cur ? 'cur' : ''}">
+                            <span class="brow-hex htier${i + 1}"></span>
+                            <div class="brow-main">
+                                <div class="brow-name">${names[i]}</div>
+                                <div class="brow-sub">ab ${t.threshold.toLocaleString('de-DE')}${unit} · <span class="brow-status">${status}</span></div>
+                            </div>
+                        </div>`;
+            }).join('');
+
+            return `
+                <div class="bcard ${maxed ? 'bcard-max' : ''} ${locked ? 'bcard-locked' : ''}" onclick="this.classList.toggle('expanded')">
+                    <div class="hexm htier${r.level}">
+                        <div class="plate"></div><div class="inner"></div>
+                        <span class="ico">${icon}</span>
+                        <div class="sheen"></div>
+                    </div>
+                    <div class="bcard-cat">${label}</div>
+                    <div class="bcard-rank ${locked ? 'bcard-rank-none' : ''}">${rankName}</div>
+                    <div class="bcard-value">${displayVal}${opts.suffix || ''}</div>
+                    <div class="bcard-bar"><div class="bcard-bar-fill" style="width:${Math.round(r.progress * 100)}%"></div></div>
+                    <div class="bcard-next">${nextText}</div>
+                    <div class="bcard-pips">${pips}</div>
+                    ${opts.mapToggle ? `<button class="bcard-maptoggle" onclick="event.stopPropagation(); toggleCountryMap()">🗺️ Weltkarte ein-/ausblenden</button>` : ''}
+                    <div class="bcard-expand-hint">▾ Stufen anzeigen</div>
+                    <div class="bcard-detail">${detailRows}</div>
+                </div>`;
+        }
+
+        // Badges rendern
+        function renderBadges() {
+            const overview = document.getElementById('badgesOverview');
+            const groupsEl = document.getElementById('badgesGroups');
+            if (!overview || !groupsEl) return;
+
+            const m = computeBadgeMetrics();
+            const research = allObservations.filter(o => o.quality === 'research');
+
+            overview.innerHTML = [
+                badgeCardHTML('Arten gesamt', m.totalSpecies, LADDERS.total, { names: RANK_NAMES.total, icon: OVERVIEW_ICON.total, unit: ' Arten', reached: reachedDistinct(research, o => o.taxonId, LADDERS.total) }),
+                badgeCardHTML('Länder', m.countries.size, LADDERS.laender, { names: RANK_NAMES.laender, icon: OVERVIEW_ICON.laender, mapToggle: true, reached: reachedDistinct(research, o => o.country, LADDERS.laender) }),
+                badgeCardHTML('Kontinente', m.continents.size, LADDERS.kontinente, { names: RANK_NAMES.kontinente, icon: OVERVIEW_ICON.kontinente, max: 7, reached: reachedDistinct(research, o => COUNTRY_META[o.country]?.[1] || null, LADDERS.kontinente) }),
+                badgeCardHTML('Kalendertage', m.days.size, LADDERS.kalender, { names: RANK_NAMES.kalender, icon: OVERVIEW_ICON.kalender, max: 366, unit: ' Tage', reached: reachedDistinct(research, o => (o.date && o.date.length >= 10) ? o.date.slice(5, 10) : null, LADDERS.kalender) }),
+                badgeCardHTML('Bester Tag', m.bioblitz, LADDERS.bioblitz, { names: RANK_NAMES.bioblitz, icon: OVERVIEW_ICON.bioblitz, suffix: '<small> Arten</small>', unit: ' Arten', reached: reachedMax(research, LADDERS.bioblitz) })
+            ].join('');
+
+            groupsEl.innerHTML = Object.entries(taxaConfig).map(([key, cfg]) => {
+                const count = m.groupSpecies[key]?.size || 0;
+                const ladder = GROUP_LADDERS[key] || GROUP_LADDER_BC;
+                return badgeCardHTML(cfg.name, count, ladder, { names: RANK_NAMES[key], icon: cfg.icon, unit: ' Arten', reached: reachedDistinct(research.filter(o => o.taxon === key), o => o.taxonId, ladder) });
+            }).join('');
+
+            // Kurz-Zusammenfassung im Kopf des Reiters
+            const trLevel = rankFor(m.totalSpecies, LADDERS.total).level;
+            const trName = trLevel > 0 ? RANK_NAMES.total[trLevel - 1] : '';
+            document.getElementById('badgesHint').innerHTML =
+                `🐾 ${trName ? trName + ' · ' : ''}${m.totalSpecies.toLocaleString('de-DE')} Arten · 🌍 ${m.countries.size} Länder · 🗺️ ${m.continents.size} Kontinente · 📅 ${m.days.size} Tage`;
+
+            // Weltkarte (falls offen) neu einfärben
+            _visitedISO = new Set([...m.countries].map(c => COUNTRY_META[c]?.[0]).filter(Boolean));
+            if (countryGeoLayer) countryGeoLayer.setStyle(countryStyle);
+        }
+
+        // ---- Länder-Weltkarte (lazy) ----
+        let countryMap = null, countryGeoLayer = null, _visitedISO = new Set();
+
+        function countryStyle(feature) {
+            const on = _visitedISO.has(feature.id);
+            return { fillColor: on ? '#8bc34a' : '#2a3a26', fillOpacity: on ? 0.9 : 0.55, color: '#0f1a0d', weight: 0.7 };
+        }
+
+        async function initCountryMap() {
+            if (countryMap) return;
+            countryMap = L.map('countryMap', { attributionControl: false, worldCopyJump: true, minZoom: 1 }).setView([25, 5], 1.4);
+            try {
+                const geo = await (await fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')).json();
+                countryGeoLayer = L.geoJSON(geo, {
+                    style: countryStyle,
+                    onEachFeature: (f, l) => l.bindTooltip(f.properties?.name || f.id, { sticky: true })
+                }).addTo(countryMap);
+                document.getElementById('countryMapNote').textContent = 'Tipp: Überseegebiete werden ggf. dem Mutterland zugeordnet.';
+            } catch (e) {
+                console.warn('Weltkarte konnte nicht geladen werden:', e);
+                document.getElementById('countryMapNote').textContent = '⚠️ Weltkarte konnte nicht geladen werden (Internet nötig).';
+            }
+        }
+
+        function toggleCountryMap() {
+            const el = document.getElementById('countryMap');
+            const lg = document.getElementById('countryMapLegend');
+            const show = !el.classList.contains('visible');
+            el.classList.toggle('visible', show);
+            lg.classList.toggle('visible', show);
+            if (show) {
+                initCountryMap().then(() => setTimeout(() => {
+                    if (countryMap) { countryMap.invalidateSize(); countryGeoLayer && countryGeoLayer.setStyle(countryStyle); }
+                }, 80));
+            }
+        }
+
+        // Reiter (Übersicht / Badges) umschalten
+        function switchMainTab(name) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+            document.getElementById('tabBtnOverview').classList.toggle('active', name === 'overview');
+            document.getElementById('tabBtnBadges').classList.toggle('active', name === 'badges');
+            if (name === 'badges' && countryMap) setTimeout(() => countryMap.invalidateSize(), 60);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ========================================================================
+        // ===== MANUELLE LÄNDER-ZUORDNUNG ========================================
+        // ========================================================================
+
+        // Fest im Code hinterlegte Zuordnungen (per Export-Button befüllbar, dann dauerhaft & für alle sichtbar)
+        const MANUAL_COUNTRY_FIXED = {};
+
+        const MANUAL_COUNTRY_KEY = 'inat_manual_country_v1';
+        let manualCountries = loadManualCountries();
+
+        function loadManualCountries() {
+            try { return JSON.parse(localStorage.getItem(MANUAL_COUNTRY_KEY)) || {}; }
+            catch (e) { return {}; }
+        }
+        function saveManualCountries() {
+            try { localStorage.setItem(MANUAL_COUNTRY_KEY, JSON.stringify(manualCountries)); }
+            catch (e) { console.warn('Manuelle Länder speichern fehlgeschlagen:', e); }
+        }
+
+        // Land je Beobachtung deterministisch neu bestimmen (manuell > place_ids > Ortstext > Datum)
+        function reapplyCountries() {
+            const cache = loadPlacesCache();
+            const merged = { ...MANUAL_COUNTRY_FIXED, ...manualCountries };
+            allObservations.forEach(o => {
+                let c = null;
+                if (o.place && merged[o.place]) c = merged[o.place];
+                else if (merged['#' + o.id]) c = merged['#' + o.id];
+                else {
+                    for (const id of (o.placeIds || [])) {
+                        const info = cache[id];
+                        if (info && info.lvl === 0 && info.country) { c = info.country; break; }
+                    }
+                    if (!c) c = extractCountry(o.place) || getCountryByDate(o.date) || null;
+                }
+                o.country = c;
+            });
+        }
+
+        function setManualCountry(key, country) {
+            if (country) manualCountries[key] = country; else delete manualCountries[key];
+            saveManualCountries();
+            reapplyCountries();
+            populateCountryFilter();
+            applyFilters();
+            renderBadges();
+            saveToCache(allObservations);
+            renderManualCountryPanel();
+        }
+
+        let _countryOptionsCache = null;
+        function countryOptionsHTML(selected) {
+            if (!_countryOptionsCache) {
+                const names = [...new Set(countryDatabase.map(c => c.name))].sort((a, b) => a.localeCompare(b, 'de'));
+                _countryOptionsCache = names.map(n => ({ n, flag: getFlag(n) }));
+            }
+            return `<option value="">— Land wählen —</option>` +
+                _countryOptionsCache.map(o => `<option value="${escapeHtml(o.n)}"${o.n === selected ? ' selected' : ''}>${o.flag} ${escapeHtml(o.n)}</option>`).join('');
+        }
+
+        function renderManualCountryPanel() {
+            const isOwner = USER_ID === DEFAULT_USER;
+            const sec = document.getElementById('mcSection');
+            if (!sec) return;
+            if (!isOwner) { sec.style.display = 'none'; return; }
+            sec.style.display = '';
+
+            const list = document.getElementById('mcList');
+            const entries = [];
+            const placeGroups = {};
+            const placeless = [];
+
+            allObservations.forEach(o => {
+                if (o.country) return;
+                if (o.place) { (placeGroups[o.place] ||= { count: 0, url: o.url }).count++; }
+                else placeless.push(o);
+            });
+            Object.entries(placeGroups).forEach(([place, info]) =>
+                entries.push({ key: place, label: escapeHtml(place), sub: `<a href="${info.url}" target="_blank">Beispiel öffnen →</a>`, count: info.count }));
+            placeless.forEach(o =>
+                entries.push({ key: '#' + o.id, label: '<em>(kein Ortsname)</em>', sub: `${escapeHtml(o.name)} · ${formatDateDE(o.date)} · <a href="${o.url}" target="_blank">öffnen →</a>`, count: 1 }));
+
+            // Bereits (in diesem Browser) manuell zugeordnete Einträge ergänzen, damit sie änderbar bleiben
+            Object.keys(manualCountries).forEach(k => {
+                if (entries.some(e => e.key === k)) return;
+                let count = 0, url = '';
+                if (k.startsWith('#')) { const o = allObservations.find(x => x.id === +k.slice(1)); if (o) { count = 1; url = o.url; } }
+                else allObservations.forEach(o => { if (o.place === k) { count++; url = url || o.url; } });
+                entries.push({ key: k, label: k.startsWith('#') ? '<em>(kein Ortsname)</em>' : escapeHtml(k), sub: url ? `<a href="${url}" target="_blank">öffnen →</a>` : '', count });
+            });
+
+            entries.sort((a, b) => b.count - a.count);
+
+            document.getElementById('mcHint').textContent = `${entries.filter(e => !manualCountries[e.key]).length} offen · ${Object.keys(manualCountries).length} zugeordnet`;
+
+            if (!entries.length) { list.innerHTML = `<div class="mc-empty">🎉 Alle Beobachtungen haben ein erkanntes Land.</div>`; return; }
+
+            list.innerHTML = entries.map(e => {
+                const sel = manualCountries[e.key] || '';
+                return `
+                    <div class="mc-row ${sel ? 'assigned' : ''}">
+                        <div class="mc-place">${e.label}<br><small>${e.sub}</small></div>
+                        <div class="mc-count">${e.count}×</div>
+                        <select class="mc-select" onchange="setManualCountry(${JSON.stringify(e.key).replace(/"/g, '&quot;')}, this.value)">${countryOptionsHTML(sel)}</select>
+                    </div>`;
+            }).join('');
+        }
+
+        function exportManualCountries() {
+            const merged = { ...MANUAL_COUNTRY_FIXED, ...manualCountries };
+            const keys = Object.keys(merged);
+            if (!keys.length) { alert('Noch keine manuellen Zuordnungen vorhanden.'); return; }
+            const body = keys.sort().map(k => `            ${JSON.stringify(k)}: ${JSON.stringify(merged[k])}`).join(',\n');
+            const code = `        const MANUAL_COUNTRY_FIXED = {\n${body}\n        };`;
+            const msg = `${keys.length} Zuordnung(en) exportiert.\n\nErsetze im Quelltext die Zeile\n  const MANUAL_COUNTRY_FIXED = {};\ndurch den kopierten Block, damit die Zuordnungen dauerhaft und für alle Besucher gelten.`;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(code).then(() => alert('📋 In Zwischenablage kopiert!\n\n' + msg))
+                    .catch(() => window.prompt('Kopiere den Code:', code));
+            } else {
+                window.prompt('Kopiere den Code:', code);
+            }
+            console.log(code);
         }
 
         // Update map
@@ -3755,6 +4616,8 @@
             const cached = loadFromCache();
             if (cached) {
                 allObservations = cached;
+                reapplyCountries();  // manuelle Zuordnungen + Ortscache berücksichtigen
+                filteredObservations = [...allObservations];
                 updateUI();
                 document.getElementById('loadingOverlay').classList.add('hidden');
             }
