@@ -1857,6 +1857,23 @@
         .countrymap-legend span { display: inline-flex; align-items: center; gap: 6px; }
         .cml-swatch { width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); }
 
+        /* Jahres-Kalender (fehlende Tage) – Monatsblöcke */
+        #calYear { display: none; margin-top: 18px; }
+        #calYear.visible { display: block; }
+        .cal-legend { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 0.8em; color: var(--text-secondary); margin-bottom: 14px; }
+        .cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 14px; }
+        .cal-month { background: rgba(15,26,13,0.45); border: 1px solid var(--border); border-radius: 10px; padding: 9px 9px 11px; }
+        .cal-month h4 { font-size: 0.82em; color: var(--text-secondary); text-align: center; margin-bottom: 7px; font-family: 'Playfair Display', serif; font-weight: 700; }
+        .cal-wd { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 3px; }
+        .cal-wd span { font-size: 8px; color: var(--text-muted); text-align: center; }
+        .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .cal-d { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 9px; border-radius: 3px; background: #243218; color: var(--text-muted); }
+        .cal-d.on { background: var(--accent); color: #0f1a0d; font-weight: 700; }
+        .cal-d.empty { background: transparent; }
+        .cal-d.today { outline: 2px solid var(--accent-light); outline-offset: -1px; box-shadow: 0 0 7px var(--accent-glow); font-weight: 700; }
+        .cal-d.today:not(.on) { color: var(--text-primary); }
+
         /* Manuelle Länder-Zuordnung */
         .mc-section { padding: 0 40px; margin: 0 0 20px; }
         .mc-details { background: var(--bg-card); border: 1px solid var(--border); border-radius: 15px; overflow: hidden; }
@@ -2241,6 +2258,8 @@
                 <span><span class="cml-swatch" style="background:#2a3a26;"></span> noch nicht</span>
                 <span id="countryMapNote" style="color:var(--text-muted);"></span>
             </div>
+
+            <div id="calYear"></div>
 
             <div class="badges-subtitle">🧬 Arten je Gruppe <span style="font-size:0.6em;color:var(--text-muted);font-weight:400;">(Staffelung nach weltweiter Artenzahl)</span></div>
             <div class="badges-grid" id="badgesGroups"></div>
@@ -3813,6 +3832,7 @@
                     <div class="bcard-next">${nextText}</div>
                     <div class="bcard-pips">${pips}</div>
                     ${opts.mapToggle ? `<button class="bcard-maptoggle" onclick="event.stopPropagation(); toggleCountryMap()">🗺️ Weltkarte ein-/ausblenden</button>` : ''}
+                    ${opts.calToggle ? `<button class="bcard-maptoggle" onclick="event.stopPropagation(); toggleCalendar()">📅 Fehlende Tage anzeigen</button>` : ''}
                     <div class="bcard-expand-hint">▾ Stufen anzeigen</div>
                     <div class="bcard-detail">${detailRows}</div>
                 </div>`;
@@ -3831,7 +3851,7 @@
                 badgeCardHTML('Arten gesamt', m.totalSpecies, LADDERS.total, { names: RANK_NAMES.total, icon: OVERVIEW_ICON.total, unit: ' Arten', reached: reachedDistinct(research, o => o.taxonId, LADDERS.total) }),
                 badgeCardHTML('Länder', m.countries.size, LADDERS.laender, { names: RANK_NAMES.laender, icon: OVERVIEW_ICON.laender, mapToggle: true, reached: reachedDistinct(research, o => o.country, LADDERS.laender) }),
                 badgeCardHTML('Kontinente', m.continents.size, LADDERS.kontinente, { names: RANK_NAMES.kontinente, icon: OVERVIEW_ICON.kontinente, max: 7, reached: reachedDistinct(research, o => COUNTRY_META[o.country]?.[1] || null, LADDERS.kontinente) }),
-                badgeCardHTML('Kalendertage', m.days.size, LADDERS.kalender, { names: RANK_NAMES.kalender, icon: OVERVIEW_ICON.kalender, max: 366, unit: ' Tage', reached: reachedDistinct(research, o => (o.date && o.date.length >= 10) ? o.date.slice(5, 10) : null, LADDERS.kalender) }),
+                badgeCardHTML('Kalendertage', m.days.size, LADDERS.kalender, { names: RANK_NAMES.kalender, icon: OVERVIEW_ICON.kalender, max: 366, unit: ' Tage', calToggle: true, reached: reachedDistinct(research, o => (o.date && o.date.length >= 10) ? o.date.slice(5, 10) : null, LADDERS.kalender) }),
                 badgeCardHTML('Bester Tag', m.bioblitz, LADDERS.bioblitz, { names: RANK_NAMES.bioblitz, icon: OVERVIEW_ICON.bioblitz, suffix: '<small> Arten</small>', unit: ' Arten', reached: reachedMax(research, LADDERS.bioblitz) })
             ].join('');
 
@@ -3850,10 +3870,58 @@
             // Weltkarte (falls offen) neu einfärben
             _visitedISO = new Set([...m.countries].map(c => COUNTRY_META[c]?.[0]).filter(Boolean));
             if (countryGeoLayer) countryGeoLayer.setStyle(countryStyle);
+
+            // Kalender (falls offen) aktualisieren
+            _coveredDays = m.days;
+            if (document.getElementById('calYear')?.classList.contains('visible')) renderYearCalendar();
         }
 
         // ---- Länder-Weltkarte (lazy) ----
         let countryMap = null, countryGeoLayer = null, _visitedISO = new Set();
+        let _coveredDays = new Set();
+
+        // ---- Jahres-Kalender (fehlende Tage) ----
+        function renderYearCalendar() {
+            const el = document.getElementById('calYear');
+            if (!el) return;
+            const covered = _coveredDays || new Set();
+            const MN = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+            const WD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+            const REF = 2024;  // Schaltjahr als Layout-Referenz (Feb hat 29 Tage)
+            const now = new Date();
+            const todayKey = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            let months = '', total = 0, missing = 0;
+            for (let mo = 0; mo < 12; mo++) {
+                const first = (new Date(REF, mo, 1).getDay() + 6) % 7;  // Wochenstart Montag
+                const dim = new Date(REF, mo + 1, 0).getDate();
+                let cells = '';
+                for (let b = 0; b < first; b++) cells += '<span class="cal-d empty"></span>';
+                for (let d = 1; d <= dim; d++) {
+                    const key = `${String(mo + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const on = covered.has(key);
+                    const today = key === todayKey;
+                    total++; if (!on) missing++;
+                    cells += `<span class="cal-d ${on ? 'on' : ''} ${today ? 'today' : ''}" title="${d}. ${MN[mo]} – ${on ? 'beobachtet ✓' : 'fehlt'}${today ? ' (heute)' : ''}">${d}</span>`;
+                }
+                months += `<div class="cal-month"><h4>${MN[mo]}</h4><div class="cal-wd">${WD.map(w => `<span>${w}</span>`).join('')}</div><div class="cal-days">${cells}</div></div>`;
+            }
+
+            el.innerHTML = `
+                <div class="cal-legend">
+                    <span><span class="cml-swatch" style="background:#8bc34a;"></span> beobachtet (${(total - missing).toLocaleString('de-DE')})</span>
+                    <span><span class="cml-swatch" style="background:#243218;"></span> fehlt (${missing.toLocaleString('de-DE')})</span>
+                    <span><span class="cml-swatch" style="background:transparent;outline:2px solid var(--accent-light);outline-offset:-2px;"></span> heute</span>
+                </div>
+                <div class="cal-grid">${months}</div>`;
+        }
+
+        function toggleCalendar() {
+            const el = document.getElementById('calYear');
+            const show = !el.classList.contains('visible');
+            el.classList.toggle('visible', show);
+            if (show) renderYearCalendar();
+        }
 
         function countryStyle(feature) {
             const on = _visitedISO.has(feature.id);
