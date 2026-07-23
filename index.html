@@ -13,7 +13,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Naturbeob.">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
@@ -3971,7 +3973,11 @@
         // ========================================================================
 
         // Fest im Code hinterlegte Zuordnungen (per Export-Button befüllbar, dann dauerhaft & für alle sichtbar)
-        const MANUAL_COUNTRY_FIXED = {};
+        const MANUAL_COUNTRY_FIXED = {
+            // Xiamen/Fujian (Festland-China) direkt an der Grenze zu den taiwanisch
+            // verwalteten Kinmen-Inseln – iNaturalist ordnet den Punkt zeitweise Taiwan zu.
+            '#384196019': 'China'
+        };
 
         const MANUAL_COUNTRY_KEY = 'inat_manual_country_v1';
         let manualCountries = loadManualCountries();
