@@ -2072,6 +2072,43 @@
         .cal-d.today { outline: 2px solid var(--accent-light); outline-offset: -1px; box-shadow: 0 0 7px var(--accent-glow); font-weight: 700; }
         .cal-d.today:not(.on) { color: var(--text-primary); }
 
+        /* Einklappbare Sections (Erstbeob., Karte, Länder, Gruppen) */
+        .sec-collapse > .sec-summary {
+            list-style: none; cursor: pointer; user-select: none;
+            font-family: 'Playfair Display', serif;
+            color: var(--accent);
+            font-size: 1.9em;
+            margin-bottom: 25px;
+            display: flex; align-items: center; gap: 15px;
+        }
+        .sec-collapse > .sec-summary::-webkit-details-marker { display: none; }
+        .sec-collapse > .sec-summary .icon { width: 1em; height: 1em; }
+        .sec-collapse > .sec-summary .sec-chevron {
+            flex: 0 0 auto; font-size: 0.5em; color: var(--text-muted); transition: transform 0.3s;
+        }
+        .sec-collapse[open] > .sec-summary .sec-chevron { transform: rotate(180deg); }
+        .sec-collapse > .sec-summary::after {
+            content: ''; flex: 1; height: 2px;
+            background: linear-gradient(90deg, var(--border), transparent);
+        }
+        @media (max-width: 768px) { .sec-collapse > .sec-summary { font-size: 1.5em; margin-bottom: 18px; } }
+        @media (max-width: 480px) { .sec-collapse > .sec-summary { font-size: 1.35em; } }
+
+        /* Filter-Section einklappbar */
+        .filter-details { border-radius: 12px; overflow: hidden; }
+        .filter-summary {
+            list-style: none; cursor: pointer;
+            display: flex; align-items: center; gap: 10px;
+            padding: 6px 4px; user-select: none;
+            font-weight: 600; color: var(--text-primary);
+        }
+        .filter-summary::-webkit-details-marker { display: none; }
+        .filter-summary .icon { width: 1.1em; height: 1.1em; color: var(--accent); }
+        .filter-summary-hint { font-size: 0.82em; color: var(--accent-warm-strong); font-weight: 600; }
+        .filter-summary .badges-chevron { margin-left: auto; font-size: 0.75em; color: var(--text-muted); transition: transform 0.3s; }
+        .filter-details[open] .filter-summary .badges-chevron { transform: rotate(180deg); }
+        .filter-body { padding-top: 14px; }
+
         /* Manuelle Länder-Zuordnung */
         .mc-section { padding: 0 40px; margin: 0 0 20px; }
         .mc-details { background: var(--bg-card); border: 1px solid var(--border); border-radius: 15px; overflow: hidden; }
@@ -2306,6 +2343,14 @@
 
     <div id="tab-overview" class="tab-panel active">
     <div class="filter-section">
+      <details class="filter-details" id="filterDetails">
+        <summary class="filter-summary">
+            <svg class="icon"><use href="#icon-eye"/></svg>
+            <span>Filter &amp; Suche</span>
+            <span class="filter-summary-hint" id="filterSummaryHint"></span>
+            <span class="badges-chevron">▼</span>
+        </summary>
+        <div class="filter-body">
         <div class="filter-row" style="margin-bottom: 15px;">
             <div class="filter-group" style="flex: 2;">
                 <label class="filter-label"><svg class="icon"><use href="#icon-eye"/></svg> Suche</label>
@@ -2356,10 +2401,12 @@
             <button class="filter-reset" onclick="resetFilters()">× Filter zurücksetzen</button>
             <button class="filter-reset" onclick="exportUnrecognizedPlaces()" style="background: #ff9800; margin-left: 10px;" title="Exportiert alle Orte ohne erkanntes Land als CSV">📥 Unerkannte Orte</button>
         </div>
-        <div id="activeFilters" class="active-filters"></div>
         <div class="filter-hint" style="margin-top: 10px; font-size: 0.8em; color: var(--text-muted);">
             Tipp: Suche nach Artname oder iNaturalist-URL (z.B. "Amsel" oder "inaturalist.org/observations/12345")
         </div>
+        </div><!-- /filter-body -->
+      </details>
+      <div id="activeFilters" class="active-filters"></div>
     </div>
 
     <div id="errorContainer"></div>
@@ -2391,8 +2438,8 @@
         </div>
     </div>
 
-    <div class="section" id="firstSeenSection">
-        <h2 class="section-title">🆕 Erstbeobachtungen im Zeitraum</h2>
+    <details class="section sec-collapse" id="firstSeenSection" open>
+        <summary class="sec-summary">🆕 Erstbeobachtungen im Zeitraum <span class="sec-chevron">▼</span></summary>
         <div class="fs-controls">
             <div class="filter-group">
                 <label class="filter-label"><svg class="icon"><use href="#icon-calendar"/></svg> Von</label>
@@ -2422,22 +2469,22 @@
         <div class="filter-hint" style="margin-top: 12px; font-size: 0.8em; color: var(--text-muted);">
             Zeigt Arten (nur Artenebene &amp; darunter – Art, Unterart, Varietät, Form), deren <strong>allererste</strong> Beobachtung in deiner Historie in diesen Zeitraum fällt.
         </div>
-    </div>
+    </details>
 
-    <div class="map-container">
-        <h2 class="section-title">🗺️ Weltkarte</h2>
+    <details class="map-container sec-collapse" id="mapSection" ontoggle="onMapSectionToggle(this)" open>
+        <summary class="sec-summary">🗺️ Weltkarte <span class="sec-chevron">▼</span></summary>
         <div id="map"></div>
-    </div>
+    </details>
 
-    <div class="section">
-        <h2 class="section-title"><svg class="icon"><use href="#icon-globe"/></svg> Länder</h2>
+    <details class="section sec-collapse" open>
+        <summary class="sec-summary"><svg class="icon"><use href="#icon-globe"/></svg> Länder <span class="sec-chevron">▼</span></summary>
         <div id="countriesGrid" class="countries-grid"></div>
-    </div>
+    </details>
 
-    <div class="section">
-        <h2 class="section-title"><svg class="icon"><use href="#icon-butterfly"/></svg> Taxonomische Gruppen</h2>
+    <details class="section sec-collapse" open>
+        <summary class="sec-summary"><svg class="icon"><use href="#icon-butterfly"/></svg> Taxonomische Gruppen <span class="sec-chevron">▼</span></summary>
         <div id="taxaGrid" class="taxa-grid"></div>
-    </div>
+    </details>
 
     <div class="section">
         <h2 class="section-title"><svg class="icon"><use href="#icon-camera"/></svg> Galerie</h2>
@@ -2528,16 +2575,16 @@
     <div class="author-section" id="authorSection">
         <div class="author-container">
             <div class="author-image-wrapper">
-                <img src="author.jpg"
+                <img src="author.jpg" id="authorImage"
                      onerror="this.src='https://static.inaturalist.org/attachments/users/icons/8968854/medium.jpg'"
-                     alt="Marvin Foppe"
+                     alt="Profilbild"
                      class="author-image">
-                <span class="author-badge"><svg class="icon" style="vertical-align: middle; margin-right: 4px;"><use href="#icon-camera"/></svg> Fotograf</span>
+                <span class="author-badge" id="authorBadge"><svg class="icon" style="vertical-align: middle; margin-right: 4px;"><use href="#icon-camera"/></svg> Fotograf</span>
             </div>
             <div class="author-info">
-                <div class="author-title">Fotograf</div>
-                <div class="author-name">Marvin Foppe</div>
-                <p class="author-bio">
+                <div class="author-title" id="authorTitle">Fotograf</div>
+                <div class="author-name" id="authorName">Marvin Foppe</div>
+                <p class="author-bio" id="authorBio">
                     Naturbegeisterter und leidenschaftlicher Wildlife-Fotograf.
                     Alle Beobachtungen und Fotos auf dieser Seite wurden von mir persönlich
                     aufgenommen und dokumentiert. Von Vögeln über Insekten bis hin zu Pflanzen –
@@ -2556,12 +2603,20 @@
                         <div class="author-stat-value" id="authorCountries">-</div>
                         <div class="author-stat-label">Länder</div>
                     </div>
+                    <div class="author-stat">
+                        <div class="author-stat-value" id="authorIdents">-</div>
+                        <div class="author-stat-label">Identifikationen</div>
+                    </div>
+                    <div class="author-stat">
+                        <div class="author-stat-value" id="authorSince">-</div>
+                        <div class="author-stat-label">Mitglied seit</div>
+                    </div>
                 </div>
-                <div class="author-links">
-                    <a href="https://www.inaturalist.org/people/marvin12748" target="_blank" class="author-link">
+                <div class="author-links" id="authorLinks">
+                    <a href="https://www.inaturalist.org/people/marvin12748" target="_blank" class="author-link" id="authorProfileLink">
                         <svg class="icon"><use href="#icon-leaf"/></svg> iNaturalist Profil
                     </a>
-                    <a href="https://www.inaturalist.org/observations?user_id=marvin12748" target="_blank" class="author-link">
+                    <a href="https://www.inaturalist.org/observations?user_id=marvin12748" target="_blank" class="author-link" id="authorObsLink">
                         <svg class="icon"><use href="#icon-camera"/></svg> Alle Beobachtungen
                     </a>
                 </div>
@@ -3007,6 +3062,17 @@
             return country ? country.flag : '🌍';
         }
 
+        // Karte beim Aufklappen korrekt dimensionieren (war in geschlossenem <details> 0px groß)
+        function onMapSectionToggle(details) {
+            if (!details.open || !map) return;
+            setTimeout(() => {
+                map.invalidateSize();
+                if (markers && markers.getLayers && markers.getLayers().length) {
+                    try { map.fitBounds(markers.getBounds().pad(0.1)); } catch (e) {}
+                }
+            }, 60);
+        }
+
         // Initialize map
         function initMap() {
             map = L.map('map', {
@@ -3412,6 +3478,17 @@
             const dateTo = document.getElementById('dateTo').value;
             const quality = document.getElementById('qualityFilter').value;
 
+            // Anzahl aktiver Filter für die eingeklappte Zusammenfassung
+            const activeCount = (searchQuery ? 1 : 0) + (selectedSpeciesId ? 1 : 0)
+                + selectedCountries.length + selectedTaxa.length
+                + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0)
+                + (quality !== 'all' ? 1 : 0) + selectedRarityLevels.size;
+            const hintEl = document.getElementById('filterSummaryHint');
+            if (hintEl) hintEl.textContent = activeCount > 0 ? `${activeCount} aktiv` : '';
+            // Bei aktiven Filtern automatisch aufklappen (z.B. aus URL geladen)
+            const details = document.getElementById('filterDetails');
+            if (details && activeCount > 0) details.open = true;
+
             // Search tag
             if (searchQuery) {
                 const displayQuery = searchQuery.length > 25 ? searchQuery.substring(0, 25) + '...' : searchQuery;
@@ -3588,22 +3665,24 @@
                 return;
             }
 
-            // Für jede Art (taxonId) die früheste Beobachtung der gesamten Historie bestimmen
-            // (optional beschränkt auf die gewählte Qualitätsstufe)
+            // Für jede Art (taxonId) die früheste Beobachtung der GESAMTEN Historie bestimmen –
+            // über ALLE Qualitätsstufen hinweg. Der Qualitätsfilter darf die echte Erstbeobachtung
+            // nicht verfälschen (sonst würde eine spätere needs_id-Beobachtung fälschlich als
+            // "erstmalig" gelten, obwohl die Art längst in Research Grade bestimmt wurde).
             const firstByTaxon = {};
             allObservations.forEach(obs => {
                 if (!isSpeciesOrBelow(obs) || !obs.date) return;
-                if (quality !== 'all' && obs.quality !== quality) return;
                 const existing = firstByTaxon[obs.taxonId];
                 if (!existing || obs.date < existing.date) firstByTaxon[obs.taxonId] = obs;
             });
 
-            // Nur Arten behalten, deren Erstbeobachtung im gewählten Zeitraum liegt
-            // (und optional zur gewählten taxonomischen Gruppe gehört)
+            // Nur Arten behalten, deren ECHTE Erstbeobachtung im Zeitraum liegt, optional zur
+            // gewählten Gruppe gehört und (falls gewählt) selbst die Qualitätsstufe erfüllt.
             const inRange = Object.values(firstByTaxon).filter(obs => {
                 if (from && obs.date < from) return false;
                 if (to && obs.date > to) return false;
                 if (fsSelectedTaxa.length > 0 && !fsSelectedTaxa.includes(obs.taxon)) return false;
+                if (quality !== 'all' && obs.quality !== quality) return false;
                 return true;
             }).sort((a, b) => a.date.localeCompare(b.date));
 
@@ -3760,9 +3839,11 @@
             renderBadges();
             renderManualCountryPanel();
             renderFsTaxaChips();
-            // #8: Aus URL geladenen Zeitraum einmalig automatisch auswerten
+            // #8: Aus URL geladenen Zeitraum einmalig automatisch auswerten (Panel dann aufklappen)
             if (!fsAutoRan && (document.getElementById('fsFrom').value || document.getElementById('fsTo').value)) {
                 fsAutoRan = true;
+                const fss = document.getElementById('firstSeenSection');
+                if (fss) fss.open = true;
                 computeFirstSeen();
             }
             resetGallery();
@@ -5268,9 +5349,53 @@
             const footer = document.getElementById('footerCredit');
             if (footer) footer.innerHTML = `© 2026 ${displayName} - <a href="https://www.inaturalist.org/people/${login}" target="_blank">@${login}</a>`;
 
-            // Autoren-Sektion (Foto/Bio) nur für den Seiten-Eigentümer
+            // Profil-Sektion für JEDEN Nutzer anzeigen (Eigentümer behält Foto/Bio)
             const authorSection = document.getElementById('authorSection');
-            if (authorSection) authorSection.style.display = isOwner ? '' : 'none';
+            if (authorSection) authorSection.style.display = '';
+
+            const imgEl = document.getElementById('authorImage');
+            const nameEl = document.getElementById('authorName');
+            const titleEl = document.getElementById('authorTitle');
+            const badgeEl = document.getElementById('authorBadge');
+            const bioEl = document.getElementById('authorBio');
+            const profileLink = document.getElementById('authorProfileLink');
+            const obsLink = document.getElementById('authorObsLink');
+
+            if (nameEl) nameEl.textContent = displayName;
+            if (profileLink) profileLink.href = `https://www.inaturalist.org/people/${login}`;
+            if (obsLink) obsLink.href = `https://www.inaturalist.org/observations?user_id=${login}`;
+
+            if (isOwner) {
+                // Eigentümer: eigenes Foto + Original-Bio beibehalten
+                if (imgEl) imgEl.src = 'author.jpg';
+                if (titleEl) titleEl.textContent = 'Fotograf';
+                if (badgeEl) badgeEl.innerHTML = '<svg class="icon" style="vertical-align: middle; margin-right: 4px;"><use href="#icon-camera"/></svg> Fotograf';
+                if (bioEl) {
+                    bioEl.style.display = '';
+                    bioEl.textContent = 'Naturbegeisterter und leidenschaftlicher Wildlife-Fotograf. Alle Beobachtungen und Fotos auf dieser Seite wurden von mir persönlich aufgenommen und dokumentiert. Von Vögeln über Insekten bis hin zu Pflanzen – die Vielfalt der Natur fasziniert mich jeden Tag aufs Neue.';
+                }
+            } else {
+                // Anderer Nutzer: Avatar + Name/Bio aus der iNat-API
+                if (imgEl && user && user.icon_url) imgEl.src = user.icon_url;
+                else if (imgEl) imgEl.src = 'https://www.inaturalist.org/assets/user-image-defaults/defaultavatar.png';
+                if (titleEl) titleEl.textContent = 'iNaturalist-Profil';
+                if (badgeEl) badgeEl.innerHTML = '<svg class="icon" style="vertical-align: middle; margin-right: 4px;"><use href="#icon-leaf"/></svg> Naturbeobachter:in';
+                if (bioEl) {
+                    const raw = (user && (user.description || '')).replace(/<[^>]*>/g, '').trim();
+                    if (raw) { bioEl.style.display = ''; bioEl.textContent = raw.length > 320 ? raw.slice(0, 320) + '…' : raw; }
+                    else { bioEl.style.display = 'none'; }
+                }
+            }
+
+            // Kennzahlen aus dem Profil (falls vorhanden)
+            const identsEl = document.getElementById('authorIdents');
+            const sinceEl = document.getElementById('authorSince');
+            if (identsEl) identsEl.textContent = (user && typeof user.identifications_count === 'number')
+                ? user.identifications_count.toLocaleString('de-DE') : '–';
+            if (sinceEl) {
+                const cy = user && user.created_at ? String(user.created_at).slice(0, 4) : '';
+                sinceEl.textContent = cy || '–';
+            }
 
             // Eingabefeld mit aktuellem Login vorbelegen
             const input = document.getElementById('userInput');
