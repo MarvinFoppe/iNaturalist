@@ -344,6 +344,17 @@
 
         .lightbox-title { font-size: 1.3em; font-weight: 600; }
         .lightbox-meta { color: #aaa; margin-top: 5px; }
+        .lightbox-counter { color: var(--accent); margin-top: 8px; font-size: 0.95em; font-weight: 600; letter-spacing: 0.5px; }
+        .lightbox-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .lightbox-link:hover { text-decoration: underline; }
 
         /* Theme Toggle */
         .theme-toggle {
@@ -1324,6 +1335,49 @@
             box-shadow: 0 4px 15px var(--accent-glow);
         }
 
+        /* In-tile species carousel (swipe/click through observations inside the tile) */
+        .tile-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            border: none;
+            width: 34px;
+            height: 46px;
+            font-size: 1.1em;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s, background 0.2s;
+            z-index: 11;
+        }
+        .gallery-img-container:hover .tile-nav { opacity: 1; }
+        .tile-nav:hover { background: rgba(0, 0, 0, 0.75); }
+        .tile-nav-prev { left: 0; border-radius: 0 8px 8px 0; }
+        .tile-nav-next { right: 0; border-radius: 8px 0 0 8px; }
+        .tile-carousel-indicator {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            pointer-events: none;
+        }
+        /* Touch devices have no hover – keep the arrows visible */
+        @media (hover: none) {
+            .tile-nav { opacity: 0.8; }
+        }
+
         /* Author Section */
         .author-section {
             background: linear-gradient(135deg, var(--bg-medium) 0%, var(--primary-dark) 100%);
@@ -1711,7 +1765,22 @@
             .stat-card { padding: 16px; }
             .stat-number { font-size: 1.9em; }
             .section-title { font-size: 1.35em; }
-            .gallery { grid-template-columns: 1fr; }
+
+            /* Kompakte Galerie: 2–3 Kacheln nebeneinander statt einer */
+            .gallery { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; padding: 12px 0; }
+            .gallery-img { height: 130px; }
+            .gallery-info { padding: 10px; }
+            .gallery-title { font-size: 0.9em; margin-bottom: 3px; }
+            .gallery-scientific { font-size: 0.72em; }
+            .gallery-meta { font-size: 0.7em; margin-top: 6px; }
+            .gallery-expand-btn { padding: 7px; font-size: 0.72em; margin-top: 8px; }
+            .gallery-link { font-size: 0.72em; margin-top: 8px; }
+            .gallery-map-btn { padding: 4px 8px; font-size: 0.72em; }
+            .gallery-actions { gap: 6px; }
+            .species-count-badge { font-size: 0.62em; padding: 4px 8px; bottom: 8px; left: 8px; }
+            .tile-nav { width: 26px; height: 36px; font-size: 0.9em; }
+            .tile-carousel-indicator { font-size: 0.62em; padding: 3px 7px; bottom: 8px; right: 8px; }
+
             .taxa-grid { grid-template-columns: repeat(2, 1fr); }
 
             /* Erstbeobachtungen-Panel: Eingaben & Buttons als volle Breite */
@@ -2351,6 +2420,8 @@
             <div class="lightbox-info">
                 <div class="lightbox-title" id="lightboxTitle"></div>
                 <div class="lightbox-meta" id="lightboxMeta"></div>
+                <div class="lightbox-counter" id="lightboxCounter"></div>
+                <a class="lightbox-link" id="lightboxLink" href="#" target="_blank" rel="noopener" style="display:none">Auf iNaturalist ansehen →</a>
             </div>
         </div>
     </div>
@@ -4536,23 +4607,46 @@
                 card.className = `gallery-item ${isNew ? 'new' : ''}`;
                 card.dataset.obsId = obs.id;
 
-                // Show observation count badge in species mode (clickable to show all observations)
-                const countBadge = viewMode === 'species' && obs.observationCount
-                    ? `<span class="species-count-badge" onclick="event.stopPropagation(); filterBySpecies(${obs.taxonId}, '${obs.name.replace(/'/g, "\\'")}')">📷 ${obs.observationCount}× beobachtet</span>`
+                const escName = obs.name.replace(/'/g, "\\'");
+                const isSpeciesTile = viewMode === 'species' && obs.observationCount;
+                const isMultiSpecies = isSpeciesTile && obs.observationCount > 1;
+
+                // Observation count badge in species mode
+                const countBadge = isSpeciesTile
+                    ? `<span class="species-count-badge">📷 ${obs.observationCount}× beobachtet</span>`
+                    : '';
+
+                // In-tile carousel controls (only when there is more than one observation to swipe through)
+                const carouselControls = isMultiSpecies
+                    ? `<button class="tile-nav tile-nav-prev" aria-label="Vorheriges Bild">❮</button>
+                       <button class="tile-nav tile-nav-next" aria-label="Nächstes Bild">❯</button>
+                       <span class="tile-carousel-indicator">1 / ${obs.observationCount}</span>`
                     : '';
 
                 const imgIndex = galleryDisplayed + batch.indexOf(obs);
                 const largeImage = obs.image.replace('medium', 'large');
                 const metaText = `${obs.date} · ${(obs.place || 'Unbekannt').substring(0, 50)}`;
 
+                // Multi-observation species tiles get their click/swipe wired in setupTileCarousel().
+                // Single-observation species tiles open fullscreen directly; observation tiles use the classic lightbox.
+                let imgOnclickAttr;
+                if (isMultiSpecies) {
+                    imgOnclickAttr = '';
+                } else if (isSpeciesTile) {
+                    imgOnclickAttr = `onclick="openSpeciesLightbox(${obs.taxonId}, '${escName}', 0)"`;
+                } else {
+                    imgOnclickAttr = `onclick="openLightbox('${largeImage}', '${escName}', '${metaText.replace(/'/g, "\\'")}', ${imgIndex})"`;
+                }
+
                 card.innerHTML = `
                     <div class="gallery-img-container">
                         ${isNew ? '<span class="new-badge">NEU</span>' : ''}
                         ${countBadge}
+                        ${carouselControls}
                         <img src="${obs.image}" class="gallery-img"
                              data-full-url="${largeImage}"
                              data-meta="${metaText}"
-                             onclick="openLightbox('${largeImage}', '${obs.name.replace(/'/g, "\\'")}', '${metaText.replace(/'/g, "\\'")}', ${imgIndex})"
+                             ${imgOnclickAttr}
                              onerror="this.parentElement.parentElement.style.display='none'"
                              alt="${obs.name}">
                     </div>
@@ -4572,6 +4666,13 @@
                     <div class="gallery-details"></div>
                 `;
                 gallery.appendChild(card);
+
+                // Wire the in-tile image carousel for multi-observation species tiles
+                if (isMultiSpecies) {
+                    card.dataset.taxonId = obs.taxonId;
+                    card.dataset.speciesName = obs.name;
+                    setupTileCarousel(card);
+                }
             });
 
             galleryDisplayed += GALLERY_BATCH;
@@ -4802,6 +4903,86 @@
             document.body.style.overflow = 'hidden';
         }
 
+        // In-tile carousel: swipe / click through all observations of one species directly inside the gallery tile
+        function setupTileCarousel(card) {
+            const taxonId = Number(card.dataset.taxonId);
+            const speciesName = card.dataset.speciesName || '';
+            const list = getSpeciesObservations(taxonId);
+            if (list.length <= 1) return;
+
+            const img = card.querySelector('.gallery-img');
+            const metaEl = card.querySelector('.gallery-meta');
+            const indicator = card.querySelector('.tile-carousel-indicator');
+            const container = card.querySelector('.gallery-img-container');
+            let idx = 0;
+
+            function show(i) {
+                idx = ((i % list.length) + list.length) % list.length;
+                const o = list[idx];
+                img.src = o.image;
+                img.dataset.fullUrl = o.image.replace('medium', 'large');
+                if (metaEl) metaEl.textContent = `${o.date || ''} · ${(o.place || 'Unbekannt').substring(0, 35)}`;
+                if (indicator) indicator.textContent = `${idx + 1} / ${list.length}`;
+            }
+
+            card.querySelector('.tile-nav-prev').addEventListener('click', e => { e.stopPropagation(); show(idx - 1); });
+            card.querySelector('.tile-nav-next').addEventListener('click', e => { e.stopPropagation(); show(idx + 1); });
+
+            // Touch swipe directly on the tile image
+            let sx = 0, sy = 0, swiped = false;
+            container.addEventListener('touchstart', e => {
+                sx = e.changedTouches[0].screenX; sy = e.changedTouches[0].screenY; swiped = false;
+            }, { passive: true });
+            container.addEventListener('touchmove', e => {
+                const dx = e.changedTouches[0].screenX - sx;
+                const dy = e.changedTouches[0].screenY - sy;
+                if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) swiped = true;
+            }, { passive: true });
+            container.addEventListener('touchend', e => {
+                const dx = e.changedTouches[0].screenX - sx;
+                const dy = e.changedTouches[0].screenY - sy;
+                if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+                    show(dx < 0 ? idx + 1 : idx - 1); // swipe left → next, swipe right → previous
+                }
+            }, { passive: true });
+
+            // Tap/click on the image (without swiping) or on the badge → open fullscreen at the current image
+            function openFull(e) {
+                if (swiped) { swiped = false; return; }
+                e.stopPropagation();
+                openSpeciesLightbox(taxonId, speciesName, idx);
+            }
+            img.addEventListener('click', openFull);
+            const badge = card.querySelector('.species-count-badge');
+            if (badge) badge.addEventListener('click', openFull);
+        }
+
+        // Build the (date-sorted) list of all observations of one species
+        function getSpeciesObservations(taxonId) {
+            return filteredObservations
+                .filter(o => o.taxonId === taxonId && o.image)
+                .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        }
+
+        // Open a lightbox with ALL observations of one species (swipe/click through them)
+        function openSpeciesLightbox(taxonId, speciesName, startIndex) {
+            const obsList = getSpeciesObservations(taxonId);
+            if (!obsList.length) return;
+
+            lightboxImages = obsList.map(o => ({
+                url: o.image.replace('medium', 'large'),
+                title: o.name,
+                meta: `${o.date || ''} · ${(o.place || 'Unbekannt').substring(0, 60)}`,
+                link: o.url
+            }));
+
+            currentLightboxIndex = Math.min(Math.max(startIndex || 0, 0), lightboxImages.length - 1);
+            updateLightboxContent();
+
+            document.getElementById('lightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
         function updateLightboxContent() {
             const current = lightboxImages[currentLightboxIndex];
             if (!current) return;
@@ -4809,6 +4990,31 @@
             document.getElementById('lightboxImage').src = current.url;
             document.getElementById('lightboxTitle').textContent = current.title;
             document.getElementById('lightboxMeta').textContent = current.meta;
+
+            // Position counter (e.g. "3 / 17") – only when there is more than one image
+            const counter = document.getElementById('lightboxCounter');
+            if (counter) {
+                counter.textContent = lightboxImages.length > 1
+                    ? `${currentLightboxIndex + 1} / ${lightboxImages.length}`
+                    : '';
+            }
+
+            // Per-observation iNaturalist link (only set in species mode)
+            const link = document.getElementById('lightboxLink');
+            if (link) {
+                if (current.link) {
+                    link.href = current.link;
+                    link.style.display = 'inline-flex';
+                } else {
+                    link.style.display = 'none';
+                }
+            }
+
+            // Hide nav arrows when there is nothing to navigate to
+            const showNav = lightboxImages.length > 1;
+            document.querySelectorAll('.lightbox-nav').forEach(b => {
+                b.style.display = showNav ? '' : 'none';
+            });
         }
 
         function closeLightbox() {
@@ -4837,6 +5043,26 @@
         document.getElementById('lightbox').addEventListener('click', (e) => {
             if (e.target.id === 'lightbox') closeLightbox();
         });
+
+        // Touch swipe navigation for lightbox (mobile)
+        let lbTouchStartX = 0, lbTouchStartY = 0;
+        (function () {
+            const lbEl = document.getElementById('lightbox');
+            lbEl.addEventListener('touchstart', (e) => {
+                if (!lbEl.classList.contains('active')) return;
+                lbTouchStartX = e.changedTouches[0].screenX;
+                lbTouchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+            lbEl.addEventListener('touchend', (e) => {
+                if (!lbEl.classList.contains('active')) return;
+                const dx = e.changedTouches[0].screenX - lbTouchStartX;
+                const dy = e.changedTouches[0].screenY - lbTouchStartY;
+                // horizontal swipe of at least 50px, and clearly more horizontal than vertical
+                if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+                    navigateLightbox(dx < 0 ? 1 : -1); // swipe left → next, swipe right → previous
+                }
+            }, { passive: true });
+        })();
 
         // ========== THEME TOGGLE ==========
         function toggleTheme() {
