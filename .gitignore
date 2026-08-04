@@ -2,17 +2,7 @@
 .DS_Store
 .claude/
 
-# PWA / App-Dateien (aktuell nicht im Repo benötigt)
-manifest.json
-service-worker.js
-apple-touch-icon.png
-favicon.ico
-favicon-16.png
-favicon-32.png
-icon-192.png
-icon-512.png
+# Quell-/Arbeitsdateien (nicht fürs Deployment benötigt)
 app-icon-1024.png
-
-# Quell-/Arbeitsdateien
 Gemini_Generated_Image_*.png
 _archiv/

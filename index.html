@@ -2292,6 +2292,9 @@
                 <svg class="icon refresh-icon"><use href="#icon-refresh"/></svg>
                 Aktualisieren
             </button>
+            <button id="installBtn" class="refresh-btn" onclick="installApp()" style="display:none;" title="Diese Seite als App installieren">
+                📲 App installieren
+            </button>
         </div>
     </div>
 
@@ -5801,6 +5804,43 @@
                     .catch(err => console.warn('Service Worker Registrierung fehlgeschlagen:', err));
             });
         }
+
+        // ===== App-Installation (PWA) =====
+        let deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            const b = document.getElementById('installBtn'); if (b) b.style.display = '';
+        });
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            const b = document.getElementById('installBtn'); if (b) b.style.display = 'none';
+        });
+        function isIosSafari() {
+            const ua = navigator.userAgent;
+            const iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const webkit = /WebKit/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+            return iOS && webkit;
+        }
+        function initInstallButton() {
+            const b = document.getElementById('installBtn'); if (!b) return;
+            const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            if (standalone) return;                 // läuft bereits als installierte App
+            if (isIosSafari()) b.style.display = ''; // iOS liefert kein beforeinstallprompt -> Button mit Anleitung zeigen
+        }
+        async function installApp() {
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                await deferredInstallPrompt.userChoice;
+                deferredInstallPrompt = null;
+                const b = document.getElementById('installBtn'); if (b) b.style.display = 'none';
+            } else if (isIosSafari()) {
+                alert('So installierst du die App auf iPhone/iPad:\n\n1. Unten auf „Teilen" tippen (Quadrat mit Pfeil nach oben)\n2. „Zum Home-Bildschirm" wählen\n3. Mit „Hinzufügen" bestätigen');
+            } else {
+                alert('Installation über das Browser-Menü: „App installieren" bzw. „Zum Startbildschirm hinzufügen".');
+            }
+        }
+        initInstallButton();
     </script>
 </body>
 </html>
