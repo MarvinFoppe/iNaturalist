@@ -1003,9 +1003,9 @@
         /* Gallery */
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            padding: 20px 0;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 14px;
+            padding: 16px 0;
         }
 
         .gallery-item {
@@ -1043,7 +1043,7 @@
 
         .gallery-img {
             width: 100%;
-            height: 200px;
+            height: 130px;
             object-fit: cover;
             cursor: pointer;
             transition: transform 0.3s;
@@ -1051,19 +1051,19 @@
 
         .gallery-item:hover .gallery-img { transform: scale(1.05); }
 
-        .gallery-info { padding: 18px; }
-        .gallery-title { color: var(--accent); font-weight: 600; margin-bottom: 5px; }
-        .gallery-scientific { color: var(--text-muted); font-style: italic; font-size: 0.9em; }
-        .gallery-meta { margin-top: 12px; font-size: 0.85em; color: var(--text-secondary); }
+        .gallery-info { padding: 12px; }
+        .gallery-title { color: var(--accent); font-weight: 600; margin-bottom: 4px; font-size: 0.95em; }
+        .gallery-scientific { color: var(--text-muted); font-style: italic; font-size: 0.8em; }
+        .gallery-meta { margin-top: 8px; font-size: 0.76em; color: var(--text-secondary); }
 
         .gallery-link {
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            margin-top: 12px;
+            margin-top: 8px;
             color: var(--accent);
             text-decoration: none;
-            font-size: 0.9em;
+            font-size: 0.8em;
             transition: gap 0.3s;
         }
 
@@ -1076,13 +1076,13 @@
             justify-content: center;
             gap: 8px;
             width: 100%;
-            padding: 10px;
-            margin-top: 12px;
+            padding: 8px;
+            margin-top: 10px;
             background: rgba(139, 195, 74, 0.1);
             border: 1px solid var(--border);
             border-radius: 8px;
             color: var(--text-secondary);
-            font-size: 0.85em;
+            font-size: 0.78em;
             cursor: pointer;
             transition: all 0.3s;
         }
@@ -1376,6 +1376,102 @@
         /* Touch devices have no hover – keep the arrows visible */
         @media (hover: none) {
             .tile-nav { opacity: 0.8; }
+        }
+
+        /* Seltenheits-Badge (1–10 Level, Farbverlauf grau → gold) */
+        .rarity-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            padding: 4px 9px;
+            border-radius: 12px;
+            font-size: 0.78em;
+            font-weight: 700;
+            color: #fff;
+            z-index: 12;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+            pointer-events: none;
+            letter-spacing: 0.3px;
+        }
+        .rarity-badge.rarity-unconfirmed {
+            background: rgba(0,0,0,0.6);
+            color: #cfcfcf;
+            font-weight: 600;
+            font-size: 0.68em;
+            backdrop-filter: blur(4px);
+        }
+        .rarity-badge.lvl-1  { background: #6b7d6b; }
+        .rarity-badge.lvl-2  { background: #5f9455; }
+        .rarity-badge.lvl-3  { background: #4a9d43; }
+        .rarity-badge.lvl-4  { background: #3a93a6; }
+        .rarity-badge.lvl-5  { background: #3f80c4; }
+        .rarity-badge.lvl-6  { background: #5e5ac9; }
+        .rarity-badge.lvl-7  { background: #8e44ad; }
+        .rarity-badge.lvl-8  { background: #c65b23; }
+        .rarity-badge.lvl-9  { background: #e67e22; }
+        .rarity-badge.lvl-10 {
+            background: linear-gradient(135deg, #f9d423, #f39c12);
+            color: #3a2c00;
+            box-shadow: 0 0 14px rgba(241, 196, 15, 0.7);
+        }
+        /* Farb-Swatch (Dropdown-Optionen & Legende) */
+        .rarity-swatch {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border-radius: 4px;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+        .rarity-swatch.lvl-1  { background: #6b7d6b; }
+        .rarity-swatch.lvl-2  { background: #5f9455; }
+        .rarity-swatch.lvl-3  { background: #4a9d43; }
+        .rarity-swatch.lvl-4  { background: #3a93a6; }
+        .rarity-swatch.lvl-5  { background: #3f80c4; }
+        .rarity-swatch.lvl-6  { background: #5e5ac9; }
+        .rarity-swatch.lvl-7  { background: #8e44ad; }
+        .rarity-swatch.lvl-8  { background: #c65b23; }
+        .rarity-swatch.lvl-9  { background: #e67e22; }
+        .rarity-swatch.lvl-10 { background: linear-gradient(135deg, #f9d423, #f39c12); }
+
+        /* Seltenheit-Reiter: Dashboard */
+        .rarity-total-hero { text-align: center; padding: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 15px; margin-bottom: 22px; }
+        .rarity-total-hero .rt-num { font-size: 3em; font-weight: 800; background: linear-gradient(135deg, var(--accent), #f1c40f); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .rarity-total-hero .rt-sub { color: var(--text-secondary); margin-top: 6px; }
+        .rarity-dist-row { display: grid; grid-template-columns: 150px 1fr 60px; align-items: center; gap: 12px; margin: 7px 0; font-size: 0.9em; }
+        .rarity-dist-label { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+        .rarity-dist-bar-wrap { background: rgba(255,255,255,0.06); border-radius: 6px; height: 20px; overflow: hidden; }
+        .rarity-dist-bar { height: 100%; border-radius: 6px; min-width: 2px; transition: width 0.5s ease; }
+        .rarity-dist-count { text-align: right; color: var(--text-primary); font-weight: 600; }
+        .rarity-group-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
+        .rarity-group-chip {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 6px 12px; border-radius: 20px; cursor: pointer;
+            font-size: 0.85em; font-weight: 600;
+            background: var(--bg-light); color: var(--text-secondary);
+            border: 1px solid var(--border); transition: all 0.15s ease; user-select: none;
+        }
+        .rarity-group-chip:hover { border-color: var(--accent); color: var(--text-primary); }
+        .rarity-group-chip.active { background: var(--accent); color: var(--bg-dark); border-color: transparent; }
+        .rarity-rare-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 14px; }
+        .rarity-rare-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; position: relative; }
+        .rarity-rare-card img { width: 100%; height: 120px; object-fit: cover; display: block; }
+        .rarity-rare-info { padding: 10px; }
+        .rarity-rare-info .rr-name { font-weight: 600; color: var(--accent); font-size: 0.9em; }
+        .rarity-rare-info .rr-sci { font-style: italic; color: var(--text-muted); font-size: 0.75em; }
+        .rarity-rare-info .rr-meta { color: var(--text-secondary); font-size: 0.75em; margin-top: 5px; }
+        @media (max-width: 480px) {
+            .rarity-dist-row { grid-template-columns: 120px 1fr 44px; font-size: 0.8em; gap: 8px; }
+        }
+
+        /* Score-Karte dezent hervorheben */
+        #rarityScoreCard .stat-number {
+            background: linear-gradient(135deg, var(--accent), #f1c40f);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         /* Author Section */
@@ -1780,6 +1876,8 @@
             .species-count-badge { font-size: 0.62em; padding: 4px 8px; bottom: 8px; left: 8px; }
             .tile-nav { width: 26px; height: 36px; font-size: 0.9em; }
             .tile-carousel-indicator { font-size: 0.62em; padding: 3px 7px; bottom: 8px; right: 8px; }
+            .rarity-badge { font-size: 0.62em; padding: 3px 6px; top: 8px; left: 8px; }
+            .rarity-badge.rarity-unconfirmed { font-size: 0.55em; }
 
             .taxa-grid { grid-template-columns: repeat(2, 1fr); }
 
@@ -2171,6 +2269,7 @@
     <div class="main-tabs">
         <button class="main-tab active" id="tabBtnOverview" onclick="switchMainTab('overview')">🌍 Übersicht</button>
         <button class="main-tab" id="tabBtnBadges" onclick="switchMainTab('badges')">🏅 Badges</button>
+        <button class="main-tab" id="tabBtnRarity" onclick="switchMainTab('rarity')">⭐ Seltenheit</button>
     </div>
 
     <div id="tab-overview" class="tab-panel active">
@@ -2212,6 +2311,16 @@
                     <option value="casual">Casual</option>
                 </select>
             </div>
+            <div class="filter-group">
+                <label class="filter-label">⭐ Seltenheit</label>
+                <div class="multi-select-container" id="rarityFilterContainer">
+                    <button type="button" class="multi-select-btn" onclick="toggleMultiSelect('rarity')">
+                        <span id="rarityFilterLabel">Alle Stufen</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="multi-select-dropdown" id="rarityDropdown"></div>
+                </div>
+            </div>
             <button class="filter-reset" onclick="resetFilters()">× Filter zurücksetzen</button>
             <button class="filter-reset" onclick="exportUnrecognizedPlaces()" style="background: #ff9800; margin-left: 10px;" title="Exportiert alle Orte ohne erkanntes Land als CSV">📥 Unerkannte Orte</button>
         </div>
@@ -2243,6 +2352,10 @@
         <div class="stat-card">
             <div class="stat-number" id="researchCount">-</div>
             <div class="stat-label">Research Grade</div>
+        </div>
+        <div class="stat-card" id="rarityScoreCard" title="Summe der Seltenheits-Level aller Arten in Forschungsqualität (jede Art einmal)">
+            <div class="stat-number" id="rarityScore">…</div>
+            <div class="stat-label">Seltenheits-Score <span id="rarityScoreCount" style="display:block; font-size:0.8em; opacity:0.7;"></span></div>
         </div>
     </div>
 
@@ -2355,6 +2468,31 @@
         </div>
     </div><!-- /tab-badges -->
 
+    <div id="tab-rarity" class="tab-panel">
+        <div class="section">
+            <h2 class="section-title">⭐ Seltenheit</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 18px; max-width: 780px;">
+                Jede Art bekommt ein <strong>Seltenheits-Level (1–10)</strong>: je seltener eine Art weltweit auf iNaturalist
+                (Forschungsqualität) beobachtet wurde, desto höher. Zusätzlich wird nach <strong>Tiergruppe</strong> normalisiert –
+                Vögel werden z.&nbsp;B. viel häufiger fotografiert als Insekten oder Weichtiere, das wird ausgeglichen.
+                Es zählen nur Arten in <strong>Forschungsqualität</strong>, jede Art einmal.
+                <button class="filter-reset" style="margin-left:10px;" onclick="refreshRarityData()" title="Globale Zahlen neu von iNaturalist laden">↻ Daten neu laden</button>
+            </p>
+            <div class="rarity-total-hero">
+                <div class="rt-num" id="rarityHeroScore">…</div>
+                <div class="rt-sub" id="rarityHeroSub">wird berechnet …</div>
+            </div>
+            <h3 style="color: var(--accent); margin: 18px 0 6px;">Filter nach Tiergruppe</h3>
+            <div class="rarity-group-chips" id="rarityGroupChips"></div>
+            <h3 style="color: var(--accent); margin: 18px 0 6px;">Verteilung nach Level</h3>
+            <div id="rarityDistribution"></div>
+            <h3 style="color: var(--accent); margin: 24px 0 6px;">Arten <span style="font-weight:400; color:var(--text-muted); font-size:0.7em;">(nach Seltenheit sortiert)</span></h3>
+            <div class="rarity-rare-grid" id="rarityRareGrid"></div>
+            <div id="rarityGridSentinel" style="height: 1px;"></div>
+            <div id="rarityGridInfo" style="text-align:center; color:var(--text-muted); margin-top:14px; font-size:0.85em;"></div>
+        </div>
+    </div><!-- /tab-rarity -->
+
     <div class="author-section" id="authorSection">
         <div class="author-container">
             <div class="author-image-wrapper">
@@ -2439,6 +2577,31 @@
         // State
         let allObservations = [];
         let filteredObservations = [];
+
+        // --- Seltenheitsgrad (1–10) ---
+        const RARITY_CACHE_KEY = 'inat_rarity_counts_v3'; // globale Forschungsqualitäts-Zahlen je Taxon (nutzerunabhängig)
+        const RARITY_W = 0.7;    // Stärke der Gruppen-Korrektur
+        const RARITY_T = 5.65;   // Anker: ab hier "häufig" -> Level 1
+        const RARITY_K = 2.5;    // Level pro Dekade
+        const RARITY_MIN_GROUP = 5; // kleinere Gruppen -> Fallback auf Gesamt-Median
+        let rarityCounts = {};   // taxonId -> globale RG-Beobachtungszahl
+        try { rarityCounts = JSON.parse(localStorage.getItem(RARITY_CACHE_KEY) || '{}') || {}; } catch (e) { rarityCounts = {}; }
+        let rarityLevels = {};   // taxonId -> Level 1..10 (für aktuellen Nutzer)
+        let rarityRgSet = new Set(); // taxonIds, die der Nutzer in Forschungsqualität hat
+        let rarityReady = false;
+        let rarityBusy = false;
+        // Beschreibung je Level (1..10)
+        const RARITY_TIER_NAMES = {
+            1: 'Sehr häufig', 2: 'Häufig', 3: 'Verbreitet', 4: 'Regelmäßig', 5: 'Ungewöhnlich',
+            6: 'Selten', 7: 'Sehr selten', 8: 'Rar', 9: 'Außergewöhnlich', 10: 'Legendär'
+        };
+        let selectedRarityLevels = new Set(); // leer = alle
+        // Seltenheit-Reiter: Liste + Gruppen-Filter + Endlos-Scroll
+        let rarityAllSpecies = [];             // {id,name,sci,image,url,level,n,group}
+        let rarityGroupFilter = new Set();     // leer = alle Gruppen
+        const RARITY_GRID_BATCH = 40;
+        let rarityGridShown = 0;
+        let rarityObserverSet = false;
         let autoRefreshTimer = null;
         let map = null;
         let markers = null;
@@ -3195,6 +3358,11 @@
                 if (dateFrom && obs.date < dateFrom) return false;
                 if (dateTo && obs.date > dateTo) return false;
                 if (quality !== 'all' && obs.quality !== quality) return false;
+                // Seltenheits-Filter (Mehrfachauswahl): nur gewählte Level (Nicht-RG-Arten haben kein Level -> raus)
+                if (selectedRarityLevels.size > 0) {
+                    const lvl = rarityLevels[obs.taxonId];
+                    if (!lvl || !selectedRarityLevels.has(lvl)) return false;
+                }
                 return true;
             });
 
@@ -3248,6 +3416,10 @@
                 const labels = { research: 'Research Grade', needs_id: 'Needs ID', casual: 'Casual' };
                 container.innerHTML += `<span class="filter-tag">${labels[quality]} <span class="filter-tag-remove" onclick="clearFilter('quality')">×</span></span>`;
             }
+            if (selectedRarityLevels.size > 0) {
+                const lvls = [...selectedRarityLevels].sort((a, b) => a - b).map(n => '★' + n).join(', ');
+                container.innerHTML += `<span class="filter-tag">⭐ ${lvls} <span class="filter-tag-remove" onclick="clearFilter('rarity')">×</span></span>`;
+            }
         }
 
         // Remove specific country from filter
@@ -3279,6 +3451,7 @@
                 case 'dateFrom': document.getElementById('dateFrom').value = ''; break;
                 case 'dateTo': document.getElementById('dateTo').value = ''; break;
                 case 'quality': document.getElementById('qualityFilter').value = 'all'; break;
+                case 'rarity': selectedRarityLevels.clear(); updateRarityFilterLabel(); updateRarityDropdownSelection(); break;
             }
             applyFilters();
         }
@@ -3295,6 +3468,9 @@
             document.getElementById('dateFrom').value = '';
             document.getElementById('dateTo').value = '';
             document.getElementById('qualityFilter').value = 'all';
+            selectedRarityLevels.clear();
+            updateRarityFilterLabel();
+            updateRarityDropdownSelection();
             updateCountryFilterLabel();
             updateCountryDropdownSelection();
             applyFilters();
@@ -3558,6 +3734,7 @@
                 computeFirstSeen();
             }
             resetGallery();
+            ensureRarity();
         }
 
         // Update statistics
@@ -3576,6 +3753,329 @@
             document.getElementById('authorObs').textContent = allObservations.length.toLocaleString('de-DE');
             document.getElementById('authorSpecies').textContent = new Set(allObservations.filter(o => o.taxonId).map(o => o.taxonId)).size.toLocaleString('de-DE');
             document.getElementById('authorCountries').textContent = allCountries.size.toLocaleString('de-DE');
+
+            updateRarityScore();
+        }
+
+        // ===================== Seltenheitsgrad =====================
+        function rarityMedian(arr) {
+            if (!arr.length) return 0;
+            const s = [...arr].sort((a, b) => a - b);
+            const m = Math.floor(s.length / 2);
+            return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+        }
+
+        // Alle Art-Ebene-Taxa, die der aktuelle Nutzer in Forschungsqualität hat
+        function rgSpeciesIds() {
+            const set = new Set();
+            for (const o of allObservations) {
+                if (o.quality === 'research' && o.taxonId && (o.rankLevel == null || o.rankLevel <= 10)) {
+                    set.add(o.taxonId);
+                }
+            }
+            return [...set];
+        }
+
+        // Levels aus den (ggf. teilweise) vorhandenen globalen Zahlen berechnen
+        function computeRarityLevels(ids) {
+            rarityRgSet = new Set(ids);
+            const groupOf = {};
+            for (const o of allObservations) {
+                if (o.taxonId && o.taxon && groupOf[o.taxonId] === undefined) groupOf[o.taxonId] = o.taxon;
+            }
+            const allL = [], byGroup = {};
+            for (const id of ids) {
+                const n = rarityCounts[id];
+                if (!n || n <= 0) continue;
+                const L = Math.log10(n);
+                allL.push(L);
+                const g = groupOf[id] || 'Unbekannt';
+                (byGroup[g] = byGroup[g] || []).push(L);
+            }
+            rarityLevels = {};
+            if (!allL.length) return;
+            const M_all = rarityMedian(allL);
+            const groupMed = {};
+            for (const g in byGroup) groupMed[g] = rarityMedian(byGroup[g]);
+            for (const id of ids) {
+                const n = rarityCounts[id];
+                if (!n || n <= 0) continue;
+                const L = Math.log10(n);
+                const g = groupOf[id] || 'Unbekannt';
+                const Mg = (byGroup[g] && byGroup[g].length >= RARITY_MIN_GROUP) ? groupMed[g] : M_all;
+                const Leff = L - RARITY_W * (Mg - M_all);
+                rarityLevels[id] = Math.max(1, Math.min(10, Math.round(RARITY_K * (RARITY_T - Leff))));
+            }
+        }
+
+        // Fehlende globale Forschungsqualitäts-Zahlen gebündelt nachladen (30 Taxa/Anfrage)
+        async function fetchRarityCounts(missing) {
+            // Pass 1: Forschungsqualität via species_counts (auf Art-Ebene aggregiert)
+            for (let i = 0; i < missing.length; i += 30) {
+                const chunk = missing.slice(i, i + 30);
+                const chunkSet = new Set(chunk);
+                try {
+                    const res = await fetch(`${API_BASE}/observations/species_counts?taxon_id=${chunk.join(',')}&quality_grade=research&per_page=200`);
+                    const data = await res.json();
+                    // WICHTIG: nur explizit angefragte Taxa übernehmen. species_counts rollt Unterarten/
+                    // Varietäten auf die Art hoch und liefert dabei fremde (kleinere) Zahlen -> würden
+                    // sonst den korrekten Art-Wert aus einem anderen Chunk überschreiben.
+                    (data.results || []).forEach(r => { if (r.taxon && chunkSet.has(r.taxon.id)) rarityCounts[r.taxon.id] = r.count; });
+                    try { localStorage.setItem(RARITY_CACHE_KEY, JSON.stringify(rarityCounts)); } catch (e) {}
+                } catch (e) {
+                    // Netzfehler: Chunk unmarkiert lassen, wird bei nächster Gelegenheit erneut versucht
+                    continue;
+                }
+                if ((i / 30) % 8 === 0) {
+                    computeRarityLevels(rgSpeciesIds());
+                    applyAllRarityBadges();
+                    updateRarityScore();
+                    if (document.getElementById('tab-rarity')?.classList.contains('active')) renderRarityDashboard();
+                }
+            }
+            // Pass 2: Fallback für Taxa, die species_counts NICHT direkt lieferte
+            // (Unterart/Varietät/Form wird auf die Art hochgerollt -> eigene ID fehlt).
+            // -> globale Gesamtzahl des Taxons selbst nutzen (nah an RG, für diese Randfälle ok).
+            const stillMissing = missing.filter(id => rarityCounts[id] === undefined);
+            for (let i = 0; i < stillMissing.length; i += 30) {
+                const chunk = stillMissing.slice(i, i + 30);
+                try {
+                    const res = await fetch(`${API_BASE}/taxa/${chunk.join(',')}`);
+                    const data = await res.json();
+                    (data.results || []).forEach(t => { rarityCounts[t.id] = t.observations_count || 0; });
+                } catch (e) { continue; }
+                chunk.forEach(id => { if (rarityCounts[id] === undefined) rarityCounts[id] = 0; });
+                try { localStorage.setItem(RARITY_CACHE_KEY, JSON.stringify(rarityCounts)); } catch (e) {}
+            }
+        }
+
+        // Sicherstellen, dass Levels vorhanden sind; fehlende Zahlen im Hintergrund holen
+        function ensureRarity() {
+            const ids = rgSpeciesIds();
+            const missing = ids.filter(id => rarityCounts[id] === undefined);
+            if (missing.length && !rarityBusy) {
+                rarityBusy = true;
+                fetchRarityCounts(missing).finally(() => {
+                    rarityBusy = false;
+                    computeRarityLevels(rgSpeciesIds());
+                    rarityReady = true;
+                    applyAllRarityBadges();
+                    updateRarityScore();
+                    renderRarityDashboard();
+                    // Falls ein Seltenheits-Filter aktiv war, bevor die Levels da waren: jetzt anwenden
+                    if (selectedRarityLevels.size > 0) applyFilters();
+                });
+            }
+            computeRarityLevels(ids);
+            if (!missing.length) rarityReady = true;
+            applyAllRarityBadges();
+            updateRarityScore();
+            renderRarityDashboard();
+        }
+
+        function fillRarityBadge(el) {
+            const tid = Number(el.dataset.taxon);
+            const scored = el.dataset.scored === '1';
+            const lvl = rarityLevels[tid];
+            if (!scored) {
+                // Beobachtung selbst nicht in Forschungsqualität -> kein Score
+                el.textContent = 'nicht bestätigt';
+                el.className = 'rarity-badge rarity-unconfirmed';
+                el.title = 'Diese Beobachtung ist nicht in Forschungsqualität – kein Seltenheits-Score';
+                el.style.display = '';
+            } else if (lvl) {
+                el.textContent = '★ ' + lvl;
+                el.className = 'rarity-badge lvl-' + lvl;
+                el.title = 'Level ' + lvl + '/10 – ' + (RARITY_TIER_NAMES[lvl] || '');
+                el.style.display = '';
+            } else if (rarityReady) {
+                el.textContent = 'nicht bestätigt';
+                el.className = 'rarity-badge rarity-unconfirmed';
+                el.title = 'Keine Beobachtung in Forschungsqualität – kein Seltenheits-Score';
+                el.style.display = '';
+            } else {
+                el.style.display = 'none'; // Level lädt noch
+            }
+        }
+
+        function applyAllRarityBadges() {
+            document.querySelectorAll('.rarity-badge[data-taxon]').forEach(fillRarityBadge);
+        }
+
+        // Gesamt-Score = Summe der Level je EINDEUTIGER RG-Art der gesamten Sammlung (jede Art einmal)
+        function updateRarityScore() {
+            let total = 0, counted = 0;
+            for (const tid of rarityRgSet) { const l = rarityLevels[tid]; if (l) { total += l; counted++; } }
+            const scoreEl = document.getElementById('rarityScore');
+            if (scoreEl) scoreEl.textContent = (rarityReady || total > 0) ? total.toLocaleString('de-DE') : '…';
+            const cntEl = document.getElementById('rarityScoreCount');
+            if (cntEl) cntEl.textContent = counted ? counted.toLocaleString('de-DE') + ' Arten' : '';
+        }
+
+        // Detail-Dashboard im Seltenheit-Reiter
+        function renderRarityDashboard() {
+            const heroScore = document.getElementById('rarityHeroScore');
+            if (!heroScore) return;
+            const heroSub = document.getElementById('rarityHeroSub');
+
+            // repräsentative Beobachtung je Art (mit Bild & meisten Bestätigungen bevorzugt)
+            const rep = {};
+            for (const o of allObservations) {
+                if (o.quality !== 'research' || !o.taxonId || !rarityLevels[o.taxonId]) continue;
+                const cur = rep[o.taxonId];
+                if (!cur || (!cur.image && o.image) || (o.image && (o.identifications || 0) > (cur.identifications || 0))) {
+                    rep[o.taxonId] = o;
+                }
+            }
+            rarityAllSpecies = Object.keys(rep).map(id => {
+                const o = rep[id];
+                return { id: +id, name: o.name, sci: o.scientific, image: o.image, url: o.url, level: rarityLevels[id], n: rarityCounts[id] || 0, group: o.taxon || 'Unbekannt' };
+            }).sort((a, b) => b.level - a.level || a.n - b.n);
+
+            if (!rarityAllSpecies.length) {
+                heroScore.textContent = rarityReady ? '0' : '…';
+                heroSub.textContent = rarityReady ? 'Keine Arten in Forschungsqualität' : 'Seltenheits-Daten werden geladen …';
+                ['rarityDistribution', 'rarityRareGrid', 'rarityGroupChips'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+                return;
+            }
+
+            const total = rarityAllSpecies.reduce((s, x) => s + x.level, 0);
+            heroScore.textContent = total.toLocaleString('de-DE');
+            heroSub.textContent = `${rarityAllSpecies.length.toLocaleString('de-DE')} Arten · Ø ${(total / rarityAllSpecies.length).toFixed(1)} pro Art${rarityReady ? '' : ' · lädt …'}`;
+
+            renderRarityGroupChips();
+            renderRarityDistribution();
+            renderRarityGrid(true);
+            setupRarityInfiniteScroll();
+        }
+
+        function getRarityFilteredSpecies() {
+            if (rarityGroupFilter.size === 0) return rarityAllSpecies;
+            return rarityAllSpecies.filter(s => rarityGroupFilter.has(s.group));
+        }
+
+        function renderRarityGroupChips() {
+            const el = document.getElementById('rarityGroupChips');
+            if (!el) return;
+            const cnt = {};
+            for (const s of rarityAllSpecies) cnt[s.group] = (cnt[s.group] || 0) + 1;
+            const groups = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
+            let html = `<span class="rarity-group-chip${rarityGroupFilter.size === 0 ? ' active' : ''}" onclick="toggleRarityGroup('__ALL__')">Alle (${rarityAllSpecies.length})</span>`;
+            for (const g of groups) {
+                const cfg = taxaConfig[g] || { icon: '', name: g };
+                html += `<span class="rarity-group-chip${rarityGroupFilter.has(g) ? ' active' : ''}" onclick="toggleRarityGroup('${g}')">${cfg.icon || ''} ${cfg.name || g} (${cnt[g]})</span>`;
+            }
+            el.innerHTML = html;
+        }
+
+        function toggleRarityGroup(g) {
+            if (g === '__ALL__') rarityGroupFilter.clear();
+            else if (rarityGroupFilter.has(g)) rarityGroupFilter.delete(g);
+            else rarityGroupFilter.add(g);
+            renderRarityGroupChips();
+            renderRarityDistribution();
+            renderRarityGrid(true);
+        }
+
+        function renderRarityDistribution() {
+            const distEl = document.getElementById('rarityDistribution');
+            if (!distEl) return;
+            const list = getRarityFilteredSpecies();
+            const cnt = {};
+            for (const s of list) cnt[s.level] = (cnt[s.level] || 0) + 1;
+            const maxc = Math.max(1, ...Object.values(cnt));
+            let dist = '';
+            for (let n = 10; n >= 1; n--) {
+                const c = cnt[n] || 0;
+                dist += `<div class="rarity-dist-row">
+                    <span class="rarity-dist-label"><span class="rarity-swatch lvl-${n}"></span> ★${n} ${RARITY_TIER_NAMES[n]}</span>
+                    <span class="rarity-dist-bar-wrap"><span class="rarity-dist-bar" style="width:${Math.round(100 * c / maxc)}%; background:var(--accent);"></span></span>
+                    <span class="rarity-dist-count">${c}</span>
+                </div>`;
+            }
+            distEl.innerHTML = dist;
+        }
+
+        function renderRarityGrid(reset) {
+            const gridEl = document.getElementById('rarityRareGrid');
+            if (!gridEl) return;
+            const list = getRarityFilteredSpecies();
+            if (reset) { rarityGridShown = 0; gridEl.innerHTML = ''; }
+            const next = list.slice(rarityGridShown, rarityGridShown + RARITY_GRID_BATCH);
+            gridEl.insertAdjacentHTML('beforeend', next.map(s => `
+                <div class="rarity-rare-card">
+                    <span class="rarity-badge lvl-${s.level}" style="position:absolute; top:8px; left:8px;">★ ${s.level}</span>
+                    ${s.image ? `<img src="${s.image}" alt="${s.name}" loading="lazy" onerror="this.style.display='none'">` : ''}
+                    <div class="rarity-rare-info">
+                        <div class="rr-name">${s.name}</div>
+                        ${s.sci ? `<div class="rr-sci">${s.sci}</div>` : ''}
+                        <div class="rr-meta">★${s.level} · ${RARITY_TIER_NAMES[s.level]}<br>weltweit ${s.n.toLocaleString('de-DE')}× (RG)</div>
+                    </div>
+                </div>`).join(''));
+            rarityGridShown += next.length;
+            const info = document.getElementById('rarityGridInfo');
+            if (info) info.textContent = `${rarityGridShown.toLocaleString('de-DE')} / ${list.length.toLocaleString('de-DE')} Arten`;
+        }
+
+        function setupRarityInfiniteScroll() {
+            if (rarityObserverSet) return;
+            const sentinel = document.getElementById('rarityGridSentinel');
+            if (!sentinel || typeof IntersectionObserver === 'undefined') return;
+            const io = new IntersectionObserver(entries => {
+                if (entries.some(e => e.isIntersecting)) {
+                    const list = getRarityFilteredSpecies();
+                    if (rarityGridShown < list.length) renderRarityGrid(false);
+                }
+            }, { rootMargin: '500px' });
+            io.observe(sentinel);
+            rarityObserverSet = true;
+        }
+
+        // Seltenheits-Daten (globale Zahlen) verwerfen und neu laden
+        function refreshRarityData() {
+            rarityCounts = {};
+            try { localStorage.removeItem(RARITY_CACHE_KEY); } catch (e) {}
+            rarityLevels = {};
+            rarityReady = false;
+            rarityBusy = false;
+            ensureRarity();
+            renderRarityDashboard();
+        }
+
+        // Seltenheits-Filter (Multi-Select-Dropdown)
+        function renderRarityOptions() {
+            const dd = document.getElementById('rarityDropdown');
+            if (!dd) return;
+            let html = '';
+            for (let n = 1; n <= 10; n++) {
+                html += `<div class="multi-select-option" data-value="${n}" onclick="event.stopPropagation(); toggleRaritySelection(${n})"><span class="rarity-swatch lvl-${n}"></span> ★${n} · ${RARITY_TIER_NAMES[n]}</div>`;
+            }
+            dd.innerHTML = html;
+            updateRarityDropdownSelection();
+            updateRarityFilterLabel();
+        }
+
+        function toggleRaritySelection(n) {
+            if (selectedRarityLevels.has(n)) selectedRarityLevels.delete(n);
+            else selectedRarityLevels.add(n);
+            updateRarityFilterLabel();
+            updateRarityDropdownSelection();
+            applyFilters();
+        }
+
+        function updateRarityFilterLabel() {
+            const label = document.getElementById('rarityFilterLabel');
+            if (!label) return;
+            const s = selectedRarityLevels;
+            if (s.size === 0) label.textContent = 'Alle Stufen';
+            else if (s.size === 1) { const n = [...s][0]; label.textContent = `★${n} · ${RARITY_TIER_NAMES[n]}`; }
+            else label.textContent = `${s.size} Stufen`;
+        }
+
+        function updateRarityDropdownSelection() {
+            document.querySelectorAll('#rarityDropdown .multi-select-option').forEach(opt => {
+                opt.classList.toggle('selected', selectedRarityLevels.has(Number(opt.dataset.value)));
+            });
         }
 
         // ========================================================================
@@ -4030,12 +4530,14 @@
             }
         }
 
-        // Reiter (Übersicht / Badges) umschalten
+        // Reiter (Übersicht / Badges / Seltenheit) umschalten
         function switchMainTab(name) {
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
             document.getElementById('tabBtnOverview').classList.toggle('active', name === 'overview');
             document.getElementById('tabBtnBadges').classList.toggle('active', name === 'badges');
+            document.getElementById('tabBtnRarity').classList.toggle('active', name === 'rarity');
             if (name === 'badges' && countryMap) setTimeout(() => countryMap.invalidateSize(), 60);
+            if (name === 'rarity') renderRarityDashboard();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -4638,9 +5140,17 @@
                     imgOnclickAttr = `onclick="openLightbox('${largeImage}', '${escName}', '${metaText.replace(/'/g, "\\'")}', ${imgIndex})"`;
                 }
 
+                // "Bepunktet" nur, wenn diese Beobachtung selbst Forschungsqualität hat
+                // (in der Arten-Ansicht repräsentiert die Kachel die ganze Art -> immer bewertbar).
+                const rarityScored = isSpeciesTile || obs.quality === 'research';
+                const rarityBadge = obs.taxonId
+                    ? `<span class="rarity-badge" data-taxon="${obs.taxonId}" data-scored="${rarityScored ? '1' : '0'}" style="display:none"></span>`
+                    : '';
+
                 card.innerHTML = `
                     <div class="gallery-img-container">
                         ${isNew ? '<span class="new-badge">NEU</span>' : ''}
+                        ${rarityBadge}
                         ${countBadge}
                         ${carouselControls}
                         <img src="${obs.image}" class="gallery-img"
@@ -4680,6 +5190,9 @@
 
             // Setup lazy loading for new images
             setupLazyLoading();
+
+            // Seltenheits-Badges der neuen Kacheln füllen
+            applyAllRarityBadges();
         }
 
         // Refresh data
@@ -4726,6 +5239,12 @@
 
         // Filter-/Ansichtszustand beim Nutzerwechsel zurücksetzen
         function resetStateForUserSwitch() {
+            // Seltenheit für neuen Nutzer neu berechnen (globale Zahlen-Cache bleibt erhalten)
+            rarityLevels = {};
+            rarityRgSet = new Set();
+            rarityReady = false;
+            rarityGroupFilter.clear();
+            rarityAllSpecies = [];
             selectedCountries = [];
             selectedTaxa = [];
             selectedSpeciesId = null;
@@ -4736,6 +5255,9 @@
             document.getElementById('dateFrom').value = '';
             document.getElementById('dateTo').value = '';
             document.getElementById('qualityFilter').value = 'all';
+            selectedRarityLevels.clear();
+            updateRarityFilterLabel();
+            updateRarityDropdownSelection();
             // Erstbeobachtungen-Panel
             document.getElementById('fsFrom').value = '';
             document.getElementById('fsTo').value = '';
@@ -5098,6 +5620,7 @@
             if (searchQuery) params.set('search', searchQuery);
             if (document.getElementById('dateFrom').value) params.set('dateFrom', document.getElementById('dateFrom').value);
             if (document.getElementById('dateTo').value) params.set('dateTo', document.getElementById('dateTo').value);
+            if (selectedRarityLevels.size > 0) params.set('rarity', [...selectedRarityLevels].sort((a, b) => a - b).join(','));
             if (currentSortMode !== 'date') params.set('sort', currentSortMode);
             if (sortAscending) params.set('asc', '1');
 
@@ -5133,6 +5656,10 @@
             if (params.get('dateTo')) {
                 document.getElementById('dateTo').value = params.get('dateTo');
             }
+            if (params.get('rarity')) {
+                selectedRarityLevels = new Set(params.get('rarity').split(',').map(Number).filter(n => n >= 1 && n <= 10));
+            }
+            renderRarityOptions();
             if (params.get('sort')) {
                 currentSortMode = params.get('sort');
                 document.querySelectorAll('.sort-btn').forEach(btn => {
