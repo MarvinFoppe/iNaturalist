@@ -3894,6 +3894,7 @@
                     applyAllRarityBadges();
                     updateRarityScore();
                     renderRarityDashboard();
+                    renderBadges();
                     // Falls ein Seltenheits-Filter aktiv war, bevor die Levels da waren: jetzt anwenden
                     if (selectedRarityLevels.size > 0) applyFilters();
                 });
@@ -3903,6 +3904,7 @@
             applyAllRarityBadges();
             updateRarityScore();
             renderRarityDashboard();
+            renderBadges();
         }
 
         function fillRarityBadge(el) {
@@ -3932,6 +3934,13 @@
 
         function applyAllRarityBadges() {
             document.querySelectorAll('.rarity-badge[data-taxon]').forEach(fillRarityBadge);
+        }
+
+        // Gesamt-Seltenheits-Score der Sammlung (Summe der Level, jede RG-Art einmal)
+        function rarityScoreTotal() {
+            let t = 0;
+            for (const tid of rarityRgSet) { const l = rarityLevels[tid]; if (l) t += l; }
+            return t;
         }
 
         // Gesamt-Score = Summe der Level je EINDEUTIGER RG-Art der gesamten Sammlung (jede Art einmal)
@@ -4294,6 +4303,7 @@
             kontinente:     ['Heimat', 'Nachbar', 'Entdecker', 'Fernreisender', 'Erdumrunder', 'Kontinentsammler', 'Weltreisender'],
             kalender:       ['Auftakt', 'Wochenlauf', 'Monatslauf', 'Jahreszeit', 'Halbjahr', 'Fast rund', 'Ewiger Kalender'],
             bioblitz:       ['Auftakt', 'Guter Tag', 'Sammeltag', 'Bioblitz', 'Glückstag', 'Traumtag', 'Sternstunde'],
+            rarity:         ['Fährtenleser', 'Aufspürer', 'Raritätenjäger', 'Schatzsucher', 'Raritätenkenner', 'Raritätenmeister', 'Legendensammler'],
             'Aves':           ['Ei', 'Küken', 'Nestling', 'Ästling', 'Flügge', 'Vogel', 'Schwarm'],
             'Mammalia':       ['Säugling', 'Welpe', 'Jungtier', 'Halbstark', 'Ausgewachsen', 'Leittier', 'Rudel'],
             'Reptilia':       ['Gelege', 'Schlüpfling', 'Jungtier', 'Häuter', 'Schuppenträger', 'Sonnenkönig', 'Drache'],
@@ -4307,7 +4317,7 @@
             'Animalia':       ['Ei', 'Larve', 'Jungtier', 'Krabbler', 'Wirbelloses', 'Gruppe', 'Kolonie']
         };
         // Icons der Sammel-Ränge (Gruppen nutzen ihr taxaConfig-Icon)
-        const OVERVIEW_ICON = { total: '🐾', laender: '🌍', kontinente: '🗺️', kalender: '📅', bioblitz: '☀️' };
+        const OVERVIEW_ICON = { total: '🐾', laender: '🌍', kontinente: '🗺️', kalender: '📅', bioblitz: '☀️', rarity: '💎' };
 
         // Schwellen je Kategorie
         const LADDERS = {
@@ -4317,6 +4327,8 @@
             kalender:   [30, 90, 180, 270, 320, 355, 366],
             bioblitz:   [5, 15, 30, 50, 75, 110, 150]
         };
+        // Seltenheits-Score-Leiter = Arten-Leiter × 5 (immer daran gekoppelt)
+        LADDERS.rarity = LADDERS.total.map(x => x * 5);   // [500, 2500, 5000, 12500, 25000, 50000, 100000]
         // Gruppen-Ladders (Staffelung nach weltweiter Artenzahl)
         const GROUP_LADDER_A  = [10, 25, 50, 100, 250, 500, 1000];        // artenarm (<15k): Vögel, Säuger, Reptilien, Amphibien
         const GROUP_LADDER_BC = [25, 100, 500, 1000, 2500, 5000, 10000];  // alle übrigen
@@ -4454,6 +4466,7 @@
 
             overview.innerHTML = [
                 badgeCardHTML('Arten gesamt', m.totalSpecies, LADDERS.total, { names: RANK_NAMES.total, icon: OVERVIEW_ICON.total, unit: ' Arten', reached: reachedDistinct(research, o => o.taxonId, LADDERS.total) }),
+                badgeCardHTML('Seltenheits-Score', rarityScoreTotal(), LADDERS.rarity, { names: RANK_NAMES.rarity, icon: OVERVIEW_ICON.rarity, unit: ' Pkt' }),
                 badgeCardHTML('Länder', m.countries.size, LADDERS.laender, { names: RANK_NAMES.laender, icon: OVERVIEW_ICON.laender, mapToggle: true, reached: reachedDistinct(research, o => o.country, LADDERS.laender) }),
                 badgeCardHTML('Kontinente', m.continents.size, LADDERS.kontinente, { names: RANK_NAMES.kontinente, icon: OVERVIEW_ICON.kontinente, max: 7, reached: reachedDistinct(research, o => COUNTRY_META[o.country]?.[1] || null, LADDERS.kontinente) }),
                 badgeCardHTML('Kalendertage', m.days.size, LADDERS.kalender, { names: RANK_NAMES.kalender, icon: OVERVIEW_ICON.kalender, max: 366, unit: ' Tage', calToggle: true, reached: reachedDistinct(research, o => (o.date && o.date.length >= 10) ? o.date.slice(5, 10) : null, LADDERS.kalender) }),
