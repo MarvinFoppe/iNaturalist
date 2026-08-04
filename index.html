@@ -25,18 +25,22 @@
             --primary: #2d5a27;
             --primary-light: #4a7c42;
             --primary-dark: #1e3d1a;
-            --accent: #8bc34a;
-            --accent-light: #aed581;
-            --accent-glow: rgba(139, 195, 74, 0.4);
-            --bg-dark: #0f1a0d;
-            --bg-medium: #1a2e16;
-            --bg-light: #243520;
-            --bg-card: rgba(45, 90, 39, 0.15);
-            --text-primary: #e8f5e9;
-            --text-secondary: #a5d6a7;
-            --text-muted: #81c784;
-            --border: rgba(139, 195, 74, 0.2);
-            --shadow: rgba(0, 0, 0, 0.4);
+            --accent: #9bcc5f;
+            --accent-light: #bfe08f;
+            --accent-glow: rgba(155, 204, 95, 0.25);
+            --accent-warm: #d8b483;
+            --accent-warm-strong: #c99a63;
+            --accent-warm-soft: rgba(216, 180, 131, 0.14);
+            --bg-dark: #0f1712;
+            --bg-medium: #17251a;
+            --bg-light: #223026;
+            --bg-card: rgba(45, 78, 52, 0.16);
+            --text-primary: #eaf3ec;
+            --text-secondary: #a9c9ae;
+            --text-muted: #83a889;
+            --border: rgba(155, 204, 95, 0.16);
+            --shadow: rgba(0, 0, 0, 0.32);
+            --radius: 14px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -47,6 +51,8 @@
             color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
             background-image:
                 radial-gradient(ellipse at top left, rgba(45, 90, 39, 0.3) 0%, transparent 50%),
                 radial-gradient(ellipse at bottom right, rgba(139, 195, 74, 0.1) 0%, transparent 50%),
@@ -379,17 +385,40 @@
             transform: translateY(-2px);
         }
 
-        /* Light Theme */
+        /* Light Theme – warm & freundlich */
         body.light-theme {
-            --bg-dark: #f5f5f5;
-            --bg-medium: #e8e8e8;
-            --bg-card: #ffffff;
-            --text-primary: #1a1a1a;
-            --text-secondary: #555555;
-            --text-muted: #888888;
-            --border: #dddddd;
-            --shadow: rgba(0, 0, 0, 0.1);
+            --primary: #5f7d3a;
+            --primary-light: #8bb867;
+            --primary-dark: #4e6f34;
+            --accent: #6f9c4a;
+            --accent-light: #8bb867;
+            --accent-glow: rgba(111, 156, 74, 0.18);
+            --accent-warm: #b07d4b;
+            --accent-warm-strong: #9c6a3a;
+            --accent-warm-soft: rgba(176, 125, 75, 0.12);
+            --bg-dark: #f7f4ee;
+            --bg-medium: #efe9df;
+            --bg-light: #e9e2d5;
+            --bg-card: #fffdf9;
+            --text-primary: #2c2620;
+            --text-secondary: #6b6154;
+            --text-muted: #a99e8c;
+            --border: #e7dece;
+            --shadow: rgba(90, 68, 40, 0.09);
         }
+
+        /* Light: warme, dezente Hintergrund-Schleier statt grün */
+        body.light-theme {
+            background-image:
+                radial-gradient(ellipse at top left, rgba(176, 125, 75, 0.10) 0%, transparent 52%),
+                radial-gradient(ellipse at bottom right, rgba(111, 156, 74, 0.07) 0%, transparent 55%);
+        }
+        /* Light: Header & Footer warm statt dunkelgrün */
+        body.light-theme .header,
+        body.light-theme .author-section {
+            background: linear-gradient(135deg, #fffdf9 0%, #f1e8d9 100%);
+        }
+        body.light-theme .header .header-left h1 { color: var(--accent-warm-strong); }
 
         /* Sort Controls */
         .sort-controls {
@@ -886,16 +915,16 @@
         }
 
         .taxa-card:hover, .taxa-card.active {
-            background: rgba(139, 195, 74, 0.15);
-            transform: scale(1.05);
-            border-color: var(--accent);
-            box-shadow: 0 8px 25px var(--shadow);
+            background: var(--accent-warm-soft);
+            transform: translateY(-4px);
+            border-color: var(--accent-warm);
+            box-shadow: 0 10px 26px var(--shadow);
         }
 
         .taxa-icon { font-size: 2.2em; margin-bottom: 10px; }
         .taxa-name { font-size: 0.85em; color: var(--text-secondary); }
         .taxa-count {
-            color: var(--accent);
+            color: var(--accent-warm-strong);
             font-weight: 700;
             font-size: 1.2em;
             margin-top: 8px;
@@ -1190,13 +1219,13 @@
 
         .taxa-icon {
             font-size: 2.5em;
-            filter: sepia(1) saturate(3) hue-rotate(70deg) brightness(0.9);
+            filter: sepia(0.55) saturate(1.45) hue-rotate(-12deg) brightness(0.98);
             transition: transform 0.3s, filter 0.3s;
         }
 
         .taxa-card:hover .taxa-icon {
             transform: scale(1.15);
-            filter: sepia(1) saturate(4) hue-rotate(70deg) brightness(1);
+            filter: sepia(0.4) saturate(1.7) hue-rotate(-12deg) brightness(1.05);
         }
 
         .taxa-card.active .taxa-icon {
@@ -1454,7 +1483,7 @@
             border: 1px solid var(--border); transition: all 0.15s ease; user-select: none;
         }
         .rarity-group-chip:hover { border-color: var(--accent); color: var(--text-primary); }
-        .rarity-group-chip.active { background: var(--accent); color: var(--bg-dark); border-color: transparent; }
+        .rarity-group-chip.active { background: var(--accent-warm); color: #fff; border-color: transparent; }
         .rarity-rare-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 14px; }
         .rarity-rare-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; position: relative; }
         .rarity-rare-card img { width: 100%; height: 120px; object-fit: cover; display: block; }
@@ -2840,77 +2869,77 @@
             'Aves': {
                 icon: '🐦',
                 name: 'Vögel',
-                color: '#81c784',
+                color: '#5a9bb5',
                 desc: 'Warmblütige Wirbeltiere mit Federn, Flügeln und Schnabel. Die einzigen heute lebenden Nachfahren der Dinosaurier.',
                 speciesCount: '~10.000'
             },
             'Mammalia': {
                 icon: '🦁',
                 name: 'Säugetiere',
-                color: '#a5d6a7',
+                color: '#b07d4b',
                 desc: 'Warmblütige Wirbeltiere, die ihre Jungen mit Milch säugen. Meist mit Fell bedeckt.',
                 speciesCount: '~6.500'
             },
             'Reptilia': {
                 icon: '🦎',
                 name: 'Reptilien',
-                color: '#66bb6a',
+                color: '#7a9a3e',
                 desc: 'Wechselwarme Wirbeltiere mit Schuppen. Dazu gehören Echsen, Schlangen, Schildkröten und Krokodile.',
                 speciesCount: '~11.000'
             },
             'Amphibia': {
                 icon: '🐸',
                 name: 'Amphibien',
-                color: '#4caf50',
+                color: '#4a9e7f',
                 desc: 'Wechselwarme Wirbeltiere, die meist im Wasser geboren werden und später an Land leben. Frösche, Kröten und Molche.',
                 speciesCount: '~8.000'
             },
             'Actinopterygii': {
                 icon: '🐟',
                 name: 'Fische',
-                color: '#43a047',
+                color: '#3d8ba8',
                 desc: 'Wasserlebende Wirbeltiere mit Kiemen und Flossen. Die artenreichste Gruppe der Wirbeltiere.',
                 speciesCount: '~35.000'
             },
             'Insecta': {
                 icon: '🦋',
                 name: 'Insekten',
-                color: '#aed581',
+                color: '#d69b3c',
                 desc: 'Gliederfüßer mit sechs Beinen und dreigeteiltem Körper. Mit über 1 Million Arten die artenreichste Tierklasse.',
                 speciesCount: '~1.000.000+'
             },
             'Arachnida': {
                 icon: '🕷️',
                 name: 'Spinnentiere',
-                color: '#8bc34a',
+                color: '#8a6d4b',
                 desc: 'Gliederfüßer mit acht Beinen. Dazu gehören Spinnen, Skorpione, Zecken und Milben.',
                 speciesCount: '~100.000'
             },
             'Mollusca': {
                 icon: '🐌',
                 name: 'Weichtiere',
-                color: '#7cb342',
+                color: '#9b7bb0',
                 desc: 'Wirbellose Tiere mit weichem Körper, oft mit Schale. Schnecken, Muscheln und Tintenfische.',
                 speciesCount: '~85.000'
             },
             'Plantae': {
                 icon: '🌿',
                 name: 'Pflanzen',
-                color: '#558b2f',
+                color: '#6f9c4a',
                 desc: 'Vielzellige Organismen, die Photosynthese betreiben. Von Moosen über Farne bis zu Blütenpflanzen.',
                 speciesCount: '~400.000'
             },
             'Fungi': {
                 icon: '🍄',
                 name: 'Pilze',
-                color: '#689f38',
+                color: '#b5643c',
                 desc: 'Weder Pflanze noch Tier – Pilze bilden ein eigenes Reich. Sie zersetzen organisches Material und bilden Symbiosen.',
                 speciesCount: '~150.000'
             },
             'Animalia': {
                 icon: '🦀',
                 name: 'Andere Tiere',
-                color: '#9ccc65',
+                color: '#8a8f98',
                 desc: 'Weitere Tiergruppen wie Krebstiere, Würmer, Quallen, Seesterne und viele mehr.',
                 speciesCount: '~1.500.000+'
             }
@@ -4675,7 +4704,7 @@
 
             filteredObservations.forEach(obs => {
                 if (obs.lat && obs.lon) {
-                    const color = taxaConfig[obs.taxon]?.color || '#8bc34a';
+                    const color = taxaConfig[obs.taxon]?.color || '#8a8f98';
                     const marker = L.marker([obs.lat, obs.lon], {
                         icon: L.divIcon({
                             className: 'custom-marker',
