@@ -3102,99 +3102,136 @@
             map.addLayer(markers);
         }
 
-        // Fetch all observations
+        // Rohes API-Objekt -> schlankes internes Beobachtungsobjekt
+        function mapObservation(obs) {
+            return {
+                id: obs.id,
+                lat: obs.geojson?.coordinates?.[1] || null,
+                lon: obs.geojson?.coordinates?.[0] || null,
+                name: obs.taxon?.preferred_common_name || obs.taxon?.name || obs.species_guess || 'Unbekannt',
+                scientific: obs.taxon?.name || '',
+                date: obs.observed_on || '',
+                created: obs.created_at || '',
+                updated: obs.updated_at || '',
+                place: obs.place_guess || '',
+                placeIds: obs.place_ids || [],
+                country: extractCountry(obs.place_guess) || getCountryByDate(obs.observed_on),
+                url: `https://www.inaturalist.org/observations/${obs.id}`,
+                image: obs.photos?.[0]?.url?.replace('square', 'medium') || '',
+                taxon: obs.taxon?.iconic_taxon_name || '',
+                quality: obs.quality_grade || '',
+                taxonId: obs.taxon?.id,
+                rank: obs.taxon?.rank || '',
+                rankLevel: obs.taxon?.rank_level ?? null,
+                identifications: obs.num_identification_agreements || 0
+            };
+        }
+
+        // Neuesten updated_at-Zeitstempel als Cursor für den nächsten Delta-Load bestimmen
+        function maxUpdatedCursor(arr) {
+            let mx = '';
+            for (const o of arr) { if (o.updated && o.updated > mx) mx = o.updated; }
+            return mx;
+        }
+
+        // Alle Seiten einer Beobachtungs-Abfrage laden (extraQuery z.B. "&updated_since=...")
+        async function fetchObservationsRaw(extraQuery, onProgress) {
+            const pageUrl = (p) => `${API_BASE}/observations?user_id=${USER_ID}&per_page=${PER_PAGE}&page=${p}&order=desc&order_by=created_at&locale=de${extraQuery || ''}`;
+            const firstData = await (await fetch(pageUrl(1))).json();
+            const totalResults = firstData.total_results || 0;
+            let allResults = firstData.results || [];
+            if (onProgress) onProgress(allResults.length, totalResults);
+
+            const maxPage = Math.floor(10000 / PER_PAGE);
+            const totalPages = Math.min(Math.ceil(totalResults / PER_PAGE), maxPage);
+            if (Math.ceil(totalResults / PER_PAGE) > maxPage) {
+                console.warn(`Über ${maxPage * PER_PAGE} Beobachtungen: API-Paginierung deckt nicht alle ab.`);
+            }
+
+            const pending = [];
+            for (let p = 2; p <= totalPages; p++) pending.push(p);
+            const CONCURRENCY = 5;
+            const worker = async () => {
+                while (pending.length) {
+                    const p = pending.shift();
+                    try {
+                        const d = await (await fetch(pageUrl(p))).json();
+                        if (d.results && d.results.length) allResults = allResults.concat(d.results);
+                    } catch (e) {
+                        console.warn(`Seite ${p} fehlgeschlagen:`, e);
+                    }
+                    if (onProgress) onProgress(allResults.length, totalResults);
+                }
+            };
+            await Promise.all(Array.from({ length: Math.min(CONCURRENCY, pending.length) }, worker));
+            return { results: allResults, totalResults };
+        }
+
+        // Gemeinsame Nachverarbeitung nach jeder Datenaktualisierung
+        function afterObservationsUpdated() {
+            reapplyCountries();  // manuelle Zuordnungen + Ortscache berücksichtigen
+
+            // Nicht erkannte Orte protokollieren
+            const unrecognizedPlaces = allObservations
+                .filter(obs => !obs.country && obs.place)
+                .map(obs => ({ id: obs.id, place: obs.place, url: obs.url }));
+            if (unrecognizedPlaces.length > 0) {
+                console.group(`🌍 ${unrecognizedPlaces.length} Beobachtungen ohne erkanntes Land:`);
+                const uniquePlaces = [...new Set(unrecognizedPlaces.map(p => p.place))].sort();
+                uniquePlaces.forEach(place => {
+                    const obs = unrecognizedPlaces.find(p => p.place === place);
+                    console.log(`"${place}" → ${obs.url}`);
+                });
+                console.groupEnd();
+            }
+
+            populateCountryFilter();
+            applyFilters();  // respektiert aktive Filter (statt sie zurückzusetzen)
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString('de-DE');
+            saveToCache(allObservations);
+            enrichCountriesFromPlaces();  // Länder im Hintergrund präzisieren
+        }
+
+        // VOLLSTÄNDIGER Load (alle Beobachtungen von vorn)
         async function fetchAllObservations() {
             const overlay = document.getElementById('loadingOverlay');
             const progress = document.getElementById('loadingProgress');
             overlay.classList.remove('hidden');
-
             try {
-                const pageUrl = (p) => `${API_BASE}/observations?user_id=${USER_ID}&per_page=${PER_PAGE}&page=${p}&order=desc&order_by=created_at&locale=de`;
-
-                // Erste Seite holen (liefert zugleich total_results -> keine Extra-Zählabfrage nötig)
-                const firstData = await (await fetch(pageUrl(1))).json();
-                const totalResults = firstData.total_results || 0;
-                let allResults = firstData.results || [];
-                progress.textContent = `${allResults.length} / ${totalResults} geladen`;
-
-                // iNaturalist begrenzt page*per_page auf 10.000 -> nur erreichbare Seiten anfragen
-                const maxPage = Math.floor(10000 / PER_PAGE);
-                const totalPages = Math.min(Math.ceil(totalResults / PER_PAGE), maxPage);
-                if (Math.ceil(totalResults / PER_PAGE) > maxPage) {
-                    console.warn(`Über ${maxPage * PER_PAGE} Beobachtungen: API-Paginierung deckt nicht alle ab.`);
-                }
-
-                // Restliche Seiten PARALLEL laden (mit begrenzter Gleichzeitigkeit)
-                const pending = [];
-                for (let p = 2; p <= totalPages; p++) pending.push(p);
-                const CONCURRENCY = 5;
-                const worker = async () => {
-                    while (pending.length) {
-                        const p = pending.shift();
-                        try {
-                            const d = await (await fetch(pageUrl(p))).json();
-                            if (d.results && d.results.length) allResults = allResults.concat(d.results);
-                        } catch (e) {
-                            console.warn(`Seite ${p} fehlgeschlagen:`, e);
-                        }
-                        progress.textContent = `${allResults.length} / ${totalResults} geladen`;
-                    }
-                };
-                await Promise.all(Array.from({ length: Math.min(CONCURRENCY, pending.length) }, worker));
-
-                allObservations = allResults.map(obs => ({
-                    id: obs.id,
-                    lat: obs.geojson?.coordinates?.[1] || null,
-                    lon: obs.geojson?.coordinates?.[0] || null,
-                    name: obs.taxon?.preferred_common_name || obs.taxon?.name || obs.species_guess || 'Unbekannt',
-                    scientific: obs.taxon?.name || '',
-                    date: obs.observed_on || '',
-                    created: obs.created_at || '',
-                    place: obs.place_guess || '',
-                    placeIds: obs.place_ids || [],
-                    country: extractCountry(obs.place_guess) || getCountryByDate(obs.observed_on),
-                    url: `https://www.inaturalist.org/observations/${obs.id}`,
-                    image: obs.photos?.[0]?.url?.replace('square', 'medium') || '',
-                    taxon: obs.taxon?.iconic_taxon_name || '',
-                    quality: obs.quality_grade || '',
-                    taxonId: obs.taxon?.id,
-                    rank: obs.taxon?.rank || '',
-                    rankLevel: obs.taxon?.rank_level ?? null,
-                    identifications: obs.num_identification_agreements || 0
-                }));
-
-                reapplyCountries();  // manuelle Zuordnungen + Ortscache berücksichtigen
-                filteredObservations = [...allObservations];
-
-                // Log unrecognized places to console
-                const unrecognizedPlaces = allObservations
-                    .filter(obs => !obs.country && obs.place)
-                    .map(obs => ({ id: obs.id, place: obs.place, url: obs.url }));
-                if (unrecognizedPlaces.length > 0) {
-                    console.group(`🌍 ${unrecognizedPlaces.length} Beobachtungen ohne erkanntes Land:`);
-                    const uniquePlaces = [...new Set(unrecognizedPlaces.map(p => p.place))].sort();
-                    uniquePlaces.forEach(place => {
-                        const obs = unrecognizedPlaces.find(p => p.place === place);
-                        console.log(`"${place}" → ${obs.url}`);
-                    });
-                    console.groupEnd();
-                }
-
-                populateCountryFilter();
-                updateUI();
+                const { results } = await fetchObservationsRaw('', (n, t) => {
+                    progress.textContent = `${n} / ${t} geladen`;
+                });
+                allObservations = results.map(mapObservation);
+                afterObservationsUpdated();
                 overlay.classList.add('hidden');
-                document.getElementById('lastUpdate').textContent = new Date().toLocaleString('de-DE');
-
-                // Save to cache
-                saveToCache(allObservations);
-
-                // Länder über echte API-Ortsdaten präzisieren (im Hintergrund, blockiert UI nicht)
-                enrichCountriesFromPlaces();
-
             } catch (error) {
                 console.error('Error fetching data:', error);
                 overlay.classList.add('hidden');
                 showError('Fehler beim Laden der Daten.');
+            }
+        }
+
+        // DELTA-Load: nur seit dem Cursor neue/geänderte Beobachtungen holen und mergen
+        async function fetchDeltaObservations() {
+            const cursor = maxUpdatedCursor(allObservations);
+            if (!cursor) return fetchAllObservations();  // kein Cursor -> voll laden
+            const progress = document.getElementById('loadingProgress');
+            try {
+                const since = encodeURIComponent(cursor);
+                const { results } = await fetchObservationsRaw(`&updated_since=${since}`, (n, t) => {
+                    if (progress) progress.textContent = `Aktualisiere … (${n} neu/geändert)`;
+                });
+                if (results.length) {
+                    // Nach id mergen: bestehende überschreiben, neue ergänzen
+                    const byId = new Map(allObservations.map(o => [o.id, o]));
+                    results.forEach(r => byId.set(r.id, mapObservation(r)));
+                    allObservations = [...byId.values()];
+                    console.log(`Delta-Load: ${results.length} Beobachtung(en) aktualisiert.`);
+                }
+                afterObservationsUpdated();
+            } catch (error) {
+                console.warn('Delta-Load fehlgeschlagen, lade vollständig:', error);
+                return fetchAllObservations();
             }
         }
 
@@ -5486,28 +5523,47 @@
             if (btn) { btn.disabled = false; btn.textContent = 'Anzeigen'; }
         }
 
-        // Daten des aktuellen Nutzers laden (Cache -> frisch)
+        // Alter, ab dem der Cache im Hintergrund per Delta aktualisiert wird
+        const CACHE_STALE_MS = 5 * 60 * 1000;      // 5 Min: darunter kein Netzwerk nötig
+        const CACHE_FULL_RELOAD_MS = 7 * 24 * 60 * 60 * 1000; // 7 Tage: kompletter Neuabgleich (fängt Löschungen)
+
+        // Daten des aktuellen Nutzers laden (Cache sofort anzeigen -> nur Delta nachladen)
         async function loadUser(skipProfile) {
-            document.getElementById('loadingOverlay').classList.remove('hidden');
             if (!skipProfile) {
                 loadUserProfile(USER_ID).then(u => applyUserChrome(u, USER_ID));
             }
-            const cached = loadFromCache();
-            if (cached) {
-                allObservations = cached;
-                reapplyCountries();  // manuelle Zuordnungen + Ortscache berücksichtigen
-                filteredObservations = [...allObservations];
-                updateUI();
+            const cache = loadCacheRaw();
+            if (cache) {
+                // 1) Cache SOFORT anzeigen (kein Wartebildschirm)
+                allObservations = cache.observations;
+                reapplyCountries();
+                populateCountryFilter();
+                applyFilters();
                 document.getElementById('loadingOverlay').classList.add('hidden');
+                document.getElementById('lastUpdate').textContent = 'aus Cache – prüfe Aktualisierung …';
+
+                // 2) Frischer Cache -> gar nichts nachladen
+                if (cache.age < CACHE_STALE_MS) {
+                    document.getElementById('lastUpdate').textContent = 'aktuell (aus Cache)';
+                    return;
+                }
+                // 3) Sehr alt -> voll neu laden (fängt auch gelöschte Beobachtungen), sonst nur Delta
+                if (cache.age > CACHE_FULL_RELOAD_MS) await fetchAllObservations();
+                else await fetchDeltaObservations();
+            } else {
+                // Kein Cache -> voller Erst-Load mit Wartebildschirm
+                document.getElementById('loadingOverlay').classList.remove('hidden');
+                await fetchAllObservations();
             }
-            await fetchAllObservations();
         }
 
         async function refreshData() {
             const btn = document.getElementById('refreshBtn');
             btn.disabled = true;
             btn.classList.add('loading');
-            await fetchAllObservations();
+            // Manuelles Aktualisieren: schneller Delta-Load (fällt bei Bedarf auf voll zurück)
+            if (allObservations.length) await fetchDeltaObservations();
+            else await fetchAllObservations();
             btn.disabled = false;
             btn.classList.remove('loading');
         }
@@ -5875,22 +5931,22 @@
             }
         }
 
-        function loadFromCache() {
+        // Cache unabhängig vom Alter lesen (mit Metadaten für Delta-Entscheidung)
+        function loadCacheRaw() {
             try {
                 const cached = localStorage.getItem(cacheKey());
                 if (!cached) return null;
-
                 const cacheData = JSON.parse(cached);
-                const age = Date.now() - cacheData.timestamp;
-
-                if (age < CACHE_DURATION) {
-                    console.log('Loading from cache (age: ' + Math.round(age/1000) + 's)');
-                    return cacheData.observations;
-                }
+                if (!cacheData.observations || !cacheData.observations.length) return null;
+                return {
+                    observations: cacheData.observations,
+                    timestamp: cacheData.timestamp || 0,
+                    age: Date.now() - (cacheData.timestamp || 0)
+                };
             } catch (e) {
                 console.warn('Cache load failed:', e);
+                return null;
             }
-            return null;
         }
 
         // ========== LAZY LOADING ==========
