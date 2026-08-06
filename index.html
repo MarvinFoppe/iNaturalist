@@ -4948,11 +4948,17 @@
             renderFriendsTab();
         }
 
-        // Zusammenfassung des aktuell angezeigten Nutzers (aus bereits geladenen Daten)
+        // Zusammenfassung des Seiten-Eigentuemers (bleibt immer die "Du"-Karte,
+        // egal welches Profil gerade in der App geladen ist)
         async function buildSelfSummary() {
-            const name = document.getElementById('authorName')?.textContent || USER_ID;
-            const icon = document.getElementById('authorImage')?.src || '';
-            return computePersonSummary(USER_ID, name, icon, allObservations);
+            // Eigentuemer ist gerade geladen -> aus bereits geladenen Daten (schnell)
+            if (USER_ID.toLowerCase() === DEFAULT_USER.toLowerCase()) {
+                const name = document.getElementById('authorName')?.textContent || USER_ID;
+                const icon = document.getElementById('authorImage')?.src || '';
+                return computePersonSummary(USER_ID, name, icon, allObservations);
+            }
+            // Ein Freundesprofil ist geladen -> Eigentuemer-Daten wie einen Freund holen (mit Cache)
+            return buildFriendSummary(DEFAULT_USER, false);
         }
 
         async function addFriendFromInput() {
@@ -4961,7 +4967,7 @@
             const raw = (input.value || '').trim().replace(/^@/, '');
             errEl.textContent = '';
             if (!raw) return;
-            if (raw.toLowerCase() === USER_ID.toLowerCase()) { errEl.textContent = 'Das bist du selbst.'; return; }
+            if (raw.toLowerCase() === USER_ID.toLowerCase() || raw.toLowerCase() === DEFAULT_USER.toLowerCase()) { errEl.textContent = 'Das bist du selbst.'; return; }
             const friends = loadFriends();
             if (friends.some(f => f.login.toLowerCase() === raw.toLowerCase())) { errEl.textContent = 'Schon in der Liste.'; return; }
             errEl.textContent = 'Prüfe …';
@@ -5074,8 +5080,16 @@
             friendsRendering = true;
 
             const friends = loadFriends();
-            const selfName = document.getElementById('authorName')?.textContent || USER_ID;
-            const people = [{ login: USER_ID, self: true, name: selfName }, ...friends.map(f => ({ login: f.login, name: f.name }))];
+            // Die "Du"-Karte ist immer der Seiten-Eigentuemer – auch wenn gerade
+            // ein Freundesprofil in der App geladen ist.
+            const ownerName = (USER_ID.toLowerCase() === DEFAULT_USER.toLowerCase())
+                ? (document.getElementById('authorName')?.textContent || DEFAULT_USER)
+                : (loadFriendSummary(DEFAULT_USER)?.summary?.name || DEFAULT_USER);
+            const people = [
+                { login: DEFAULT_USER, self: true, name: ownerName },
+                ...friends.filter(f => f.login.toLowerCase() !== DEFAULT_USER.toLowerCase())
+                          .map(f => ({ login: f.login, name: f.name }))
+            ];
 
             // Platzhalter-Karten mit Ladeanzeige (zeigt Fortschritt je Person)
             wrap.innerHTML = people.map((p, i) => `
