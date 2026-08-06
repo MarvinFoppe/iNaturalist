@@ -2558,7 +2558,7 @@
         </div>
     </details>
 
-    <details class="map-container sec-collapse" id="mapSection" ontoggle="onMapSectionToggle(this)" open>
+    <details class="map-container sec-collapse" id="mapSection" ontoggle="if(window.onMapSectionToggle)onMapSectionToggle(this)" open>
         <summary class="sec-summary">🗺️ Weltkarte <span class="sec-chevron">▼</span></summary>
         <div id="map"></div>
     </details>
@@ -5851,7 +5851,7 @@
 
             if (isOwner) {
                 // Eigentümer: eigenes Foto + Original-Bio beibehalten
-                if (imgEl) imgEl.src = 'author.jpg';
+                if (imgEl) { imgEl.style.visibility = ''; imgEl.src = 'author.jpg'; }
                 if (titleEl) titleEl.textContent = 'Fotograf';
                 if (badgeEl) badgeEl.innerHTML = '<svg class="icon" style="vertical-align: middle; margin-right: 4px;"><use href="#icon-camera"/></svg> Fotograf';
                 if (bioEl) {
@@ -5860,12 +5860,15 @@
                 }
             } else {
                 // Anderer Nutzer: Avatar + Name/Bio aus der iNat-API
-                if (imgEl && user && user.icon_url) imgEl.src = user.icon_url;
-                else if (imgEl) imgEl.src = 'https://www.inaturalist.org/assets/user-image-defaults/defaultavatar.png';
+                if (imgEl) {
+                    imgEl.onerror = function () { this.onerror = null; this.style.visibility = 'hidden'; };
+                    if (user && user.icon_url) { imgEl.style.visibility = ''; imgEl.src = user.icon_url; }
+                    else { imgEl.style.visibility = 'hidden'; }
+                }
                 if (titleEl) titleEl.textContent = 'iNaturalist-Profil';
                 if (badgeEl) badgeEl.innerHTML = '<svg class="icon" style="vertical-align: middle; margin-right: 4px;"><use href="#icon-leaf"/></svg> Naturbeobachter:in';
                 if (bioEl) {
-                    const raw = (user && (user.description || '')).replace(/<[^>]*>/g, '').trim();
+                    const raw = ((user && user.description) || '').replace(/<[^>]*>/g, '').trim();
                     if (raw) { bioEl.style.display = ''; bioEl.textContent = raw.length > 320 ? raw.slice(0, 320) + '…' : raw; }
                     else { bioEl.style.display = 'none'; }
                 }
@@ -6438,11 +6441,12 @@
             localStorage.setItem('inat_current_user', USER_ID);
 
             loadFiltersFromURL();
-            initMap();
+            try { initMap(); } catch (e) { console.warn('initMap fehlgeschlagen:', e); }
 
             // Sofort provisorisch anpassen (verhindert Aufblitzen des Eigentümer-Profils),
             // wird nach dem Laden des Profils mit dem echten Namen verfeinert.
-            applyUserChrome(null, USER_ID);
+            // In try/catch, damit ein Chrome-Fehler NIE das Laden der Daten blockiert.
+            try { applyUserChrome(null, USER_ID); } catch (e) { console.warn('applyUserChrome fehlgeschlagen:', e); }
 
             // Profil + Daten des aktuellen Nutzers laden
             loadUser();

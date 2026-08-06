@@ -1,7 +1,7 @@
 // Minimaler Service Worker – ermöglicht die Installation als App ("PWA").
 // Kein Offline-Zwang: Anfragen laufen network-first (immer aktuelle Daten),
 // der Cache dient nur als Rückfallebene, wenn gerade kein Netz da ist.
-const CACHE = 'inat-shell-v6';
+const CACHE = 'inat-shell-v7';
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (event) => {
