@@ -1562,13 +1562,17 @@
             .friends-cards .person-avatar { width: 38px; height: 38px; }
             .friends-cards .person-name { font-size: 0.82em; }
             .friends-cards .person-login { font-size: 0.68em; }
-            .friends-cards .person-stats { gap: 5px; margin-bottom: 0; }
+            .friends-cards .person-stats { gap: 5px; margin-bottom: 12px; }
             .friends-cards .pc-stat { padding: 5px 3px; border-radius: 8px; }
             .friends-cards .pc-stat-val { font-size: 0.9em; }
             .friends-cards .pc-stat-label { font-size: 0.52em; }
-            /* Badges & Krone erst in der Detailansicht zeigen */
-            .friends-cards .person-badges,
-            .friends-cards .person-badges-title { display: none; }
+            /* Sammel-Ränge kompakt auch in der kleinen Darstellung zeigen */
+            .friends-cards .person-badges-title { font-size: 0.6em; margin-bottom: 6px; }
+            .friends-cards .person-badges { gap: 5px; }
+            .friends-cards .pc-badge { font-size: 0.7em; gap: 5px; }
+            .friends-cards .pc-badge-ico { font-size: 1em; width: 1.2em; }
+            .friends-cards .pc-badge-rank { line-height: 1.1; }
+            .friends-cards .pc-badge-pips span { width: 5px; height: 5px; }
             .friends-cards .pc-tap-hint { display: block; text-align: center; margin-top: 8px; font-size: 0.62em; color: var(--text-muted); }
             .friends-cards .person-remove { font-size: 1.2em; }
         }
@@ -5005,7 +5009,7 @@
                 : '';
             const dragAttrs = isSelf ? '' : `draggable="true" data-login="${s.login}" ondragstart="friendDragStart(event,'${s.login}')" ondragend="friendDragEnd(event)" ondragover="friendDragOver(event)" ondragenter="friendDragEnter(event)" ondragleave="friendDragLeave(event)" ondrop="friendDrop(event,'${s.login}')"`;
             return `<div class="person-card ${isSelf ? 'person-self' : ''}" ${dragAttrs} onclick="onPersonCardClick(event,'${s.login}')">
-                <span class="pc-tap-hint">Tippen für Details</span>
+                <span class="pc-tap-hint">Tippen zum Vergrößern</span>
                 ${newBadge}
                 <div class="person-head">
                     ${avatar}
