@@ -2583,6 +2583,7 @@
             <span style="color: var(--text-secondary); font-size: 0.9em;">Sortieren:</span>
             <button class="sort-btn active" data-sort="date" onclick="setSortMode('date')">📅 Beobachtet</button>
             <button class="sort-btn" data-sort="created" onclick="setSortMode('created')">⬆️ Hochgeladen</button>
+            <button class="sort-btn" data-sort="updated" onclick="setSortMode('updated')">🆔 Letzte Einordnung</button>
             <button class="sort-btn" data-sort="name" onclick="setSortMode('name')">🔤 Name</button>
             <button class="sort-btn" data-sort="country" onclick="setSortMode('country')">🌍 Land</button>
         </div>
@@ -6018,6 +6019,9 @@
                         break;
                     case 'created':
                         comparison = new Date(b.created || '1900-01-01') - new Date(a.created || '1900-01-01');
+                        break;
+                    case 'updated':
+                        comparison = new Date(b.updated || b.created || '1900-01-01') - new Date(a.updated || a.created || '1900-01-01');
                         break;
                     case 'name':
                         const nameA = (a.name || '').toLowerCase();
