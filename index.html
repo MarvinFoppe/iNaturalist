@@ -1486,7 +1486,8 @@
         .rarity-group-chip:hover { border-color: var(--accent); color: var(--text-primary); }
         .rarity-group-chip.active { background: var(--accent-warm); color: #fff; border-color: transparent; }
         .rarity-rare-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 14px; }
-        .rarity-rare-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; position: relative; }
+        .rarity-rare-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; position: relative; display: block; text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; }
+        .rarity-rare-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 8px 22px var(--shadow); }
         .rarity-rare-card img { width: 100%; height: 120px; object-fit: cover; display: block; }
         .rarity-rare-info { padding: 10px; }
         .rarity-rare-info .rr-name { font-weight: 600; color: var(--accent); font-size: 0.9em; }
@@ -1505,6 +1506,8 @@
         .person-card[draggable="true"] { cursor: grab; }
         .person-card.pc-dragging { opacity: 0.5; cursor: grabbing; }
         .person-card.pc-drop { outline: 2px dashed var(--accent-warm); outline-offset: 2px; }
+        .pc-open-app { display: block; width: 100%; margin-top: 12px; padding: 10px; border: 1px solid var(--accent); border-radius: 10px; background: var(--accent-glow); color: var(--text-primary); font-size: 0.88em; font-weight: 600; cursor: pointer; transition: background 0.15s ease, transform 0.15s ease; }
+        .pc-open-app:hover { background: var(--accent); color: var(--bg-dark); transform: translateY(-1px); }
         .pc-new {
             position: absolute; top: -9px; right: -9px; z-index: 5;
             background: var(--accent-warm-strong); color: #fff;
@@ -1550,7 +1553,7 @@
         .person-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 10001; display: none; align-items: flex-start; justify-content: center; padding: 24px 14px; overflow-y: auto; }
         .person-modal.active { display: flex; }
         .person-modal-inner { position: relative; width: 100%; max-width: 420px; }
-        .person-modal-inner .person-card { cursor: default; }
+        .person-modal-inner .person-card { cursor: default; background: linear-gradient(var(--bg-card), var(--bg-card)), var(--bg-dark); box-shadow: 0 18px 50px rgba(0,0,0,0.55); }
         .person-modal-inner .pc-tap-hint { display: none; }
         .person-modal-close { position: absolute; top: -12px; right: -6px; z-index: 3; width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--accent); color: var(--bg-dark); font-size: 1.3em; font-weight: 700; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.4); }
 
@@ -4284,8 +4287,10 @@
             const list = getRarityFilteredSpecies();
             if (reset) { rarityGridShown = 0; gridEl.innerHTML = ''; }
             const next = list.slice(rarityGridShown, rarityGridShown + RARITY_GRID_BATCH);
-            gridEl.insertAdjacentHTML('beforeend', next.map(s => `
-                <div class="rarity-rare-card">
+            gridEl.insertAdjacentHTML('beforeend', next.map(s => {
+                const href = s.url || `https://www.inaturalist.org/taxa/${s.id}`;
+                return `
+                <a class="rarity-rare-card" href="${href}" target="_blank" rel="noopener" title="Auf iNaturalist öffnen">
                     <span class="rarity-badge lvl-${s.level}" style="position:absolute; top:8px; left:8px;">★ ${s.level}</span>
                     ${s.image ? `<img src="${s.image}" alt="${s.name}" loading="lazy" onerror="this.style.display='none'">` : ''}
                     <div class="rarity-rare-info">
@@ -4293,7 +4298,8 @@
                         ${s.sci ? `<div class="rr-sci">${s.sci}</div>` : ''}
                         <div class="rr-meta">★${s.level} · ${RARITY_TIER_NAMES[s.level]}<br>weltweit ${s.n.toLocaleString('de-DE')}× (RG)</div>
                     </div>
-                </div>`).join(''));
+                </a>`;
+            }).join(''));
             rarityGridShown += next.length;
             const info = document.getElementById('rarityGridInfo');
             if (info) info.textContent = `${rarityGridShown.toLocaleString('de-DE')} / ${list.length.toLocaleString('de-DE')} Arten`;
@@ -5023,6 +5029,7 @@
                 <div class="person-stats">${stats}</div>
                 <div class="person-badges-title">Sammel-Ränge</div>
                 <div class="person-badges">${badges}</div>
+                ${isSelf ? '' : `<button class="pc-open-app" onclick="openFriendInApp('${s.login}')" title="Beobachtungen von @${s.login} in dieser App anzeigen">👤 Profil in App öffnen</button>`}
             </div>`;
         }
 
@@ -5034,6 +5041,14 @@
             if (e.target.closest('a, button, .pc-new')) return;      // Links/Buttons/Zähler nicht abfangen
             if (!window.matchMedia('(max-width: 600px)').matches) return; // nur mobil vergrößern
             openPersonModal(login);
+        }
+        // Freund als aktuelles Profil in die App laden (wie Nutzerwechsel)
+        function openFriendInApp(login) {
+            closePersonModal();
+            const input = document.getElementById('userInput');
+            if (input) input.value = login;
+            switchMainTab('overview');
+            switchUser(login);
         }
         function openPersonModal(login) {
             const d = friendRenderState.byLogin[login.toLowerCase()];
