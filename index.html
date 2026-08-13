@@ -1084,6 +1084,7 @@
         .gallery-title { color: var(--accent); font-weight: 600; margin-bottom: 4px; font-size: 0.95em; }
         .gallery-scientific { color: var(--text-muted); font-style: italic; font-size: 0.8em; }
         .gallery-meta { margin-top: 8px; font-size: 0.76em; color: var(--text-secondary); }
+        .gallery-meta-upload { margin-top: 2px; color: var(--text-muted); }
 
         .gallery-link {
             display: inline-flex;
@@ -2651,6 +2652,27 @@
                 <div class="rt-sub" id="rarityHeroSub">wird berechnet …</div>
                 <div class="rt-note" id="rarityHeroNote"></div>
             </div>
+            <div class="filter-row" style="margin-bottom: 4px;">
+                <div class="filter-group">
+                    <label class="filter-label"><svg class="icon"><use href="#icon-globe"/></svg> Länder</label>
+                    <div class="multi-select-container" id="rarityCountryFilterContainer">
+                        <button type="button" class="multi-select-btn" onclick="toggleMultiSelect('rarityCountry')">
+                            <span id="rarityCountryFilterLabel">Alle Länder</span>
+                            <span class="arrow">▼</span>
+                        </button>
+                        <div class="multi-select-dropdown" id="rarityCountryDropdown"></div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label"><svg class="icon"><use href="#icon-calendar"/></svg> Von Datum</label>
+                    <input type="date" id="rarityDateFrom" class="filter-input" onchange="renderRarityDashboard()" onclick="this.showPicker()">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label"><svg class="icon"><use href="#icon-calendar"/></svg> Bis Datum</label>
+                    <input type="date" id="rarityDateTo" class="filter-input" onchange="renderRarityDashboard()" onclick="this.showPicker()">
+                </div>
+                <button class="filter-reset" onclick="resetRarityFilters()">× Filter zurücksetzen</button>
+            </div>
             <h3 style="color: var(--accent); margin: 18px 0 6px;">Filter nach Tiergruppe</h3>
             <div class="rarity-group-chips" id="rarityGroupChips"></div>
             <h3 style="color: var(--accent); margin: 18px 0 6px;">Verteilung nach Level</h3>
@@ -2802,6 +2824,7 @@
         // Seltenheit-Reiter: Liste + Gruppen-Filter + Endlos-Scroll
         let rarityAllSpecies = [];             // {id,name,sci,image,url,level,n,group}
         let rarityGroupFilter = new Set();     // leer = alle Gruppen
+        let rarityCountryFilter = [];          // ausgewaehlte Laender im Seltenheit-Reiter (leer = alle)
         const RARITY_GRID_BATCH = 40;
         let rarityGridShown = 0;
         let rarityObserverSet = false;
@@ -4194,35 +4217,60 @@
             if (!heroScore) return;
             const heroSub = document.getElementById('rarityHeroSub');
 
+            // Länder-/Datumsfilter des Reiters aufbereiten
+            populateRarityCountryFilter();
+            const rcFrom = (document.getElementById('rarityDateFrom') || {}).value || '';
+            const rcTo = (document.getElementById('rarityDateTo') || {}).value || '';
+            const rcHasNoCountry = rarityCountryFilter.includes('__NO_COUNTRY__');
+            const rcRegular = rarityCountryFilter.filter(c => c !== '__NO_COUNTRY__');
+            const rarityFilterActive = rarityCountryFilter.length > 0 || !!rcFrom || !!rcTo;
+            const passesRarityFilter = (o) => {
+                if (rarityCountryFilter.length > 0) {
+                    const okCountry = (rcHasNoCountry && !o.country) || (o.country && rcRegular.includes(o.country));
+                    if (!okCountry) return false;
+                }
+                if (rcFrom && (!o.date || o.date < rcFrom)) return false;
+                if (rcTo && (!o.date || o.date > rcTo)) return false;
+                return true;
+            };
+
             // repräsentative Beobachtung je Art (mit Bild & meisten Bestätigungen bevorzugt)
+            // + frühestes Beobachtungsdatum je Art ("zuerst entdeckt am")
             const rep = {};
+            const firstSeen = {};
             for (const o of allObservations) {
                 if (o.quality !== 'research' || !o.taxonId || !rarityLevels[o.taxonId]) continue;
+                if (!passesRarityFilter(o)) continue;
                 const cur = rep[o.taxonId];
                 if (!cur || (!cur.image && o.image) || (o.image && (o.identifications || 0) > (cur.identifications || 0))) {
                     rep[o.taxonId] = o;
                 }
+                if (o.date && (!firstSeen[o.taxonId] || o.date < firstSeen[o.taxonId])) firstSeen[o.taxonId] = o.date;
             }
             rarityAllSpecies = Object.keys(rep).map(id => {
                 const o = rep[id];
-                return { id: +id, name: o.name, sci: o.scientific, image: o.image, url: o.url, level: rarityLevels[id], n: rarityCounts[id] || 0, group: o.taxon || 'Unbekannt' };
+                return { id: +id, name: o.name, sci: o.scientific, image: o.image, url: o.url, level: rarityLevels[id], n: rarityCounts[id] || 0, group: o.taxon || 'Unbekannt', firstSeen: firstSeen[id] || '' };
             }).sort((a, b) => b.level - a.level || a.n - b.n);
 
             if (!rarityAllSpecies.length) {
                 heroScore.textContent = rarityReady ? '0' : '…';
-                heroSub.textContent = rarityReady ? 'Keine Arten in Forschungsqualität' : 'Seltenheits-Daten werden geladen …';
-                ['rarityDistribution', 'rarityRareGrid', 'rarityGroupChips'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+                heroSub.textContent = rarityReady
+                    ? (rarityFilterActive ? 'Keine Arten für diese Auswahl' : 'Keine Arten in Forschungsqualität')
+                    : 'Seltenheits-Daten werden geladen …';
+                ['rarityDistribution', 'rarityRareGrid'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+                renderRarityGroupChips();
+                const gi = document.getElementById('rarityGridInfo'); if (gi) gi.textContent = '';
                 return;
             }
 
             const total = rarityAllSpecies.reduce((s, x) => s + x.level, 0);
             heroScore.textContent = total.toLocaleString('de-DE');
-            heroSub.textContent = `${rarityAllSpecies.length.toLocaleString('de-DE')} Arten · Ø ${(total / rarityAllSpecies.length).toFixed(1)} pro Art${rarityReady ? '' : ' · lädt …'}`;
+            heroSub.textContent = `${rarityAllSpecies.length.toLocaleString('de-DE')} Arten · Ø ${(total / rarityAllSpecies.length).toFixed(1)} pro Art${rarityReady ? '' : ' · lädt …'}${rarityFilterActive ? ' · gefiltert' : ''}`;
 
             // Kurze Erklärung, falls weniger Arten bewertet als Research-Grade-Arten insgesamt
             const noteEl = document.getElementById('rarityHeroNote');
             if (noteEl) {
-                const rgTotal = new Set(allObservations.filter(o => o.quality === 'research' && o.taxonId).map(o => o.taxonId)).size;
+                const rgTotal = new Set(allObservations.filter(o => o.quality === 'research' && o.taxonId && passesRarityFilter(o)).map(o => o.taxonId)).size;
                 const rated = rarityAllSpecies.length;
                 noteEl.textContent = (rgTotal > rated)
                     ? `Bewertet: ${rated.toLocaleString('de-DE')} von ${rgTotal.toLocaleString('de-DE')} Research-Grade-Arten. Die übrigen ${(rgTotal - rated).toLocaleString('de-DE')} sind nur bis zur Gattung/zum Arten-Komplex bestimmt – dafür gibt es keinen Seltenheitswert (jede Art zählt einmal).`
@@ -4233,6 +4281,76 @@
             renderRarityDistribution();
             renderRarityGrid(true);
             setupRarityInfiniteScroll();
+        }
+
+        // Länder-Dropdown im Seltenheit-Reiter befüllen (nur Research-Grade-Beobachtungen)
+        function populateRarityCountryFilter() {
+            const dropdown = document.getElementById('rarityCountryDropdown');
+            if (!dropdown) return;
+            const countries = {};
+            let noCountryCount = 0;
+            allObservations.forEach(obs => {
+                if (obs.quality !== 'research' || !obs.taxonId) return;
+                if (obs.country) countries[obs.country] = (countries[obs.country] || 0) + 1;
+                else noCountryCount++;
+            });
+            const sorted = Object.entries(countries).sort((a, b) => a[0].localeCompare(b[0], 'de'));
+            dropdown.innerHTML = '';
+            if (noCountryCount > 0) {
+                const opt = document.createElement('div');
+                opt.className = 'multi-select-option no-country-option';
+                opt.dataset.value = '__NO_COUNTRY__';
+                opt.innerHTML = `<span class="multi-select-checkbox"></span><span>❓ Kein Land erkannt</span><span class="multi-select-count">${noCountryCount}</span>`;
+                opt.onclick = (e) => { e.stopPropagation(); toggleRarityCountrySelection('__NO_COUNTRY__'); };
+                dropdown.appendChild(opt);
+            }
+            sorted.forEach(([country, count]) => {
+                const opt = document.createElement('div');
+                opt.className = 'multi-select-option';
+                opt.dataset.value = country;
+                opt.innerHTML = `<span class="multi-select-checkbox"></span><span>${getFlag(country)} ${country}</span><span class="multi-select-count">${count}</span>`;
+                opt.onclick = (e) => { e.stopPropagation(); toggleRarityCountrySelection(country); };
+                dropdown.appendChild(opt);
+            });
+            updateRarityCountrySelection();
+            updateRarityCountryLabel();
+        }
+
+        function toggleRarityCountrySelection(country) {
+            const i = rarityCountryFilter.indexOf(country);
+            if (i === -1) rarityCountryFilter.push(country);
+            else rarityCountryFilter.splice(i, 1);
+            updateRarityCountrySelection();
+            updateRarityCountryLabel();
+            renderRarityDashboard();
+        }
+
+        function updateRarityCountrySelection() {
+            document.querySelectorAll('#rarityCountryDropdown .multi-select-option').forEach(opt => {
+                opt.classList.toggle('selected', rarityCountryFilter.includes(opt.dataset.value));
+            });
+        }
+
+        function updateRarityCountryLabel() {
+            const label = document.getElementById('rarityCountryFilterLabel');
+            if (!label) return;
+            if (rarityCountryFilter.length === 0) {
+                label.textContent = 'Alle Länder';
+            } else if (rarityCountryFilter.length === 1) {
+                label.textContent = rarityCountryFilter[0] === '__NO_COUNTRY__'
+                    ? '❓ Kein Land' : `${getFlag(rarityCountryFilter[0])} ${rarityCountryFilter[0]}`;
+            } else {
+                label.textContent = `${rarityCountryFilter.length} Länder ausgewählt`;
+            }
+        }
+
+        function resetRarityFilters() {
+            rarityCountryFilter = [];
+            const f = document.getElementById('rarityDateFrom'); if (f) f.value = '';
+            const t = document.getElementById('rarityDateTo'); if (t) t.value = '';
+            updateRarityCountrySelection();
+            updateRarityCountryLabel();
+            renderRarityDashboard();
         }
 
         function getRarityFilteredSpecies() {
@@ -4297,7 +4415,7 @@
                     <div class="rarity-rare-info">
                         <div class="rr-name">${s.name}</div>
                         ${s.sci ? `<div class="rr-sci">${s.sci}</div>` : ''}
-                        <div class="rr-meta">★${s.level} · ${RARITY_TIER_NAMES[s.level]}<br>weltweit ${s.n.toLocaleString('de-DE')}× (RG)</div>
+                        <div class="rr-meta">★${s.level} · ${RARITY_TIER_NAMES[s.level]}<br>weltweit ${s.n.toLocaleString('de-DE')}× (RG)${s.firstSeen ? `<br>🔭 zuerst entdeckt ${formatDateDE(s.firstSeen)}` : ''}</div>
                     </div>
                 </a>`;
             }).join(''));
@@ -5774,6 +5892,7 @@
                         <div class="gallery-title">${obs.name}</div>
                         ${obs.scientific ? `<div class="gallery-scientific">${obs.scientific}</div>` : ''}
                         <div class="gallery-meta">${obs.date} · ${(obs.place || 'Unbekannt').substring(0, 35)}</div>
+                        ${(!isSpeciesTile && obs.created) ? `<div class="gallery-meta gallery-meta-upload" title="Auf iNaturalist hochgeladen">⬆️ hochgeladen ${obs.created.slice(0, 10)}</div>` : ''}
                         <button class="gallery-expand-btn" onclick="event.stopPropagation(); toggleDetails(this.closest('.gallery-item'), ${JSON.stringify(obs).replace(/"/g, '&quot;')})">
                             <span>Mehr erfahren</span>
                             <span class="arrow">▼</span>
