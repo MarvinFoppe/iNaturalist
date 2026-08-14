@@ -2958,6 +2958,9 @@
     .species-card-modal .rw-front{border-radius:20px;}
     .species-card-modal .rw-front.rwt3{--frame:#b48ad6}
     .species-card-modal .rw-front.rwt4{--frame:#e9c65a;box-shadow:0 26px 55px rgba(0,0,0,.6),0 0 26px rgba(240,207,99,.55)}
+    .species-card-modal .rw-wiki{max-height:118px;overflow-y:auto;padding-right:6px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+    .species-card-modal .rw-wiki::-webkit-scrollbar{width:6px;}
+    .species-card-modal .rw-wiki::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22);border-radius:3px;}
     .rw-inat{display:block;text-align:center;margin:12px 4px 2px;font-size:12px;font-weight:700;color:#2a6df4;text-decoration:none;}
     </style>
 
@@ -4645,12 +4648,12 @@
             rwFetchFacts(tid).then(f => {
                 if (!f || !modal.classList.contains('active')) return;
                 const w = document.getElementById('scWiki'), st = document.getElementById('scStats');
-                if (w && f.wiki) w.textContent = f.wiki.length > 240 ? f.wiki.slice(0, 240).replace(/\s+\S*$/, '') + ' …' : f.wiki;
+                if (w && f.wiki) w.textContent = f.wiki;   // voller Text, Box ist scrollbar
                 const rows = [];
                 if (s.n) rows.push(`<span>🔬 ${s.n.toLocaleString('de-DE')} RG weltweit</span>`);
                 if (f.obsCount) rows.push(`<span>🌍 ${f.obsCount.toLocaleString('de-DE')} gesamt</span>`);
-                if (f.status) rows.push(`<span>🛡️ ${rwEsc(f.status)}</span>`);
-                if (f.ordnung) rows.push(`<span>🧬 ${rwEsc(f.ordnung)}</span>`);
+                if (f.statusCode || f.status) rows.push(`<span>🛡️ ${rwEsc(rwConservationLabel(f.statusCode, f.status))}</span>`);
+                if (f.ordnung) rows.push(`<span>🧬 Ordnung: ${rwEsc(f.ordnung)}</span>`);
                 if (st) st.innerHTML = rows.join('');
             });
         }
@@ -5247,6 +5250,15 @@
         function rwRarityLevel(n){ if(!n||n<=0) return null; const L=Math.log10(n);
             return Math.max(1,Math.min(10,Math.round(RARITY_K*(RARITY_T-L)))); }
         function rwRarityTier(lvl){ return lvl>=9?4:lvl>=7?3:lvl>=4?2:1; }
+        // IUCN-Schutzstatus-Code -> lesbare deutsche Bezeichnung
+        function rwConservationLabel(code, fallback){
+            const M={EX:'Ausgestorben',EW:'In der Natur ausgestorben',CR:'Vom Aussterben bedroht',
+                EN:'Stark gefährdet',VU:'Gefährdet',NT:'Potenziell gefährdet',LC:'Nicht gefährdet',
+                DD:'Ungenügende Daten',NE:'Nicht bewertet'};
+            const c=(code||'').toString().toUpperCase().replace(/[^A-Z]/g,'');
+            if(M[c]) return M[c]+' ('+c+')';
+            return fallback||code||'';
+        }
 
         // Sound (Web Audio, keine Dateien)
         let rwAudioCtx=null;
@@ -5274,6 +5286,7 @@
                 const anc={}; (t.ancestors||[]).forEach(a=>{anc[a.rank]=a.preferred_common_name||a.name;});
                 const f={ obsCount:t.observations_count||0, wiki:rwStripHtml(t.wikipedia_summary||''),
                     status:(t.conservation_status&&(t.conservation_status.status_name||t.conservation_status.status))||'',
+                    statusCode:(t.conservation_status&&t.conservation_status.status||'').toString().toUpperCase(),
                     ordnung:anc.order||'', familie:anc.family||'' };
                 rwFactCache[taxonId]=f; return f;
             }catch(e){ rwFactCache[taxonId]=null; return null; }
@@ -5409,8 +5422,8 @@
                     const wiki = f&&f.wiki ? (f.wiki.length>200 ? f.wiki.slice(0,200).replace(/\s+\S*$/,'')+' …' : f.wiki) : '';
                     const stats=[];
                     if(f&&f.obsCount) stats.push(`<span>🌍 ${f.obsCount.toLocaleString('de-DE')} weltweit</span>`);
-                    if(f&&f.status) stats.push(`<span>🛡️ ${rwEsc(f.status)}</span>`);
-                    if(f&&f.ordnung) stats.push(`<span>🧬 ${rwEsc(f.ordnung)}</span>`);
+                    if(f&&(f.statusCode||f.status)) stats.push(`<span>🛡️ ${rwEsc(rwConservationLabel(f.statusCode,f.status))}</span>`);
+                    if(f&&f.ordnung) stats.push(`<span>🧬 Ordnung: ${rwEsc(f.ordnung)}</span>`);
                     const collNum = rewardCollectionSize ? (rewardCollectionSize - idx) : 0;
                     const collHtml = collNum>0 ? `<div class="rw-collection">Nr. <b>${collNum}</b> in deiner Sammlung</div>` : '';
 
