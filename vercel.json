@@ -1,6 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "github": { "silent": true },
+  "crons": [
+    { "path": "/api/cron/notify", "schedule": "0 5 * * *" }
+  ],
   "headers": [
     {
       "source": "/(.*)\\.(png|jpg|jpeg|ico|webp)",
