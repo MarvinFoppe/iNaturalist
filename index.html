@@ -7108,8 +7108,54 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')
+                    .then(() => initPushUI())
                     .catch(err => console.warn('Service Worker Registrierung fehlgeschlagen:', err));
             });
+        }
+
+        // ===== Push-Benachrichtigungen (nur mit Backend/Vercel) =====
+        function rwUrlB64ToUint8(base64) {
+            const pad = '='.repeat((4 - base64.length % 4) % 4);
+            const b = (base64 + pad).replace(/-/g, '+').replace(/_/g, '/');
+            const raw = atob(b); const arr = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+            return arr;
+        }
+        async function enablePush() {
+            try {
+                if (!('serviceWorker' in navigator) || !('PushManager' in window)) { alert('Push wird auf diesem Gerät/Browser nicht unterstützt.'); return false; }
+                const perm = await Notification.requestPermission();
+                if (perm !== 'granted') return false;
+                const vk = await (await fetch('api/vapid')).json();
+                if (!vk.publicKey) { alert('Push ist serverseitig noch nicht konfiguriert (VAPID-Schlüssel fehlt).'); return false; }
+                const reg = await navigator.serviceWorker.ready;
+                let sub = await reg.pushManager.getSubscription();
+                if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: rwUrlB64ToUint8(vk.publicKey) });
+                const r = await fetch('api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sub) });
+                if (!r.ok) throw new Error('subscribe ' + r.status);
+                localStorage.setItem('inat_push_on', '1');
+                return true;
+            } catch (e) { console.warn('Push aktivieren fehlgeschlagen:', e); alert('Push konnte nicht aktiviert werden: ' + e.message); return false; }
+        }
+        async function initPushUI() {
+            try {
+                await backendProbe;
+                if (!BACKEND_READY) return;                                                   // nur auf Vercel
+                if (String(USER_ID).toLowerCase() !== DEFAULT_USER.toLowerCase()) return;      // nur eigenes Profil
+                if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+                if (Notification.permission === 'denied') return;
+                if (localStorage.getItem('inat_push_dismissed') === '1') return;
+                try { const reg = await navigator.serviceWorker.ready; if (await reg.pushManager.getSubscription()) return; } catch (e) {}
+                const bar = document.createElement('div');
+                bar.id = 'pushPrompt';
+                bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:11500;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:12px 16px;border-radius:14px;background:rgba(20,30,20,.96);color:#eafbe0;box-shadow:0 8px 30px rgba(0,0,0,.5);font-size:14px;';
+                bar.innerHTML = '<span style="flex:1;min-width:180px">🔔 Bei neuer freigeschalteter Art benachrichtigen?</span>'
+                    + '<button id="pushYes" style="font:inherit;font-weight:700;padding:8px 14px;border-radius:10px;border:0;background:#2d5a27;color:#fff;cursor:pointer">Aktivieren</button>'
+                    + '<button id="pushNo" style="font:inherit;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#cdd6c8;cursor:pointer">Nicht jetzt</button>';
+                document.body.appendChild(bar);
+                document.getElementById('pushYes').onclick = async () => { const ok = await enablePush(); if (ok) bar.remove(); };
+                document.getElementById('pushNo').onclick = () => { localStorage.setItem('inat_push_dismissed', '1'); bar.remove(); };
+            } catch (e) {}
         }
 
         // ===== App-Installation (PWA) =====
