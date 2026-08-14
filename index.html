@@ -2983,6 +2983,27 @@
         let allObservations = [];
         let filteredObservations = [];
 
+        // --- Backend (Vercel /api) optional erkennen; sonst Direkt-Modus (z. B. GitHub Pages) ---
+        let BACKEND_READY = false;
+        const backendProbe = (async () => {
+            try {
+                const ctrl = new AbortController();
+                const t = setTimeout(() => ctrl.abort(), 1500);
+                const r = await fetch('api/health', { signal: ctrl.signal });
+                clearTimeout(t);
+                if (r.ok) { const j = await r.json().catch(() => null); BACKEND_READY = !!(j && j.ok); }
+            } catch (e) { BACKEND_READY = false; }
+            if (BACKEND_READY) console.log('Backend erkannt – iNat-Abfragen laufen über den Cache-Proxy.');
+        })();
+        // Eine iNaturalist-API-URL holen: über den Vercel-Cache-Proxy, wenn verfügbar, sonst direkt.
+        async function inatFetch(url) {
+            if (BACKEND_READY) {
+                try { return await fetch('api/inat?u=' + encodeURIComponent(url)); }
+                catch (e) { /* Netzfehler -> direkt versuchen */ }
+            }
+            return fetch(url);
+        }
+
         // --- Seltenheitsgrad (1–10) ---
         const RARITY_CACHE_KEY = 'inat_rarity_counts_v3'; // globale Forschungsqualitäts-Zahlen je Taxon (nutzerunabhängig)
         const RARITY_W = 0.7;    // Stärke der Gruppen-Korrektur
@@ -3455,7 +3476,7 @@
         async function fetchObservationsRaw(extraQuery, onProgress, userId) {
             const uid = userId || USER_ID;
             const pageUrl = (p) => `${API_BASE}/observations?user_id=${uid}&per_page=${PER_PAGE}&page=${p}&order=desc&order_by=created_at&locale=de${extraQuery || ''}`;
-            const firstData = await (await fetch(pageUrl(1))).json();
+            const firstData = await (await inatFetch(pageUrl(1))).json();
             const totalResults = firstData.total_results || 0;
             let allResults = firstData.results || [];
             if (onProgress) onProgress(allResults.length, totalResults);
@@ -3473,7 +3494,7 @@
                 while (pending.length) {
                     const p = pending.shift();
                     try {
-                        const d = await (await fetch(pageUrl(p))).json();
+                        const d = await (await inatFetch(pageUrl(p))).json();
                         if (d.results && d.results.length) allResults = allResults.concat(d.results);
                     } catch (e) {
                         console.warn(`Seite ${p} fehlgeschlagen:`, e);
@@ -4286,7 +4307,7 @@
                 const chunk = missing.slice(i, i + 30);
                 const chunkSet = new Set(chunk);
                 try {
-                    const res = await fetch(`${API_BASE}/observations/species_counts?taxon_id=${chunk.join(',')}&quality_grade=research&per_page=200`);
+                    const res = await inatFetch(`${API_BASE}/observations/species_counts?taxon_id=${chunk.join(',')}&quality_grade=research&per_page=200`);
                     const data = await res.json();
                     // WICHTIG: nur explizit angefragte Taxa übernehmen. species_counts rollt Unterarten/
                     // Varietäten auf die Art hoch und liefert dabei fremde (kleinere) Zahlen -> würden
@@ -5281,7 +5302,7 @@
         async function rwFetchFacts(taxonId){
             if(rwFactCache[taxonId]!==undefined) return rwFactCache[taxonId];
             try{
-                const d=await (await fetch(`${API_BASE}/taxa/${taxonId}?locale=de`)).json();
+                const d=await (await inatFetch(`${API_BASE}/taxa/${taxonId}?locale=de`)).json();
                 const t=d.results&&d.results[0]; if(!t){ rwFactCache[taxonId]=null; return null; }
                 const anc={}; (t.ancestors||[]).forEach(a=>{anc[a.rank]=a.preferred_common_name||a.name;});
                 const f={ obsCount:t.observations_count||0, wiki:rwStripHtml(t.wikipedia_summary||''),
@@ -6615,11 +6636,13 @@
                     return;
                 }
                 // 3) Sehr alt -> voll neu laden (fängt auch gelöschte Beobachtungen), sonst nur Delta
+                try { await backendProbe; } catch (e) {}
                 if (cache.age > CACHE_FULL_RELOAD_MS) await fetchAllObservations();
                 else await fetchDeltaObservations();
             } else {
                 // Kein Cache -> voller Erst-Load mit Wartebildschirm
                 document.getElementById('loadingOverlay').classList.remove('hidden');
+                try { await backendProbe; } catch (e) {}
                 await fetchAllObservations();
             }
         }
