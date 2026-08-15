@@ -5278,7 +5278,10 @@
                 const u = new URL(location.href);
                 const t = u.searchParams.get('owner');
                 if (t) {
-                    if (await rwSha256Hex(t) === OWNER_TOKEN_HASH) localStorage.setItem('inat_owner', '1');
+                    if (await rwSha256Hex(t) === OWNER_TOKEN_HASH) {
+                        localStorage.setItem('inat_owner', '1');
+                        localStorage.setItem('inat_owner_token', t);   // für geräteübergreifendes Speichern
+                    }
                     u.searchParams.delete('owner');                    // Token aus URL/History entfernen
                     history.replaceState({}, '', u.pathname + (u.search || '') + u.hash);
                 }
@@ -5291,6 +5294,28 @@
             catch (e) { return null; }
         }
         function saveSeenSpecies(ids) { try { localStorage.setItem(speciesSeenKey(), JSON.stringify(ids)); } catch (e) {} }
+
+        // Geräteübergreifender "gesehen"-Stand (nur mit Backend/Vercel)
+        async function fetchServerSeen() {
+            if (!BACKEND_READY) return null;
+            try {
+                const r = await fetch('api/seen?user=' + encodeURIComponent(String(USER_ID).toLowerCase()));
+                if (!r.ok) return null;
+                const j = await r.json();
+                return Array.isArray(j.seen) ? j.seen : null;
+            } catch (e) { return null; }
+        }
+        async function saveServerSeen(ids) {
+            if (!BACKEND_READY) return;
+            const token = localStorage.getItem('inat_owner_token'); if (!token) return;
+            try {
+                await fetch('api/seen?user=' + encodeURIComponent(String(USER_ID).toLowerCase()), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ seen: ids })
+                });
+            } catch (e) {}
+        }
 
         function rwEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
         function rwStripHtml(html){ const d=document.createElement('div'); d.innerHTML=html||''; return (d.textContent||'').trim(); }
@@ -5382,8 +5407,11 @@
             if(rewardActive) return;                                                 // Serie läuft gerade
             const currentIds = rgSpeciesIdsFrom(allObservations);
             if(!currentIds.length) return;
-            const seen = loadSeenSpecies();
-            if(seen==null){ saveSeenSpecies(currentIds); return; }         // Baseline: beim ersten Mal nichts zeigen
+            // "gesehen"-Stand lokal + geräteübergreifend (Server) vereinen
+            const localSeen = loadSeenSpecies();
+            const serverSeen = await fetchServerSeen();
+            let seen = (localSeen || serverSeen) ? [...new Set([...(localSeen||[]), ...(serverSeen||[])])] : null;
+            if(seen==null){ saveSeenSpecies(currentIds); saveServerSeen(currentIds); return; }  // Baseline: beim ersten Mal nichts zeigen
             const seenSet = new Set(seen);
             const newIds = currentIds.filter(id=>!seenSet.has(id));
             if(!newIds.length){ saveSeenSpecies(currentIds); hideRewardIcon(); return; }
@@ -5417,7 +5445,9 @@
             const cards = rewardPendingCards, ids = rewardPendingIds;
             try{ await runRewardFlow(cards); }
             finally{
-                saveSeenSpecies(ids || rgSpeciesIdsFrom(allObservations));
+                const finalIds = ids || rgSpeciesIdsFrom(allObservations);
+                saveSeenSpecies(finalIds);
+                saveServerSeen(finalIds);          // geräteübergreifend merken
                 rewardPendingCards = null; rewardPendingIds = null;
                 rewardActive = false;
             }
