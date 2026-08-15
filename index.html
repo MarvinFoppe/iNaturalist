@@ -2913,24 +2913,21 @@
         border-top:1px dashed rgba(0,0,0,.15);padding-top:9px;}
     .rw-collection b{color:#1a2230;}
 
-    /* Icon oben rechts: wartende neue Arten (umgedrehte Karte + roter Zähler) */
-    .reward-icon{position:fixed;top:10px;right:10px;z-index:11800;cursor:pointer;
-        display:none;flex-direction:row-reverse;align-items:center;gap:8px;max-width:calc(100vw - 20px);
-        animation:riPop .45s cubic-bezier(.2,.8,.3,1.4) both;}
-    .reward-icon .ri-cardwrap{position:relative;flex:none;animation:riFloat 3s ease-in-out infinite;}
-    @keyframes riFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-    .reward-icon .ri-card{width:40px;height:54px;border-radius:7px;overflow:hidden;border:2px solid #e9c65a;
-        box-shadow:0 5px 16px rgba(0,0,0,.45);transform:rotate(-7deg);transition:transform .2s ease;}
-    .reward-icon:hover .ri-card{transform:rotate(0) scale(1.06);}
-    .reward-icon .ri-card img{width:100%;height:100%;object-fit:cover;display:block;}
-    .reward-icon .ri-badge{position:absolute;top:-7px;right:-7px;min-width:21px;height:21px;padding:0 5px;border-radius:11px;
-        background:#e0342b;color:#fff;font-size:12px;font-weight:800;line-height:1;
-        display:flex;align-items:center;justify-content:center;border:2px solid #fff;
-        box-shadow:0 2px 6px rgba(0,0,0,.4);animation:riBadge 1.6s ease-in-out infinite;}
-    @keyframes riBadge{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-    .reward-icon .ri-label{font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.62);
-        padding:2px 8px;border-radius:9px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.35);}
-    @keyframes riPop{0%{opacity:0;transform:scale(.5) translateY(-10px)}100%{opacity:1;transform:scale(1)}}
+    /* "New species"-Pille (unten rechts) – in sich geschlossen, ragt nirgends über den Rand */
+    .reward-icon{position:fixed;right:12px;bottom:80px;z-index:11800;cursor:pointer;
+        display:none;align-items:center;gap:8px;max-width:calc(100vw - 24px);
+        padding:7px 12px 7px 9px;border-radius:16px;
+        background:rgba(12,26,14,.94);border:1.5px solid #e9c65a;box-shadow:0 8px 22px rgba(0,0,0,.55);
+        transition:transform .2s ease;animation:riPop .45s cubic-bezier(.2,.8,.3,1.4) both;}
+    .reward-icon:hover{transform:translateY(-2px);}
+    .reward-icon .ri-mini{width:30px;height:40px;border-radius:6px;object-fit:cover;flex:none;
+        border:1.5px solid #e9c65a;transform:rotate(-6deg);box-shadow:0 3px 8px rgba(0,0,0,.4);}
+    .reward-icon .ri-count{flex:none;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#e0342b;
+        color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;
+        border:2px solid #fff;animation:riBadge 1.6s ease-in-out infinite;}
+    @keyframes riBadge{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+    .reward-icon .ri-label{color:#eafbe0;font-weight:700;font-size:12.5px;white-space:nowrap;}
+    @keyframes riPop{0%{opacity:0;transform:scale(.6) translateY(8px)}100%{opacity:1;transform:scale(1)}}
     </style>
 
     <div class="reward-overlay" id="rewardOverlay">
@@ -2949,10 +2946,8 @@
     </div>
 
     <div class="reward-icon" id="rewardIcon" style="display:none" onclick="openRewardSeries()" title="Neue Arten ansehen">
-        <div class="ri-cardwrap">
-            <div class="ri-card"><img src="card-back.png" alt=""></div>
-            <span class="ri-badge" id="rewardIconCount">0</span>
-        </div>
+        <img class="ri-mini" src="card-back.png" alt="">
+        <span class="ri-count" id="rewardIconCount">0</span>
         <span class="ri-label">New species</span>
     </div>
 
