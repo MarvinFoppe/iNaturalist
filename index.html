@@ -2914,16 +2914,16 @@
     .rw-collection b{color:#1a2230;}
 
     /* Icon oben rechts: wartende neue Arten (umgedrehte Karte + roter Zähler) */
-    .reward-icon{position:fixed;top:14px;right:14px;z-index:11800;cursor:pointer;
-        display:none;flex-direction:column;align-items:center;gap:5px;
+    .reward-icon{position:fixed;top:10px;right:10px;z-index:11800;cursor:pointer;
+        display:none;flex-direction:row-reverse;align-items:center;gap:8px;max-width:calc(100vw - 20px);
         animation:riPop .45s cubic-bezier(.2,.8,.3,1.4) both;}
-    .reward-icon .ri-cardwrap{position:relative;animation:riFloat 3s ease-in-out infinite;}
+    .reward-icon .ri-cardwrap{position:relative;flex:none;animation:riFloat 3s ease-in-out infinite;}
     @keyframes riFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-    .reward-icon .ri-card{width:48px;height:64px;border-radius:8px;overflow:hidden;border:2px solid #e9c65a;
+    .reward-icon .ri-card{width:40px;height:54px;border-radius:7px;overflow:hidden;border:2px solid #e9c65a;
         box-shadow:0 5px 16px rgba(0,0,0,.45);transform:rotate(-7deg);transition:transform .2s ease;}
     .reward-icon:hover .ri-card{transform:rotate(0) scale(1.06);}
     .reward-icon .ri-card img{width:100%;height:100%;object-fit:cover;display:block;}
-    .reward-icon .ri-badge{position:absolute;top:-7px;right:-9px;min-width:22px;height:22px;padding:0 5px;border-radius:11px;
+    .reward-icon .ri-badge{position:absolute;top:-7px;right:-7px;min-width:21px;height:21px;padding:0 5px;border-radius:11px;
         background:#e0342b;color:#fff;font-size:12px;font-weight:800;line-height:1;
         display:flex;align-items:center;justify-content:center;border:2px solid #fff;
         box-shadow:0 2px 6px rgba(0,0,0,.4);animation:riBadge 1.6s ease-in-out infinite;}
