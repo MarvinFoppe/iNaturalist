@@ -5266,6 +5266,25 @@
         let rewardActive = false, rewardMuted = false, rewardCollectionSize = 0;
         let rewardPendingCards = null, rewardPendingIds = null;   // wartende neue Arten (Icon oben rechts)
 
+        // --- Owner-Gerät: Belohnung & Push nur auf freigeschalteten Geräten (Fremde sehen nichts) ---
+        const OWNER_TOKEN_HASH = '2e19de2ea3bba6b438471ee1c9eef4a76537fe582a921713167afe569803b2f2';
+        async function rwSha256Hex(s){
+            const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+            return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+        }
+        function isOwnerDevice(){ return localStorage.getItem('inat_owner') === '1'; }
+        (async () => {
+            try {
+                const u = new URL(location.href);
+                const t = u.searchParams.get('owner');
+                if (t) {
+                    if (await rwSha256Hex(t) === OWNER_TOKEN_HASH) localStorage.setItem('inat_owner', '1');
+                    u.searchParams.delete('owner');                    // Token aus URL/History entfernen
+                    history.replaceState({}, '', u.pathname + (u.search || '') + u.hash);
+                }
+            } catch (e) {}
+        })();
+
         function speciesSeenKey() { return SPECIES_SEEN_PREFIX + String(USER_ID).toLowerCase(); }
         function loadSeenSpecies() {
             try { const v = JSON.parse(localStorage.getItem(speciesSeenKey())); return Array.isArray(v) ? v : null; }
@@ -5358,6 +5377,7 @@
         // Haupteinstieg: neue RG-Arten seit letztem Besuch ermitteln und ggf. Popup-Serie starten
         // Prüft neue RG-Arten und zeigt bei Fund NUR das Icon oben rechts (öffnet nicht automatisch).
         async function maybeShowSpeciesRewards(){
+            if(!isOwnerDevice()) return;                                             // nur auf deinen freigeschalteten Geräten
             if(String(USER_ID).toLowerCase() !== DEFAULT_USER.toLowerCase()) return; // nur eigenes Profil
             if(rewardActive) return;                                                 // Serie läuft gerade
             const currentIds = rgSpeciesIdsFrom(allObservations);
@@ -7191,6 +7211,7 @@
             try {
                 await backendProbe;
                 if (!BACKEND_READY) return;                                                   // nur auf Vercel
+                if (!isOwnerDevice()) return;                                                  // nur auf deinen freigeschalteten Geräten
                 if (String(USER_ID).toLowerCase() !== DEFAULT_USER.toLowerCase()) return;      // nur eigenes Profil
                 if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
                 if (Notification.permission === 'denied') return;
