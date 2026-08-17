@@ -5415,13 +5415,34 @@
 
         // Taxon-Fakten von iNat (Wikipedia-Kurztext, Ordnung, Schutzstatus, weltweite Zahl)
         const rwFactCache={};
+        // Vollständigeren Wikipedia-Einleitungstext holen (iNats wikipedia_summary ist gekürzt, endet mit "…")
+        async function rwWikiExtract(wikipediaUrl){
+            try{
+                if(!wikipediaUrl) return '';
+                const host = (wikipediaUrl.match(/^https?:\/\/([^/]+)/) || [])[1] || 'de.wikipedia.org';
+                const m = wikipediaUrl.match(/\/wiki\/(.+)$/);
+                if(!m) return '';
+                // Vollständiger Einleitungsabschnitt (alle Intro-Absätze) als Klartext
+                const url = `https://${host}/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&redirects=1&format=json&origin=*&titles=${m[1]}`;
+                const r = await fetch(url);
+                if(!r.ok) return '';
+                const j = await r.json();
+                const pages = j && j.query && j.query.pages;
+                if(!pages) return '';
+                const first = pages[Object.keys(pages)[0]];
+                return (first && first.extract) ? String(first.extract).trim() : '';
+            }catch(e){ return ''; }
+        }
         async function rwFetchFacts(taxonId){
             if(rwFactCache[taxonId]!==undefined) return rwFactCache[taxonId];
             try{
                 const d=await (await inatFetch(`${API_BASE}/taxa/${taxonId}?locale=de`)).json();
                 const t=d.results&&d.results[0]; if(!t){ rwFactCache[taxonId]=null; return null; }
                 const anc={}; (t.ancestors||[]).forEach(a=>{anc[a.rank]=a.preferred_common_name||a.name;});
-                const f={ obsCount:t.observations_count||0, wiki:rwStripHtml(t.wikipedia_summary||''),
+                let wiki = rwStripHtml(t.wikipedia_summary||'');
+                const fullWiki = await rwWikiExtract(t.wikipedia_url||'');   // vollständiger Intro-Absatz
+                if(fullWiki && fullWiki.length > wiki.length) wiki = fullWiki;
+                const f={ obsCount:t.observations_count||0, wiki,
                     status:(t.conservation_status&&(t.conservation_status.status_name||t.conservation_status.status))||'',
                     statusCode:(t.conservation_status&&t.conservation_status.status||'').toString().toUpperCase(),
                     ordnung:anc.order||'', familie:anc.family||'' };
