@@ -2698,7 +2698,7 @@
                 <input type="text" id="friendInput" class="user-input" placeholder="iNaturalist-Nutzername"
                        onkeydown="if(event.key==='Enter'){event.preventDefault(); addFriendFromInput();}">
                 <button class="user-switch-btn" onclick="addFriendFromInput()">+ Hinzufügen</button>
-                <button class="filter-reset" onclick="renderFriendsTab(false)" title="Vergleich neu laden">↻ Aktualisieren</button>
+                <button class="filter-reset" onclick="renderFriendsTab(false, true)" title="Vergleich neu laden">↻ Aktualisieren</button>
                 <span id="friendError" class="user-error"></span>
             </div>
             <div id="friendsCards" class="friends-cards"></div>
@@ -5287,6 +5287,21 @@
         }
         function saveFriends(list) {
             try { localStorage.setItem(FRIENDS_KEY, JSON.stringify(list)); } catch (e) {}
+            syncFriendsToServer(list);   // Owner-Gerät: Liste server-seitig spiegeln (für Freundes-Upload-Push)
+        }
+        // Freundesliste zum Server spiegeln, damit der Cron neue Uploads erkennt.
+        // Nur auf Owner-Geräten (mit Token) und nur, wenn ein Backend läuft.
+        async function syncFriendsToServer(list) {
+            try {
+                if (!BACKEND_READY) return;
+                const token = localStorage.getItem('inat_owner_token'); if (!token) return;
+                const logins = (list || loadFriends()).map(f => f.login);
+                await fetch('api/friends', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ friends: logins })
+                });
+            } catch (e) {}
         }
         function friendSummaryKey(login) { return FRIEND_SUMMARY_PREFIX + login.toLowerCase(); }
         function loadFriendSummary(login) {
@@ -5886,68 +5901,103 @@
             document.body.style.overflow = '';
         }
 
-        async function renderFriendsTab(scrollAfter) {
+        // Kleiner Concurrency-Begrenzer: führt Aufgaben mit max. `limit` gleichzeitig aus.
+        async function runLimited(tasks, limit) {
+            const q = tasks.slice();
+            const workers = Array.from({ length: Math.min(limit, q.length) }, async () => {
+                while (q.length) { const t = q.shift(); await t(); }
+            });
+            await Promise.all(workers);
+        }
+
+        async function renderFriendsTab(scrollAfter, force) {
             const wrap = document.getElementById('friendsCards');
             if (!wrap) return;
             if (friendsRendering) return;
             friendsRendering = true;
 
-            const friends = loadFriends();
-            // Die "Du"-Karte ist immer der Seiten-Eigentuemer – auch wenn gerade
-            // ein Freundesprofil in der App geladen ist.
-            const ownerName = (USER_ID.toLowerCase() === DEFAULT_USER.toLowerCase())
-                ? (document.getElementById('authorName')?.textContent || DEFAULT_USER)
-                : (loadFriendSummary(DEFAULT_USER)?.summary?.name || DEFAULT_USER);
-            const people = [
-                { login: DEFAULT_USER, self: true, name: ownerName },
-                ...friends.filter(f => f.login.toLowerCase() !== DEFAULT_USER.toLowerCase())
-                          .map(f => ({ login: f.login, name: f.name }))
-            ];
+            try {
+                const friends = loadFriends();
+                // Die "Du"-Karte ist immer der Seiten-Eigentuemer – auch wenn gerade
+                // ein Freundesprofil in der App geladen ist.
+                const ownerName = (USER_ID.toLowerCase() === DEFAULT_USER.toLowerCase())
+                    ? (document.getElementById('authorName')?.textContent || DEFAULT_USER)
+                    : (loadFriendSummary(DEFAULT_USER)?.summary?.name || DEFAULT_USER);
+                const people = [
+                    { login: DEFAULT_USER, self: true, name: ownerName },
+                    ...friends.filter(f => f.login.toLowerCase() !== DEFAULT_USER.toLowerCase())
+                              .map(f => ({ login: f.login, name: f.name }))
+                ];
 
-            // Platzhalter-Karten mit Ladeanzeige (zeigt Fortschritt je Person)
-            wrap.innerHTML = people.map((p, i) => `
-                <div class="person-card person-loading" id="pcard-${i}">
-                    <div class="pc-loading">
-                        <span class="pc-spinner"></span>
-                        <div>${p.self ? 'Deine Daten' : escapeHtml(p.name || ('@' + p.login))}
-                            <div class="pc-prog" id="pcprog-${i}">lädt …</div>
-                        </div>
-                    </div>
-                </div>`).join('');
+                const summaries = new Array(people.length).fill(null);
+                const failed = new Array(people.length).fill(false);
 
-            const summaries = new Array(people.length).fill(null);
-            for (let i = 0; i < people.length; i++) {
-                const prog = (n, t) => { const el = document.getElementById('pcprog-' + i); if (el) el.textContent = `${n.toLocaleString('de-DE')}${t ? (' / ' + t.toLocaleString('de-DE')) : ''} Beobachtungen`; };
-                try {
-                    summaries[i] = people[i].self ? await buildSelfSummary() : await buildFriendSummary(people[i].login, false, prog);
-                } catch (e) {
-                    console.warn('Person fehlgeschlagen:', people[i].login, e);
-                    const c = document.getElementById('pcard-' + i);
-                    if (c) c.innerHTML = `<div class="pc-loading">⚠️ „@${escapeHtml(people[i].login)}" konnte nicht geladen werden</div>`;
+                // Malt das gesamte Raster neu: geladene/gecachte Personen als Karte,
+                // noch ausstehende als Ladeplatzhalter (mit Fortschritts-Feld pcprog-i).
+                const paint = () => {
+                    const resolved = summaries.filter(Boolean);
+                    const maxima = {};
+                    FRIEND_STAT_DEFS.forEach(d => { maxima[d.key] = Math.max(0, ...resolved.map(s => s[d.key] || 0)); });
+                    friendRenderState = { maxima, byLogin: {} };
+                    wrap.innerHTML = people.map((p, i) => {
+                        const s = summaries[i];
+                        if (!s) {
+                            if (failed[i]) return `<div class="person-card" id="pcard-${i}"><div class="pc-loading">⚠️ „@${escapeHtml(p.login)}" konnte nicht geladen werden</div></div>`;
+                            return `<div class="person-card person-loading" id="pcard-${i}">
+                                <div class="pc-loading">
+                                    <span class="pc-spinner"></span>
+                                    <div>${p.self ? 'Deine Daten' : escapeHtml(p.name || ('@' + p.login))}
+                                        <div class="pc-prog" id="pcprog-${i}">lädt …</div>
+                                    </div>
+                                </div></div>`;
+                        }
+                        let newObs = 0;
+                        if (!p.self) {
+                            const seen = getFriendSeen(s.login);
+                            if (seen == null) setFriendSeen(s.login, s.observations); // erster Besuch: Basislinie, kein Zähler
+                            else newObs = Math.max(0, s.observations - seen);
+                        }
+                        friendRenderState.byLogin[s.login.toLowerCase()] = { s, self: p.self, newObs };
+                        return personCardHTML(s, maxima, p.self, newObs);
+                    }).join('') || '<div class="friends-loading">Keine Daten.</div>';
+                };
+
+                // Pass 1 – sofort aus dem Cache zeigen (auch abgelaufene), Voll-Load nur wo nötig.
+                const needsLoad = new Array(people.length).fill(true);
+                for (let i = 0; i < people.length; i++) {
+                    if (people[i].self) continue; // "Du" wird immer frisch (aus bereits geladenen Daten) gebaut – schnell
+                    const cached = loadFriendSummary(people[i].login);
+                    if (cached && cached.summary) {
+                        summaries[i] = cached.summary;
+                        const stale = force || (Date.now() - cached.ts) >= FRIEND_SUMMARY_TTL;
+                        needsLoad[i] = stale; // frisch genug -> gar nicht neu laden
+                    }
                 }
+                paint();
+
+                // Pass 2 – fehlende/veraltete Personen PARALLEL nachladen (max. 3 gleichzeitig),
+                // jede fertige Karte wird sofort eingeblendet.
+                const tasks = [];
+                for (let i = 0; i < people.length; i++) {
+                    if (!needsLoad[i]) continue;
+                    const idx = i;
+                    tasks.push(async () => {
+                        const prog = (n, t) => { const el = document.getElementById('pcprog-' + idx); if (el) el.textContent = `${n.toLocaleString('de-DE')}${t ? (' / ' + t.toLocaleString('de-DE')) : ''} Beobachtungen`; };
+                        try {
+                            summaries[idx] = people[idx].self ? await buildSelfSummary() : await buildFriendSummary(people[idx].login, force, prog);
+                        } catch (e) {
+                            console.warn('Person fehlgeschlagen:', people[idx].login, e);
+                            if (!summaries[idx]) failed[idx] = true; // vorhandenen Cache-Stand stehen lassen
+                        }
+                        paint();
+                    });
+                }
+                await runLimited(tasks, 3);
+                paint();
+            } finally {
+                friendsRendering = false;
+                if (scrollAfter) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-
-            // Bestwerte je Metrik
-            const resolved = summaries.filter(Boolean);
-            const maxima = {};
-            FRIEND_STAT_DEFS.forEach(d => { maxima[d.key] = Math.max(0, ...resolved.map(s => s[d.key] || 0)); });
-
-            // Finale Karten (mit Bestwert-Krone + Neu-Beobachtungs-Zähler) + Render-State für Detail-Modal
-            friendRenderState = { maxima, byLogin: {} };
-            wrap.innerHTML = summaries.map((s, i) => {
-                if (!s) return `<div class="person-card"><div class="pc-loading">⚠️ @${escapeHtml(people[i].login)} nicht verfügbar</div></div>`;
-                let newObs = 0;
-                if (!people[i].self) {
-                    const seen = getFriendSeen(s.login);
-                    if (seen == null) setFriendSeen(s.login, s.observations); // erster Besuch: Basislinie setzen, kein Zähler
-                    else newObs = Math.max(0, s.observations - seen);
-                }
-                friendRenderState.byLogin[s.login.toLowerCase()] = { s, self: people[i].self, newObs };
-                return personCardHTML(s, maxima, people[i].self, newObs);
-            }).join('') || '<div class="friends-loading">Keine Daten.</div>';
-
-            friendsRendering = false;
-            if (scrollAfter) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         // Reiter (Übersicht / Badges / Seltenheit / Freunde) umschalten
@@ -7309,6 +7359,7 @@
                 if (!BACKEND_READY) return;                                                   // nur auf Vercel
                 if (!isOwnerDevice()) return;                                                  // nur auf deinen freigeschalteten Geräten
                 if (String(USER_ID).toLowerCase() !== DEFAULT_USER.toLowerCase()) return;      // nur eigenes Profil
+                syncFriendsToServer();                                                         // Freundesliste einmal beim Start spiegeln
                 if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
                 if (Notification.permission === 'denied') return;
                 if (localStorage.getItem('inat_push_dismissed') === '1') return;
