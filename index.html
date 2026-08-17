@@ -2673,6 +2673,8 @@
                 </div>
                 <button class="filter-reset" onclick="resetRarityFilters()">× Filter zurücksetzen</button>
             </div>
+            <h3 style="color: var(--accent); margin: 18px 0 6px;">Filter nach Seltenheit</h3>
+            <div class="rarity-group-chips" id="rarityLevelChips"></div>
             <h3 style="color: var(--accent); margin: 18px 0 6px;">Filter nach Tiergruppe</h3>
             <div class="rarity-group-chips" id="rarityGroupChips"></div>
             <h3 style="color: var(--accent); margin: 18px 0 6px;">Verteilung nach Level</h3>
@@ -2985,7 +2987,8 @@
     .species-card-modal .rw-front{border-radius:20px;}
     .species-card-modal .rw-front.rwt3{--frame:#b48ad6}
     .species-card-modal .rw-front.rwt4{--frame:#e9c65a;box-shadow:0 26px 55px rgba(0,0,0,.6),0 0 26px rgba(240,207,99,.55)}
-    .species-card-modal .rw-wiki{max-height:118px;overflow-y:auto;padding-right:6px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+    .species-card-modal .rw-wiki{max-height:clamp(90px,26vh,220px);overflow-y:auto;padding-right:6px;
+        -webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;}
     .species-card-modal .rw-wiki::-webkit-scrollbar{width:6px;}
     .species-card-modal .rw-wiki::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22);border-radius:3px;}
     .rw-inat{display:block;text-align:center;margin:12px 4px 2px;font-size:12px;font-weight:700;color:#2a6df4;text-decoration:none;}
@@ -3052,6 +3055,7 @@
         // Seltenheit-Reiter: Liste + Gruppen-Filter + Endlos-Scroll
         let rarityAllSpecies = [];             // {id,name,sci,image,url,level,n,group}
         let rarityGroupFilter = new Set();     // leer = alle Gruppen
+        let rarityLevelFilter = new Set();     // leer = alle Seltenheits-Level
         let rarityCountryFilter = [];          // ausgewaehlte Laender im Seltenheit-Reiter (leer = alle)
         const RARITY_GRID_BATCH = 40;
         let rarityGridShown = 0;
@@ -4488,6 +4492,7 @@
                     : 'Seltenheits-Daten werden geladen …';
                 ['rarityDistribution', 'rarityRareGrid'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
                 renderRarityGroupChips();
+                renderRarityLevelChips();
                 const gi = document.getElementById('rarityGridInfo'); if (gi) gi.textContent = '';
                 return;
             }
@@ -4507,6 +4512,7 @@
             }
 
             renderRarityGroupChips();
+            renderRarityLevelChips();
             renderRarityDistribution();
             renderRarityGrid(true);
             setupRarityInfiniteScroll();
@@ -4575,6 +4581,8 @@
 
         function resetRarityFilters() {
             rarityCountryFilter = [];
+            rarityLevelFilter.clear();
+            rarityGroupFilter.clear();
             const f = document.getElementById('rarityDateFrom'); if (f) f.value = '';
             const t = document.getElementById('rarityDateTo'); if (t) t.value = '';
             updateRarityCountrySelection();
@@ -4583,8 +4591,10 @@
         }
 
         function getRarityFilteredSpecies() {
-            if (rarityGroupFilter.size === 0) return rarityAllSpecies;
-            return rarityAllSpecies.filter(s => rarityGroupFilter.has(s.group));
+            let list = rarityAllSpecies;
+            if (rarityGroupFilter.size) list = list.filter(s => rarityGroupFilter.has(s.group));
+            if (rarityLevelFilter.size) list = list.filter(s => rarityLevelFilter.has(s.level));
+            return list;
         }
 
         function renderRarityGroupChips() {
@@ -4605,6 +4615,29 @@
             if (g === '__ALL__') rarityGroupFilter.clear();
             else if (rarityGroupFilter.has(g)) rarityGroupFilter.delete(g);
             else rarityGroupFilter.add(g);
+            renderRarityGroupChips();
+            renderRarityLevelChips();
+            renderRarityDistribution();
+            renderRarityGrid(true);
+        }
+
+        function renderRarityLevelChips() {
+            const el = document.getElementById('rarityLevelChips');
+            if (!el) return;
+            const cnt = {};
+            for (const s of rarityAllSpecies) cnt[s.level] = (cnt[s.level] || 0) + 1;
+            let html = `<span class="rarity-group-chip${rarityLevelFilter.size === 0 ? ' active' : ''}" onclick="toggleRarityLevel('__ALL__')">Alle (${rarityAllSpecies.length})</span>`;
+            for (let n = 10; n >= 1; n--) {
+                if (!cnt[n]) continue;
+                html += `<span class="rarity-group-chip${rarityLevelFilter.has(n) ? ' active' : ''}" onclick="toggleRarityLevel(${n})"><span class="rarity-swatch lvl-${n}"></span> ★${n} ${RARITY_TIER_NAMES[n]} (${cnt[n]})</span>`;
+            }
+            el.innerHTML = html;
+        }
+
+        function toggleRarityLevel(n) {
+            if (n === '__ALL__') rarityLevelFilter.clear();
+            else { n = +n; if (rarityLevelFilter.has(n)) rarityLevelFilter.delete(n); else rarityLevelFilter.add(n); }
+            renderRarityLevelChips();
             renderRarityGroupChips();
             renderRarityDistribution();
             renderRarityGrid(true);
@@ -4725,6 +4758,17 @@
                 }
             }, { rootMargin: '500px' });
             io.observe(sentinel);
+            // Zusätzlicher Scroll-Loader (zuverlässig auch mobil, wenn der Sentinel im Randbereich verharrt)
+            const loadMoreIfNear = () => {
+                if (!document.getElementById('tab-rarity')?.classList.contains('active')) return;
+                const list = getRarityFilteredSpecies();
+                if (rarityGridShown >= list.length) return;
+                const rect = sentinel.getBoundingClientRect();
+                const vh = window.innerHeight || document.documentElement.clientHeight;
+                if (rect.top <= vh + 600) renderRarityGrid(false);
+            };
+            window.addEventListener('scroll', loadMoreIfNear, { passive: true });
+            window.addEventListener('resize', loadMoreIfNear, { passive: true });
             rarityObserverSet = true;
         }
 
@@ -6650,6 +6694,7 @@
             rarityRgSet = new Set();
             rarityReady = false;
             rarityGroupFilter.clear();
+            rarityLevelFilter.clear();
             rarityAllSpecies = [];
             selectedCountries = [];
             selectedTaxa = [];
