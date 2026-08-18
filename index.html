@@ -2958,6 +2958,118 @@
         <span class="ri-label">New species</span>
     </div>
 
+    <!-- ===== Belohnung: "Neuer Rang" (Badge-Aufstieg, Variante A) ===== -->
+    <style>
+    /* Ruhe-Indikator unten rechts – Geschwister zum New-species-Icon (Hexagon im Metall-Rang-Look) */
+    .rank-icon{position:fixed;right:14px;bottom:80px;z-index:11810;cursor:pointer;display:none;
+        flex-direction:column;align-items:center;gap:6px;max-width:calc(100vw - 28px);
+        animation:riPop .5s cubic-bezier(.2,.8,.3,1.4) both;}
+    .rank-icon.stacked{bottom:172px;}   /* rutscht über das New-species-Icon, wenn beide sichtbar */
+    .rank-icon .rk-wrap{position:relative;animation:riFloat 3s ease-in-out infinite;}
+    .rank-icon .rk-hex{position:relative;width:58px;height:64px;filter:drop-shadow(0 5px 14px rgba(0,0,0,.5));transition:transform .2s ease;}
+    .rank-icon:hover .rk-hex{transform:scale(1.08) rotate(-3deg);}
+    .rank-icon .rk-hex .plate{position:absolute;inset:0;background:var(--rim,#4a564c);
+        clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);}
+    .rank-icon .rk-hex .inner{position:absolute;inset:5px;background:radial-gradient(circle at 40% 30%,#24361f,#0f1a0d 80%);
+        clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);box-shadow:inset 0 2px 6px rgba(0,0,0,.8);}
+    .rank-icon .rk-hex .ico{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;
+        font-size:1.7em;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));}
+    .rank-icon .rk-hex .glow{position:absolute;inset:-8px;z-index:-1;border-radius:50%;
+        background:radial-gradient(circle,rgba(233,198,90,.55),transparent 68%);animation:rkGlow 1.8s ease-in-out infinite;}
+    @keyframes rkGlow{0%,100%{opacity:.5;transform:scale(.9)}50%{opacity:1;transform:scale(1.12)}}
+    .rank-icon .rk-up{position:absolute;top:-8px;right:-10px;min-width:22px;height:22px;padding:0 5px;border-radius:11px;
+        background:linear-gradient(180deg,#f6d365,#e0a020);color:#3a2c00;font-size:12px;font-weight:900;line-height:1;
+        display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);
+        animation:riBadge 1.6s ease-in-out infinite;}
+    .rank-icon .rk-label{font-size:11px;font-weight:800;color:#3a2c00;letter-spacing:.02em;
+        background:linear-gradient(180deg,#f6d365,#e6b93e);padding:3px 10px;border-radius:9px;white-space:nowrap;
+        box-shadow:0 2px 6px rgba(0,0,0,.35);text-transform:uppercase;}
+
+    /* Feier-Overlay (Vollbild, größer & wuchtiger als die Art-Karte) */
+    .rankup-overlay{position:fixed;inset:0;z-index:12000;display:none;align-items:center;justify-content:center;
+        overflow:hidden;cursor:pointer;padding:24px;}
+    .rankup-overlay.active{display:flex;}
+    .rankup-bg{position:absolute;inset:0;background:radial-gradient(circle at 50% 42%,rgba(30,52,20,.94),rgba(0,0,0,.97));
+        -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:ruFade .35s ease both;}
+    @keyframes ruFade{from{opacity:0}to{opacity:1}}
+    .rankup-rays{position:absolute;top:50%;left:50%;width:200vmax;height:200vmax;transform:translate(-50%,-50%);
+        pointer-events:none;opacity:0;mix-blend-mode:screen;
+        background:repeating-conic-gradient(from 0deg,rgba(233,198,90,.16) 0deg 7deg,transparent 7deg 20deg);
+        animation:ruRaysIn .8s ease forwards,ruRaysSpin 26s linear infinite;}
+    @keyframes ruRaysIn{to{opacity:1}}
+    @keyframes ruRaysSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+    .rankup-halo{position:absolute;top:50%;left:50%;width:64vmin;height:64vmin;transform:translate(-50%,-50%);
+        pointer-events:none;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 62%);
+        animation:ruHalo 2.6s ease-in-out infinite;}
+    @keyframes ruHalo{0%,100%{opacity:.35;transform:translate(-50%,-50%) scale(.95)}50%{opacity:.7;transform:translate(-50%,-50%) scale(1.06)}}
+    .rankup-fx{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;}
+    .rankup-stage{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center;pointer-events:none;}
+    .rankup-hex{position:relative;width:210px;height:230px;filter:drop-shadow(0 16px 30px rgba(0,0,0,.6));
+        animation:ruPop 1s cubic-bezier(.2,.8,.3,1.3) both;}
+    @keyframes ruPop{0%{opacity:0;transform:scale(.2) rotate(-40deg)}60%{opacity:1;transform:scale(1.14) rotate(6deg)}100%{transform:scale(1) rotate(0)}}
+    .rankup-hex .plate{position:absolute;inset:0;background:var(--rim,#4a564c);
+        clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);}
+    .rankup-hex .inner{position:absolute;inset:11px;background:radial-gradient(circle at 40% 30%,#24361f,#0f1a0d 80%);
+        clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);box-shadow:inset 0 3px 10px rgba(0,0,0,.85);}
+    .rankup-hex .ico{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;
+        font-size:5.4em;line-height:1;filter:drop-shadow(0 3px 5px rgba(0,0,0,.6));}
+    .rankup-hex .sheen{position:absolute;inset:0;z-index:3;pointer-events:none;
+        clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+        background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.6) 48%,transparent 58%);
+        background-size:250% 250%;animation:hexSweep 3.6s linear infinite;}
+    .rankup-kicker{font-size:.82em;font-weight:800;letter-spacing:.35em;text-transform:uppercase;color:#e9c65a;
+        text-shadow:0 2px 8px rgba(0,0,0,.6);margin-bottom:4px;animation:ruRise .5s .2s ease both;}
+    .rankup-cat{font-size:.95em;color:#c9d6c2;margin-bottom:2px;animation:ruRise .5s .25s ease both;}
+    .rankup-name{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:2.7em;line-height:1.05;margin-top:2px;
+        background:linear-gradient(90deg,#f6d365,#fff2c2,#f6d365);background-size:200% 100%;
+        -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+        filter:drop-shadow(0 2px 10px rgba(233,198,90,.35));animation:rwShimmer 2.6s linear infinite,ruRise .6s .35s ease both;}
+    .rankup-fromto{font-size:.95em;color:#9fb39a;margin-top:8px;animation:ruRise .6s .45s ease both;}
+    .rankup-fromto b{color:#eaf3ec;}
+    .rankup-pips{display:flex;gap:9px;margin-top:16px;animation:ruRise .6s .5s ease both;}
+    .rankup-pips i{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.14);}
+    .rankup-pips i.on{background:var(--accent);box-shadow:0 0 10px var(--accent-glow);}
+    .rankup-pips i.justnow{background:#e9c65a;box-shadow:0 0 16px #e9c65a,0 0 30px rgba(233,198,90,.6);transform:scale(1.35);}
+    @keyframes ruRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+    .rankup-hint{position:fixed;left:0;right:0;bottom:26px;z-index:4;text-align:center;pointer-events:none;
+        color:rgba(255,255,255,.78);font-size:13px;letter-spacing:.05em;animation:rwHint 1.8s ease-in-out infinite;}
+    .rankup-close{position:fixed;top:14px;right:16px;z-index:12030;width:46px;height:46px;border-radius:50%;
+        border:2px solid rgba(255,255,255,.5);background:rgba(0,0,0,.45);color:#fff;font-size:26px;line-height:1;
+        display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s ease,background .2s ease;}
+    .rankup-close:hover{background:rgba(255,255,255,.18);transform:scale(1.1) rotate(90deg);}
+    .ru-conf{position:absolute;top:-20px;width:11px;height:16px;border-radius:2px;animation:ruConfFall linear forwards;}
+    @keyframes ruConfFall{to{transform:translateY(112vh) rotate(720deg);opacity:.9}}
+    .ru-spark{position:absolute;top:50%;left:50%;width:10px;height:10px;border-radius:2px;box-shadow:0 0 10px currentColor;
+        animation:ruSparkOut .95s ease-out forwards;}
+    @keyframes ruSparkOut{0%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}
+        100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.2)}}
+    @media (max-width:520px){
+        .rankup-hex{width:172px;height:189px}.rankup-hex .ico{font-size:4.5em}.rankup-name{font-size:2.1em}
+    }
+    </style>
+
+    <div class="rankup-overlay" id="rankupOverlay">
+        <button class="rankup-close" id="rankupClose" aria-label="Schließen">×</button>
+        <div class="rankup-bg"></div>
+        <div class="rankup-rays"></div>
+        <div class="rankup-halo"></div>
+        <div class="rankup-fx" id="rankupFx"></div>
+        <div class="rankup-stage" id="rankupStage"></div>
+        <div class="rankup-hint" id="rankupHint">Tippen zum Weiter</div>
+    </div>
+
+    <div class="rank-icon" id="rankIcon" onclick="openRankSeries()" title="Neuen Rang ansehen">
+        <div class="rk-wrap">
+            <div class="rk-hex" id="rankIconHex">
+                <div class="glow"></div>
+                <div class="plate"></div><div class="inner"></div>
+                <div class="ico" id="rankIconIco">🏅</div>
+            </div>
+            <span class="rk-up">▲</span>
+        </div>
+        <span class="rk-label">Neuer Rang</span>
+    </div>
+
     <!-- ===== Sammelkarten-Optik im Seltenheits-Tab + Detailkarte ===== -->
     <style>
     .rarity-rare-card{border-color:var(--type,var(--border));}
@@ -3561,6 +3673,7 @@
             saveToCache(allObservations);
             enrichCountriesFromPlaces();  // Länder im Hintergrund präzisieren
             maybeShowSpeciesRewards();    // neue RG-Arten seit letztem Besuch belohnen
+            maybeShowRankRewards();       // neue Badge-Ränge seit letztem Besuch feiern
         }
 
         // VOLLSTÄNDIGER Load (alle Beobachtungen von vorn)
@@ -5513,8 +5626,12 @@
             el.style.display = 'flex';
             // Pop-Animation neu starten
             el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+            // Rang-Icon ggf. darüber parken, damit sich beide nicht überlappen
+            const rk = document.getElementById('rankIcon');
+            if(rk && rk.style.display && rk.style.display !== 'none') rk.classList.add('stacked');
         }
-        function hideRewardIcon(){ const el = document.getElementById('rewardIcon'); if(el) el.style.display = 'none'; }
+        function hideRewardIcon(){ const el = document.getElementById('rewardIcon'); if(el) el.style.display = 'none';
+            const rk = document.getElementById('rankIcon'); if(rk) rk.classList.remove('stacked'); }
 
         // Klick aufs Icon -> Kartenserie wie gewohnt
         async function openRewardSeries(){
@@ -5676,6 +5793,208 @@
                 overlay.addEventListener('click',onTap);
                 closeBtn.addEventListener('click',onClose);
                 document.addEventListener('keydown',onKey);
+                render();
+            });
+        }
+
+        // ========================================================================
+        // ===== Belohnung: "Neuer Rang" (Badge-Aufstieg, Variante A) =============
+        // ========================================================================
+        const BADGE_LEVELS_SEEN_PREFIX = 'inat_badge_levels_v1_';
+        const RANKUP_COLORS = ['#e9c65a','#9bcc5f','#bfe08f','#f6d365','#fda085','#ffffff','#8bb867'];
+        let rankActive = false;
+        let rankPendingEvents = null, rankPendingSnapshot = null;
+
+        function badgeLevelsKey(){ return BADGE_LEVELS_SEEN_PREFIX + String(USER_ID).toLowerCase(); }
+        function loadSeenLevels(){
+            try{ const v = JSON.parse(localStorage.getItem(badgeLevelsKey())); return (v && typeof v==='object') ? v : null; }
+            catch(e){ return null; }
+        }
+        function saveSeenLevels(map){ try{ localStorage.setItem(badgeLevelsKey(), JSON.stringify(map)); }catch(e){} }
+
+        // Geräteübergreifender Rang-Stand (analog zum "gesehen"-Stand der Arten)
+        async function fetchServerLevels(){
+            if(!BACKEND_READY) return null;
+            try{
+                const r = await fetch('api/badgelevels?user=' + encodeURIComponent(String(USER_ID).toLowerCase()));
+                if(!r.ok) return null;
+                const j = await r.json();
+                return (j && j.levels && typeof j.levels==='object') ? j.levels : null;
+            }catch(e){ return null; }
+        }
+        async function saveServerLevels(map){
+            if(!BACKEND_READY) return;
+            const token = localStorage.getItem('inat_owner_token'); if(!token) return;
+            try{
+                await fetch('api/badgelevels?user=' + encodeURIComponent(String(USER_ID).toLowerCase()), {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+                    body: JSON.stringify({ levels: map })
+                });
+            }catch(e){}
+        }
+
+        // Aktuelle Rang-Stufe je Badge-Kategorie (Übersicht + Gruppen) – gleiche Leitern wie renderBadges()
+        function computeBadgeLevels(){
+            const m = computeBadgeMetrics();
+            const out = {};
+            const add = (key, label, icon, value, ladder, names) => {
+                out[key] = { level: rankFor(value, ladder).level, label, icon, names };
+            };
+            add('total','Arten gesamt',OVERVIEW_ICON.total,m.totalSpecies,LADDERS.total,RANK_NAMES.total);
+            add('rarity','Seltenheits-Score',OVERVIEW_ICON.rarity,rarityScoreTotal(),LADDERS.rarity,RANK_NAMES.rarity);
+            add('laender','Länder',OVERVIEW_ICON.laender,m.countries.size,LADDERS.laender,RANK_NAMES.laender);
+            add('kontinente','Kontinente',OVERVIEW_ICON.kontinente,m.continents.size,LADDERS.kontinente,RANK_NAMES.kontinente);
+            add('kalender','Kalendertage',OVERVIEW_ICON.kalender,m.days.size,LADDERS.kalender,RANK_NAMES.kalender);
+            add('bioblitz','Bester Tag',OVERVIEW_ICON.bioblitz,m.bioblitz,LADDERS.bioblitz,RANK_NAMES.bioblitz);
+            Object.entries(taxaConfig).forEach(([key,cfg])=>{
+                const count = m.groupSpecies[key]?.size || 0;
+                const ladder = GROUP_LADDERS[key] || GROUP_LADDER_BC;
+                add(key, cfg.name, cfg.icon, count, ladder, RANK_NAMES[key] || BADGE_RANKS.map(x=>x.name));
+            });
+            return out;
+        }
+
+        // Haupteinstieg: Rang-Aufstiege seit letztem Besuch finden → Ruhe-Icon zeigen (öffnet nicht automatisch)
+        async function maybeShowRankRewards(){
+            if(!isOwnerDevice()) return;                                             // nur auf freigeschalteten Geräten
+            if(String(USER_ID).toLowerCase() !== DEFAULT_USER.toLowerCase()) return; // nur eigenes Profil
+            if(rankActive) return;                                                   // Serie läuft gerade
+            const cur = computeBadgeLevels();
+            const snapshot = {}; Object.keys(cur).forEach(k => snapshot[k] = cur[k].level);
+
+            const local = loadSeenLevels();
+            const server = await fetchServerLevels();
+            let seen = null;
+            if(local || server){
+                seen = {};
+                new Set([...Object.keys(local||{}), ...Object.keys(server||{})]).forEach(k =>
+                    seen[k] = Math.max((local&&local[k])||0, (server&&server[k])||0));
+            }
+            if(seen==null){ saveSeenLevels(snapshot); saveServerLevels(snapshot); return; }  // Baseline: erstes Mal nichts zeigen
+
+            const events = [];
+            for(const key of Object.keys(cur)){
+                const now = cur[key].level;
+                const was = (key in seen) ? seen[key] : now;   // unbekannter Key → als gesehen behandeln (keine Fehl-Feier)
+                if(now > was){
+                    const names = cur[key].names || BADGE_RANKS.map(x=>x.name);
+                    for(let lvl = was+1; lvl <= now; lvl++){    // jede übersprungene Stufe einzeln feiern
+                        events.push({
+                            key, label: cur[key].label, icon: cur[key].icon,
+                            level: lvl, total: names.length,
+                            toName: names[lvl-1] || ('Stufe '+lvl),
+                            fromName: lvl>1 ? (names[lvl-2] || ('Stufe '+(lvl-1))) : 'Kein Rang'
+                        });
+                    }
+                }
+            }
+            if(!events.length){ saveSeenLevels(snapshot); saveServerLevels(snapshot); hideRankIcon(); return; }
+
+            const top = events.reduce((a,b)=> b.level>a.level ? b : a, events[0]);  // höchste Stufe prägt Icon-Optik
+            rankPendingEvents = events;
+            rankPendingSnapshot = snapshot;
+            showRankIcon(events.length, top);
+        }
+
+        function showRankIcon(n, top){
+            const el = document.getElementById('rankIcon'); if(!el) return;
+            const hex = document.getElementById('rankIconHex');
+            const ico = document.getElementById('rankIconIco');
+            if(ico) ico.textContent = top ? top.icon : '🏅';
+            if(hex) hex.className = 'rk-hex htier' + Math.max(1, Math.min(7, top ? top.level : 1));
+            const up = el.querySelector('.rk-up'); if(up) up.textContent = n>1 ? n : '▲';
+            const sp = document.getElementById('rewardIcon');   // ggf. über dem New-species-Icon parken
+            el.classList.toggle('stacked', !!(sp && sp.style.display && sp.style.display!=='none'));
+            el.style.display = 'flex';
+            el.style.animation='none'; void el.offsetWidth; el.style.animation='';
+        }
+        function hideRankIcon(){ const el = document.getElementById('rankIcon'); if(el) el.style.display='none'; }
+
+        async function openRankSeries(){
+            if(rankActive || !rankPendingEvents) return;
+            rankActive = true;
+            hideRankIcon();
+            const events = rankPendingEvents, snap = rankPendingSnapshot;
+            try{ await runRankupFlow(events); }
+            finally{
+                saveSeenLevels(snap);
+                saveServerLevels(snap);              // geräteübergreifend merken
+                rankPendingEvents = null; rankPendingSnapshot = null;
+                rankActive = false;
+            }
+        }
+
+        // Aufstiegs-Fanfare (Web Audio, nutzt gemeinsamen Audio-Ctx & Mute-Status des Art-Popups)
+        function rankupSound(){
+            if(rwMuted()) return; rwEnsureAudio(); if(!rwAudioCtx) return;
+            const now=rwAudioCtx.currentTime, notes=[523.25,659.25,783.99,1046.5];   // C-E-G-C Fanfare
+            notes.forEach((f,i)=>{ const o=rwAudioCtx.createOscillator(), g=rwAudioCtx.createGain();
+                o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(rwAudioCtx.destination);
+                const t=now+i*0.12; g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.22,t+0.03);
+                g.gain.exponentialRampToValueAtTime(0.001,t+0.5); o.start(t); o.stop(t+0.55); });
+        }
+
+        // Variante A: großer Hexagon-Aufstieg; mehrere Stufen nacheinander zum Weitertippen
+        function runRankupFlow(events){
+            return new Promise(resolve=>{
+                const overlay = document.getElementById('rankupOverlay');
+                const stage = document.getElementById('rankupStage');
+                const fx = document.getElementById('rankupFx');
+                const hint = document.getElementById('rankupHint');
+                const closeBtn = document.getElementById('rankupClose');
+                let idx=0, busy=false, done=false;
+
+                function finish(){ if(done) return; done=true;
+                    overlay.classList.remove('active');
+                    overlay.removeEventListener('click', onTap);
+                    closeBtn.removeEventListener('click', onClose);
+                    document.removeEventListener('keydown', onKey);
+                    stage.innerHTML=''; fx.innerHTML=''; resolve(); }
+                function onClose(e){ e.stopPropagation(); finish(); }
+                function onKey(e){ if(e.key==='Escape') finish(); else if(e.key==='Enter'||e.key===' ') advance(); }
+                function onTap(){ advance(); }
+                function advance(){ if(busy||done) return; if(idx>=events.length-1){ finish(); return; }
+                    busy=true; idx++; render(); setTimeout(()=>{ busy=false; },700); }
+
+                function pipsHTML(ev){ let s='';
+                    for(let i=1;i<=ev.total;i++){ const c = i<ev.level ? 'on' : (i===ev.level ? 'on justnow' : ''); s+=`<i class="${c}"></i>`; }
+                    return s; }
+
+                function celebrate(ev){
+                    for(let i=0;i<26;i++){ const sp=document.createElement('span'); sp.className='ru-spark';
+                        const a=(Math.PI*2*i)/26, d=120+Math.random()*180;
+                        sp.style.setProperty('--dx',Math.cos(a)*d+'px'); sp.style.setProperty('--dy',Math.sin(a)*d+'px');
+                        sp.style.color=RANKUP_COLORS[i%RANKUP_COLORS.length]; sp.style.animationDelay=(Math.random()*.12)+'s';
+                        fx.appendChild(sp); setTimeout(()=>sp.remove(),1100); }
+                    for(let i=0;i<80;i++){ const c=document.createElement('span'); c.className='ru-conf';
+                        c.style.left=Math.random()*100+'vw'; c.style.background=RANKUP_COLORS[i%RANKUP_COLORS.length];
+                        c.style.animationDuration=(1.8+Math.random()*1.8)+'s'; c.style.animationDelay=(Math.random()*.5)+'s';
+                        c.style.transform=`rotate(${Math.random()*360}deg)`; if(Math.random()<.4) c.style.borderRadius='50%';
+                        fx.appendChild(c); setTimeout(()=>c.remove(),3800); }
+                    rankupSound();
+                    try{ if(navigator.vibrate) navigator.vibrate([25,35,25,35,55]); }catch(e){}
+                }
+
+                function render(){
+                    const ev = events[idx];
+                    const tier = Math.max(1, Math.min(7, ev.level));
+                    fx.innerHTML='';
+                    stage.innerHTML = `
+                        <div class="rankup-kicker">Neuer Rang erreicht</div>
+                        <div class="rankup-cat">${ev.icon} ${rwEsc(ev.label)}</div>
+                        <div class="rankup-hex htier${tier}"><div class="plate"></div><div class="inner"></div><div class="ico">${ev.icon}</div><div class="sheen"></div></div>
+                        <div class="rankup-name">${rwEsc(ev.toName)}</div>
+                        <div class="rankup-fromto"><b>${rwEsc(ev.fromName)}</b> &nbsp;→&nbsp; <b>${rwEsc(ev.toName)}</b> · Stufe ${ev.level} / ${ev.total}</div>
+                        <div class="rankup-pips">${pipsHTML(ev)}</div>`;
+                    hint.textContent = idx>=events.length-1 ? 'Tippen zum Schließen' : `Tippen für nächsten Rang (${idx+1}/${events.length})`;
+                    setTimeout(()=>{ if(!done) celebrate(ev); }, 550);
+                }
+
+                overlay.classList.add('active');
+                overlay.addEventListener('click', onTap);
+                closeBtn.addEventListener('click', onClose);
+                document.addEventListener('keydown', onKey);
                 render();
             });
         }
@@ -6849,6 +7168,7 @@
                 if (cache.age < CACHE_STALE_MS) {
                     document.getElementById('lastUpdate').textContent = 'aktuell (aus Cache)';
                     maybeShowSpeciesRewards();  // auch bei reinem Cache-Start prüfen
+                    maybeShowRankRewards();     // Rang-Aufstiege auch bei Cache-Start prüfen
                     return;
                 }
                 // 3) Sehr alt -> voll neu laden (fängt auch gelöschte Beobachtungen), sonst nur Delta

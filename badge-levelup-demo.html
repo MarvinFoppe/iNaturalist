@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Badge-Aufstieg · Feier-Vorschläge</title>
+<style>
+    :root{
+        --accent:#9bcc5f; --accent-light:#bfe08f; --accent-glow:rgba(155,204,95,.35);
+        --gold:#e9c65a; --bg-dark:#0f1712;
+        /* Metall-Ränge (identisch zur App: htier1–7) */
+        --t1: conic-gradient(from 210deg,#6b4423,#c8813f,#f0b46a,#a5642e,#6b4423,#d18b46,#6b4423);
+        --t2: conic-gradient(from 210deg,#5c3f18,#a9762f,#e4c07a,#8a5f22,#5c3f18,#c39a4e,#5c3f18);
+        --t3: conic-gradient(from 210deg,#5c666c,#c3ccd2,#ffffff,#9aa3a9,#5c666c,#d6dde1,#5c666c);
+        --t4: conic-gradient(from 210deg,#7d6412,#d9bb52,#f8ea9e,#b89a34,#7d6412,#ecd06a,#7d6412);
+        --t5: conic-gradient(from 210deg,#7a560a,#d4af37,#fbe196,#b58e22,#7a560a,#e6c34e,#7a560a);
+        --t6: conic-gradient(from 210deg,#4e6155,#bfe0cb,#ffffff,#9cc0a8,#4e6155,#d8efdf,#4e6155);
+        --t7: conic-gradient(from 210deg,#166b34,#33c95a,#d6ffe2,#e6c34e,#1f8f45,#f8ea9e,#166b34);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:radial-gradient(circle at 50% 20%,#1a2717,#0b110b 70%);color:#eaf3ec;
+        font-family:'Open Sans',system-ui,-apple-system,sans-serif;min-height:100vh;padding:40px 20px 80px;}
+    h1{font-family:'Playfair Display',Georgia,serif;font-size:1.9em;text-align:center;color:var(--accent-light);margin-bottom:6px;}
+    .sub{text-align:center;color:#9fb39a;font-size:.95em;max-width:560px;margin:0 auto 34px;line-height:1.5;}
+    .picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;max-width:820px;margin:0 auto;}
+    .pick{background:rgba(20,32,18,.7);border:1px solid rgba(155,204,95,.25);border-radius:16px;padding:20px 18px;
+        cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;text-align:center;}
+    .pick:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 14px 34px rgba(0,0,0,.45);}
+    .pick .n{font-size:1.6em;margin-bottom:8px;}
+    .pick h3{font-family:'Playfair Display',Georgia,serif;color:var(--accent-light);font-size:1.15em;margin-bottom:6px;}
+    .pick p{font-size:.82em;color:#9fb39a;line-height:1.45;}
+    .pick .go{margin-top:14px;display:inline-block;font-size:.78em;font-weight:700;color:var(--bg-dark);
+        background:linear-gradient(180deg,var(--accent-light),var(--accent));padding:8px 18px;border-radius:20px;}
+    .note{max-width:760px;margin:36px auto 0;padding:16px 20px;border:1px dashed rgba(155,204,95,.3);border-radius:14px;
+        font-size:.82em;color:#9fb39a;line-height:1.55;text-align:center;}
+
+    /* ===================== FEIER-OVERLAY (gemeinsam) ===================== */
+    .cel{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;overflow:hidden;
+        cursor:pointer;padding:24px;}
+    .cel.on{display:flex;}
+    .cel-bg{position:absolute;inset:0;z-index:0;
+        background:radial-gradient(circle at 50% 42%,rgba(30,52,20,.94),rgba(0,0,0,.97));
+        -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:celFade .35s ease both;}
+    @keyframes celFade{from{opacity:0}to{opacity:1}}
+
+    /* rotierende Lichtstrahlen (godrays) */
+    .rays{position:absolute;top:50%;left:50%;width:200vmax;height:200vmax;transform:translate(-50%,-50%);
+        z-index:1;pointer-events:none;opacity:0;mix-blend-mode:screen;
+        background:repeating-conic-gradient(from 0deg,rgba(233,198,90,.16) 0deg 7deg,transparent 7deg 20deg);
+        animation:raysIn .8s ease forwards,raysSpin 26s linear infinite;}
+    @keyframes raysIn{to{opacity:1}}
+    @keyframes raysSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+    .halo{position:absolute;top:50%;left:50%;width:64vmin;height:64vmin;transform:translate(-50%,-50%);z-index:1;
+        pointer-events:none;background:radial-gradient(circle,var(--rankcol,var(--accent-glow)) 0%,transparent 62%);
+        opacity:0;animation:haloPulse 2.6s ease-in-out infinite;}
+    @keyframes haloPulse{0%,100%{opacity:.35;transform:translate(-50%,-50%) scale(.95)}50%{opacity:.7;transform:translate(-50%,-50%) scale(1.06)}}
+
+    .stage{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center;pointer-events:none;}
+
+    /* Großer Hexagon-Badge */
+    .hexbig{position:relative;width:210px;height:230px;filter:drop-shadow(0 16px 30px rgba(0,0,0,.6));}
+    .hexbig .plate{position:absolute;inset:0;background:var(--rim,var(--t3));
+        clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);}
+    .hexbig .inner{position:absolute;inset:11px;background:radial-gradient(circle at 40% 30%,#24361f,#0f1a0d 80%);
+        clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);box-shadow:inset 0 3px 10px rgba(0,0,0,.85);}
+    .hexbig .ico{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;
+        font-size:5.4em;line-height:1;filter:drop-shadow(0 3px 5px rgba(0,0,0,.6));}
+    .hexbig .sheen{position:absolute;inset:0;z-index:3;pointer-events:none;
+        clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+        background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.6) 48%,transparent 58%);
+        background-size:250% 250%;animation:hexSweep 3.6s linear infinite;}
+    @keyframes hexSweep{0%{background-position:150% 0}100%{background-position:-90% 0}}
+    .rimset1{--rim:var(--t1)}.rimset2{--rim:var(--t2)}.rimset3{--rim:var(--t3)}.rimset4{--rim:var(--t4)}
+    .rimset5{--rim:var(--t5)}.rimset6{--rim:var(--t6)}.rimset7{--rim:var(--t7)}
+
+    .kicker{font-size:.82em;font-weight:800;letter-spacing:.35em;text-transform:uppercase;color:var(--gold);
+        text-shadow:0 2px 8px rgba(0,0,0,.6);margin-bottom:4px;}
+    .cat{font-size:.9em;color:#c9d6c2;margin-bottom:2px;}
+    .rankname{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:2.6em;line-height:1.05;
+        background:linear-gradient(90deg,#f6d365,#fff2c2,#f6d365);background-size:200% 100%;
+        -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+        animation:shimmer 2.6s linear infinite;filter:drop-shadow(0 2px 10px rgba(233,198,90,.35));}
+    @keyframes shimmer{to{background-position:200% 0}}
+    .fromto{font-size:.92em;color:#9fb39a;margin-top:8px;}
+    .fromto b{color:#eaf3ec;}
+    /* Stufen-Pips */
+    .pips{display:flex;gap:9px;margin-top:16px;}
+    .pips i{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.14);transition:all .3s;}
+    .pips i.on{background:var(--accent);box-shadow:0 0 10px var(--accent-glow);}
+    .pips i.justnow{background:var(--gold);box-shadow:0 0 16px var(--gold),0 0 30px rgba(233,198,90,.6);transform:scale(1.35);}
+    .taphint{position:fixed;bottom:26px;left:0;right:0;text-align:center;color:rgba(255,255,255,.7);font-size:.8em;
+        letter-spacing:.05em;z-index:4;animation:hintPulse 1.8s ease-in-out infinite;}
+    @keyframes hintPulse{0%,100%{opacity:.45}50%{opacity:.95}}
+
+    /* Konfetti + Funken */
+    .fx{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;}
+    .conf{position:absolute;top:-20px;width:11px;height:16px;border-radius:2px;opacity:.95;
+        animation:confFall linear forwards;}
+    @keyframes confFall{to{transform:translateY(112vh) rotate(720deg);opacity:.9}}
+    .spark{position:absolute;top:50%;left:50%;width:10px;height:10px;border-radius:2px;
+        box-shadow:0 0 10px currentColor;animation:sparkOut .95s ease-out forwards;}
+    @keyframes sparkOut{0%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}
+        100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.2)}}
+    .shock{position:absolute;top:50%;left:50%;width:40px;height:40px;border-radius:50%;transform:translate(-50%,-50%);
+        border:4px solid var(--gold);z-index:2;pointer-events:none;animation:shock .7s ease-out forwards;}
+    @keyframes shock{0%{opacity:.9;width:40px;height:40px}100%{opacity:0;width:150vmax;height:150vmax;border-width:1px}}
+
+    /* --- Variantenspezifische Eingänge --- */
+    /* A: Aufstieg / Morph */
+    .anim-A .hexbig{animation:aPop 1s cubic-bezier(.2,.8,.3,1.3) both;}
+    @keyframes aPop{0%{opacity:0;transform:scale(.2) rotate(-40deg)}60%{opacity:1;transform:scale(1.14) rotate(6deg)}100%{transform:scale(1) rotate(0)}}
+    .anim-A .rankname{animation:riseIn .6s .35s ease both;}
+    .anim-A .kicker,.anim-A .cat{animation:riseIn .5s .2s ease both;}
+    @keyframes riseIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+    /* B: Lichtsäule / Ascension */
+    .beam{position:absolute;left:50%;top:0;bottom:0;width:150px;transform:translateX(-50%);z-index:2;pointer-events:none;
+        background:linear-gradient(to top,transparent,rgba(233,198,90,.5) 40%,rgba(255,255,255,.75));
+        filter:blur(6px);opacity:0;animation:beamGrow .7s ease forwards;}
+    @keyframes beamGrow{to{opacity:.9}}
+    .anim-B .hexbig{animation:ascend 1.3s cubic-bezier(.2,.7,.25,1) both;}
+    @keyframes ascend{0%{opacity:0;transform:translateY(46vh) scale(.5)}55%{opacity:1}100%{opacity:1;transform:translateY(0) scale(1)}}
+    .anim-B .stage>*:not(.hexbig){animation:riseIn .6s .7s ease both;}
+    .streamup{position:absolute;bottom:-10px;width:6px;height:22px;border-radius:3px;background:var(--gold);
+        box-shadow:0 0 10px var(--gold);opacity:.9;animation:streamUp linear infinite;}
+    @keyframes streamUp{to{transform:translateY(-108vh);opacity:0}}
+
+    /* C: Siegel-Stempel / Impact */
+    .anim-C .stage{animation:stamp .5s cubic-bezier(.2,.9,.3,1.4) both;}
+    @keyframes stamp{0%{opacity:0;transform:scale(2.6)}70%{opacity:1;transform:scale(.94)}100%{transform:scale(1)}}
+    .cel.shake .cel-bg{animation:celFade .35s ease both,shake .4s ease;}
+    @keyframes shake{0%,100%{transform:translate(0,0)}20%{transform:translate(-9px,6px)}40%{transform:translate(8px,-7px)}60%{transform:translate(-6px,-5px)}80%{transform:translate(6px,5px)}}
+
+    /* D: Karten-Enthüllung (Flip, wie New-Species aber Rang) */
+    .flipwrap{width:230px;perspective:1400px;}
+    .flipcard{position:relative;width:100%;aspect-ratio:3/4;transform-style:preserve-3d;transform:rotateY(180deg);
+        transition:transform .8s cubic-bezier(.2,.75,.3,1.15);}
+    .flipcard.rev{transform:rotateY(0);}
+    .flipcard .face{position:absolute;inset:0;-webkit-backface-visibility:hidden;backface-visibility:hidden;border-radius:18px;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;}
+    .flipcard .back{transform:rotateY(180deg);background:radial-gradient(circle at 50% 32%,#3a58a6,#1a2747 72%);
+        border:6px solid var(--gold);box-shadow:inset 0 0 0 3px rgba(255,255,255,.4),0 26px 55px rgba(0,0,0,.6);
+        font-size:3.4em;}
+    .flipcard .front{background:linear-gradient(160deg,#fffdf5,#e7ecf6 60%,#d8e1f0);border:5px solid var(--gold);
+        box-shadow:0 26px 55px rgba(0,0,0,.6),0 0 26px rgba(240,207,99,.55);color:#1a2230;}
+    .flipcard .front .hexbig{width:130px;height:143px;}
+    .flipcard .front .hexbig .ico{font-size:3.2em;}
+    .flipcard:not(.rev) .back{animation:tapcue 1.7s ease-in-out infinite;}
+    @keyframes tapcue{0%,100%{box-shadow:inset 0 0 0 3px rgba(255,255,255,.4),0 26px 55px rgba(0,0,0,.6)}
+        50%{box-shadow:inset 0 0 0 3px rgba(255,255,255,.6),0 0 30px rgba(240,207,99,.6),0 26px 55px rgba(0,0,0,.6)}}
+    .fc-kicker{font-size:.7em;font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:#b8892b;}
+    .fc-rank{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:1.7em;color:#1a2230;}
+    .fc-cat{font-size:.82em;color:#5a6678;}
+
+    @media (max-width:520px){
+        .hexbig{width:170px;height:186px}.hexbig .ico{font-size:4.4em}
+        .rankname{font-size:2.1em}.flipwrap{width:200px}
+    }
+</style>
+</head>
+<body>
+    <h1>🏅 Badge-Aufstieg — Feier-Vorschläge</h1>
+    <p class="sub">Vier Varianten, wie ein <b>neuer Rang</b> gefeiert werden könnte — größer &amp; wuchtiger als die „Neue Art“-Karte.
+       Tippe eine an, klick dich durch, und sag mir welche in die App soll (Details lassen sich frei mischen).</p>
+
+    <div class="picker">
+        <div class="pick" onclick="play('A')">
+            <div class="n">⬆️</div><h3>A · Rang-Aufstieg</h3>
+            <p>Hexagon platzt groß rein, dreht sich in Position, Lichtstrahlen &amp; Konfetti. Klar &amp; feierlich.</p>
+            <span class="go">Ansehen ▸</span>
+        </div>
+        <div class="pick" onclick="play('B')">
+            <div class="n">🌟</div><h3>B · Lichtsäule</h3>
+            <p>Der Rang steigt aus einer Lichtsäule empor, Funken strömen nach oben. Episch &amp; erhaben.</p>
+            <span class="go">Ansehen ▸</span>
+        </div>
+        <div class="pick" onclick="play('C')">
+            <div class="n">💥</div><h3>C · Siegel-Stempel</h3>
+            <p>Der neue Rang knallt wie ein Wappen-Siegel auf den Screen — Schockwelle &amp; Wackler. Wuchtig.</p>
+            <span class="go">Ansehen ▸</span>
+        </div>
+        <div class="pick" onclick="play('D')">
+            <div class="n">🃏</div><h3>D · Rang-Karte</h3>
+            <p>Wie die „Neue Art“-Karte, aber für Ränge: Karte aufdecken → neuer Rang. Vertraut &amp; sammelbar.</p>
+            <span class="go">Ansehen ▸</span>
+        </div>
+    </div>
+
+    <div class="note">
+        Beispiel-Aufstieg in allen Varianten: <b>Vögel</b> — von <i>Flügge</i> (Stufe 4) auf <b>Vogel</b> (Stufe 5/7). 🐦<br>
+        Farben, Rang-Icon &amp; Metall-Rahmen kommen aus deiner App (htier1–7). Ton ist optional zuschaltbar.
+    </div>
+
+    <!-- Ton-Toggle -->
+    <div style="text-align:center;margin-top:20px;">
+        <label style="font-size:.82em;color:#9fb39a;cursor:pointer;">
+            <input type="checkbox" id="sndToggle" checked> 🔊 Sound-Effekt
+        </label>
+    </div>
+
+    <!-- ===== Overlay ===== -->
+    <div class="cel" id="cel" onclick="closeCel()">
+        <div class="cel-bg"></div>
+        <div class="rays" id="rays"></div>
+        <div class="halo" id="halo"></div>
+        <div class="fx" id="fx"></div>
+        <div class="stage" id="stage"></div>
+        <div class="taphint">Tippen zum Schließen</div>
+    </div>
+
+<script>
+    // Beispiel-Aufstieg (aus der App: Gruppe Vögel, Stufe 4 -> 5)
+    const DEMO = {
+        cat: '🐦 Vögel',
+        icon: '🐦',
+        fromRank: 'Flügge',
+        toRank: 'Vogel',
+        level: 5,          // neue Stufe
+        total: 7,
+        rankColorVar: '--accent'
+    };
+
+    const cel = document.getElementById('cel');
+    const stage = document.getElementById('stage');
+    const fx = document.getElementById('fx');
+    let closed = true;
+
+    const CONF_COLORS = ['#e9c65a','#9bcc5f','#bfe08f','#f6d365','#fda085','#ffffff','#8bb867'];
+
+    function rimClass(lvl){ return 'rimset' + Math.max(1, Math.min(7, lvl)); }
+
+    function hexBigHTML(icon, lvl){
+        return `<div class="hexbig ${rimClass(lvl)}">
+            <div class="plate"></div><div class="inner"></div>
+            <div class="ico">${icon}</div><div class="sheen"></div></div>`;
+    }
+    function pipsHTML(lvl,total){
+        let s='<div class="pips">';
+        for(let i=1;i<=total;i++){
+            const cls = i<lvl ? 'on' : (i===lvl ? 'on justnow' : '');
+            s+=`<i class="${cls}"></i>`;
+        }
+        return s+'</div>';
+    }
+
+    function stageInner(v){
+        const d=DEMO;
+        if(v==='D'){
+            return `<div class="flipwrap"><div class="flipcard" id="flip">
+                <div class="face back">🃏</div>
+                <div class="face front">
+                    <div class="fc-kicker">Neuer Rang</div>
+                    ${hexBigHTML(d.icon,d.level)}
+                    <div class="fc-rank">${d.toRank}</div>
+                    <div class="fc-cat">${d.cat} · Stufe ${d.level}/${d.total}</div>
+                </div>
+            </div></div>`;
+        }
+        return `
+            <div class="kicker">Neuer Rang erreicht</div>
+            <div class="cat">${d.cat}</div>
+            ${hexBigHTML(d.icon,d.level)}
+            <div class="rankname">${d.toRank}</div>
+            <div class="fromto"><b>${d.fromRank}</b> &nbsp;→&nbsp; <b>${d.toRank}</b> · Stufe ${d.level} / ${d.total}</div>
+            ${pipsHTML(d.level,d.total)}`;
+    }
+
+    function play(v){
+        closed=false;
+        cel.className='cel on anim-'+v;
+        fx.innerHTML='';
+        stage.innerHTML=stageInner(v);
+
+        if(v==='B') addBeam();
+        if(v==='C') { cel.classList.add('shake'); shockwave(); }
+
+        // Variante D: erst Karte, dann aufdecken
+        if(v==='D'){
+            const flip=document.getElementById('flip');
+            setTimeout(()=>{ if(!closed){ flip.classList.add('rev'); burst(); confetti(); chime(); } }, 900);
+            return;
+        }
+
+        // Effekte gestaffelt
+        const kick = v==='C' ? 0 : (v==='B' ? 900 : 550);
+        setTimeout(()=>{ if(!closed){ burst(); confetti(); chime(); } }, kick);
+        if(v==='B') beamStream();
+    }
+
+    // ---- Effekte ----
+    function burst(){
+        for(let i=0;i<26;i++){
+            const s=document.createElement('span'); s.className='spark';
+            const a=(Math.PI*2*i)/26, dist=120+Math.random()*180;
+            s.style.setProperty('--dx',Math.cos(a)*dist+'px');
+            s.style.setProperty('--dy',Math.sin(a)*dist+'px');
+            s.style.color=CONF_COLORS[i%CONF_COLORS.length];
+            s.style.animationDelay=(Math.random()*.12)+'s';
+            fx.appendChild(s); setTimeout(()=>s.remove(),1100);
+        }
+    }
+    function confetti(){
+        for(let i=0;i<80;i++){
+            const c=document.createElement('span'); c.className='conf';
+            c.style.left=Math.random()*100+'vw';
+            c.style.background=CONF_COLORS[i%CONF_COLORS.length];
+            c.style.animationDuration=(1.8+Math.random()*1.8)+'s';
+            c.style.animationDelay=(Math.random()*.5)+'s';
+            c.style.transform=`rotate(${Math.random()*360}deg)`;
+            if(Math.random()<.4) c.style.borderRadius='50%';
+            fx.appendChild(c); setTimeout(()=>c.remove(),3800);
+        }
+    }
+    function shockwave(){
+        const s=document.createElement('span'); s.className='shock';
+        fx.appendChild(s); setTimeout(()=>s.remove(),750);
+    }
+    function addBeam(){ const b=document.createElement('div'); b.className='beam'; fx.appendChild(b); }
+    function beamStream(){
+        for(let i=0;i<30;i++){
+            const s=document.createElement('span'); s.className='streamup';
+            s.style.left=(46+Math.random()*8)+'vw';
+            s.style.animationDuration=(.8+Math.random()*1.1)+'s';
+            s.style.animationDelay=(Math.random()*1.2)+'s';
+            fx.appendChild(s); setTimeout(()=>s.remove(),2600);
+        }
+    }
+
+    // ---- Sound (WebAudio, kleiner Aufstiegs-Jingle) ----
+    let actx=null;
+    function chime(){
+        if(!document.getElementById('sndToggle').checked) return;
+        try{
+            actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+            const notes=[523.25,659.25,783.99,1046.5]; // C E G C – Fanfare
+            notes.forEach((f,i)=>{
+                const o=actx.createOscillator(), g=actx.createGain();
+                o.type='triangle'; o.frequency.value=f;
+                const t=actx.currentTime+i*0.12;
+                g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.22,t+0.03);
+                g.gain.exponentialRampToValueAtTime(.0001,t+0.5);
+                o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+0.55);
+            });
+        }catch(e){}
+    }
+
+    function closeCel(){ closed=true; cel.className='cel'; fx.innerHTML=''; stage.innerHTML=''; }
+</script>
+</body>
+</html>
