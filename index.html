@@ -2472,6 +2472,7 @@
         .stampc.stier-1 .stampc-cnt, .stampc.stier-2 .stampc-cnt, .stampc.stier-3 .stampc-cnt { color: var(--text-primary); }
 
         .sbadge-live { font-family:'Open Sans',sans-serif; font-size:0.55em; background: var(--accent-warm-strong); color:#1a1206; padding:2px 7px; border-radius:6px; vertical-align:middle; margin-left:4px; font-weight:700; }
+        .sbadge-soon { font-family:'Open Sans',sans-serif; font-size:0.55em; background: rgba(255,255,255,0.1); color: var(--text-secondary); padding:2px 7px; border-radius:6px; vertical-align:middle; margin-left:4px; font-weight:700; border:1px solid var(--border); }
 
         @media (max-width: 768px) {
             .season-cards { grid-template-columns: 1fr 1fr; }
@@ -5490,7 +5491,7 @@
 
         // Monats-Challenge: verschiedene Arten in EINEM Kalendermonat → Bronze/Silber/Gold
         // Kalibriert aus echten RG-Beobachtungen seit März 2025 (Urlaubs-Peaks herausgerechnet).
-        const SB_MONTH_TIERS = [25, 50, 75];
+        const SB_MONTH_TIERS = [10, 20, 30];
         const SB_TIER = [
             { name: 'offen',  medal: '',   cls: 'stier-0' },
             { name: 'Bronze', medal: '🥉', cls: 'stier-1' },
@@ -5506,10 +5507,10 @@
         // Saison-Badges: je Jahreszeit eine passende (überall auffindbare) Artengruppe
         // Saison-Ziele kalibriert aus echten Beobachtungen seit März 2025 (Urlaubs-Peaks raus).
         const SB_SEASONS = [
-            { key:'spring', name:'Frühling', icon:'🌸', months:[2,3,4],  group:'Plantae', groupLabel:'Pflanzenarten', range:'Mär–Mai', goal:30 },
-            { key:'summer', name:'Sommer',   icon:'🦋', months:[5,6,7],  group:'Insecta', groupLabel:'Insektenarten', range:'Jun–Aug', goal:50 },
-            { key:'autumn', name:'Herbst',   icon:'🍄', months:[8,9,10], group:'Fungi',   groupLabel:'Pilzarten',     range:'Sep–Nov', goal:20 },
-            { key:'winter', name:'Winter',   icon:'🐦', months:[11,0,1], group:'Aves',    groupLabel:'Vogelarten',    range:'Dez–Feb', goal:40 }
+            { key:'spring', name:'Frühling', icon:'🌸', months:[2,3,4],  group:'Plantae', groupLabel:'Pflanzenarten', range:'Mär–Mai', tiers:[30,60,90] },
+            { key:'summer', name:'Sommer',   icon:'🦋', months:[5,6,7],  group:'Insecta', groupLabel:'Insektenarten', range:'Jun–Aug', tiers:[30,60,90] },
+            { key:'autumn', name:'Herbst',   icon:'🍄', months:[8,9,10], group:'Fungi',   groupLabel:'Pilzarten',     range:'Sep–Nov', tiers:[30,60,90] },
+            { key:'winter', name:'Winter',   icon:'🐦', months:[11,0,1], group:'Aves',    groupLabel:'Vogelarten',    range:'Dez–Feb', tiers:[30,60,90] }
         ];
         function sbSeasonInstance(seasonKey, year, monthIdx){
             // Winter (Dez–Feb) gehört zum Jahr des Januars → Dez zählt zum Folgejahr
@@ -5576,6 +5577,7 @@
         };
         function sbFmtMonth(ym){ const p = ym.split('-'); return SB_MONTH_ABBR[+p[1]-1] + ' ' + p[0]; }
         function sbRow(label, val, done){ return `<div class="sd-row ${done?'done':''}"><span>${label}</span><b>${val}</b></div>`; }
+        function sbTierOf(count, tiers){ let t = 0; for (let i = 0; i < tiers.length; i++) if (count >= tiers[i]) t = i + 1; return t; }
 
         // Tage & häufigste Gruppe in einem Monat (für die Detail-Ansicht der Sammelkarte)
         function sbMonthStats(ym){
@@ -5590,18 +5592,28 @@
             return { days: days.size, topG, topN };
         }
 
-        // Lifetime-Basis: GESAMTE Historie (ohne Start-Filter) – für Serien & neue Arten pro Jahr
+        // Lifetime-Basis: GESAMTE Historie (ohne Start-Filter).
+        // "Neue Art" = erstmals überhaupt beobachtet (Lebensliste). Basis für Serien,
+        // Jahres-Ziel, Monats-Challenge und Saison-Badges (alle auf NEUE Arten).
         function sbLifetime(){
-            const days = new Set(), months = new Set(), years = new Set(), firstSeen = {};
+            const days = new Set(), months = new Set(), years = new Set(), daysByMonth = {}, firstSeen = {}, firstGroup = {};
             for (const o of allObservations){
                 if (o.quality !== 'research' || !o.taxonId || !o.date || o.date.length < 10) continue;
-                const d = o.date.slice(0,10);
-                days.add(d); months.add(d.slice(0,7)); years.add(d.slice(0,4));
-                if (!firstSeen[o.taxonId] || d < firstSeen[o.taxonId]) firstSeen[o.taxonId] = d;
+                const d = o.date.slice(0,10), ym = d.slice(0,7);
+                days.add(d); months.add(ym); years.add(d.slice(0,4));
+                (daysByMonth[ym] ||= new Set()).add(d);
+                if (!firstSeen[o.taxonId] || d < firstSeen[o.taxonId]){ firstSeen[o.taxonId] = d; firstGroup[o.taxonId] = o.taxon; }
             }
-            const newByYear = {};
-            for (const tid in firstSeen){ const y = firstSeen[tid].slice(0,4); newByYear[y] = (newByYear[y]||0) + 1; }
-            return { days, months, years, newByYear };
+            const newByYear = {}, newByMonth = {}, newBySeason = {}, newMonthTop = {};
+            for (const tid in firstSeen){
+                const d = firstSeen[tid], y = d.slice(0,4), ym = d.slice(0,7), g = firstGroup[tid], mo = +d.slice(5,7) - 1;
+                newByYear[y]  = (newByYear[y]||0) + 1;
+                newByMonth[ym] = (newByMonth[ym]||0) + 1;
+                const mt = (newMonthTop[ym] ||= {}); mt[g] = (mt[g]||0) + 1;
+                const s = SB_SEASONS.find(x => x.months.includes(mo));     // neue Arten je Saison – ALLE Gruppen
+                if (s){ const inst = sbSeasonInstance(s.key, +y, mo); newBySeason[s.key + ':' + inst] = (newBySeason[s.key + ':' + inst]||0) + 1; }
+            }
+            return { days, months, years, daysByMonth, newByYear, newByMonth, newBySeason, newMonthTop };
         }
         // Tagesserie: aufeinanderfolgende Kalendertage mit Beobachtung
         function sbDayStreak(daysSet, now){
@@ -5649,36 +5661,38 @@
             const curYM = cy + '-' + String(cm+1).padStart(2,'0');
             const beforeStart = curYM < SEASON_START_YM;
 
-            // ---------- Monats-Challenge (laufender Monat) ----------
-            const curCount = (data.byMonth[curYM] || new Set()).size;
+            // ---------- Monats-Challenge: NEUE Arten im laufenden Monat ----------
+            const curCount = life.newByMonth[curYM] || 0;
             const curTier  = sbMonthTier(curCount);
             const nextGoal = curTier < SB_MONTH_TIERS.length ? SB_MONTH_TIERS[curTier] : null;
             const prevGoal = curTier > 0 ? SB_MONTH_TIERS[curTier-1] : 0;
             const mProg = nextGoal === null ? 1 : Math.max(0, Math.min(1, (curCount - prevGoal) / (nextGoal - prevGoal)));
-            const mNext = nextGoal === null ? 'Gold erreicht 🎉' : `noch ${nextGoal - curCount} Arten bis ${SB_TIER[curTier+1].name}`;
+            const mNext = nextGoal === null ? 'Gold erreicht 🎉' : `noch ${nextGoal - curCount} neue Arten bis ${SB_TIER[curTier+1].name}`;
             let bestMN = 0, bestMK = null;
-            Object.entries(data.byMonth).forEach(([k,s])=>{ if (s.size > bestMN){ bestMN = s.size; bestMK = k; } });
-            const mStats = beforeStart ? { days:0, topG:null, topN:0 } : sbMonthStats(curYM);
+            Object.keys(life.newByMonth).forEach(k => { if (k >= SEASON_START_YM && life.newByMonth[k] > bestMN){ bestMN = life.newByMonth[k]; bestMK = k; } });
+            const mDays = (life.daysByMonth[curYM] || new Set()).size;
+            const mTop = life.newMonthTop[curYM] || {};
+            let mTopG = null, mTopN = 0; for (const g in mTop) if (mTop[g] > mTopN){ mTopN = mTop[g]; mTopG = g; }
             const monthDetail =
-                SB_MONTH_TIERS.map((t,i)=> sbRow(`${SB_TIER[i+1].medal} ${SB_TIER[i+1].name}`, curCount>=t ? '✓ '+t+' Arten' : 'ab '+t+' · noch '+(t-curCount), curCount>=t)).join('') +
-                sbRow('Beobachtungstage im Monat', mStats.days) +
-                (mStats.topG ? sbRow('Häufigste Gruppe', (SB_GROUP_LABEL[mStats.topG]||mStats.topG)+' · '+mStats.topN+' Arten') : '') +
-                (bestMK ? sbRow('Bester Monat bisher', bestMN+' Arten · '+sbFmtMonth(bestMK)) : '') +
-                `<div class="sd-note">Zählt verschiedene Arten in diesem Kalendermonat. Setzt am Monatsersten zurück.</div>`;
+                SB_MONTH_TIERS.map((t,i)=> sbRow(`${SB_TIER[i+1].medal} ${SB_TIER[i+1].name}`, curCount>=t ? '✓ '+t+' neue Arten' : 'ab '+t+' · noch '+(t-curCount), curCount>=t)).join('') +
+                sbRow('Beobachtungstage im Monat', mDays) +
+                (mTopG ? sbRow('Häufigste neue Gruppe', (SB_GROUP_LABEL[mTopG]||mTopG)+' · '+mTopN) : '') +
+                (bestMK ? sbRow('Bester Monat bisher', bestMN+' neue · '+sbFmtMonth(bestMK)) : '') +
+                `<div class="sd-note">Zählt <b>neue Arten</b> (erstmals überhaupt beobachtet = Lebensliste) in diesem Kalendermonat. Setzt am Monatsersten zurück.</div>`;
             const monthCard = beforeStart ? `
                 <div class="scard" onclick="this.classList.toggle('expanded')">
                     <div class="scard-hero">📅</div>
                     <div class="scard-title">Monats-Challenge</div>
-                    <div class="scard-sub">startet am 01.09.2026</div>
+                    <div class="scard-sub">startet am 01.09.2026 · neue Arten</div>
                     <div class="scard-big">–</div>
                     <div class="scard-tiers">${SB_MONTH_TIERS.map((t,i)=>`<span class="stx">${SB_TIER[i+1].medal} ${t}</span>`).join('')}</div>
-                    <div class="scard-next">Ab September zählt jede Art, die du in dem Monat findest.</div>
+                    <div class="scard-next">Ab September zählt jede neue Art, die du in dem Monat findest.</div>
                 </div>` : `
                 <div class="scard ${curTier>0?'scard-on':''}" onclick="this.classList.toggle('expanded')">
                     <div class="scard-hero stier-${curTier}">${SB_TIER[curTier].medal || '📅'}</div>
                     <div class="scard-title">Monats-Challenge</div>
-                    <div class="scard-sub">${SB_MONTH_NAMES[cm]} ${cy} · Arten-Vielfalt</div>
-                    <div class="scard-big">${curCount}<span class="scard-unit"> Arten</span></div>
+                    <div class="scard-sub">${SB_MONTH_NAMES[cm]} ${cy} · neue Arten</div>
+                    <div class="scard-big">${curCount}<span class="scard-unit"> neue Arten</span></div>
                     <div class="scard-tiers">${SB_MONTH_TIERS.map((t,i)=>`<span class="stx ${curTier>=i+1?'on':''}">${SB_TIER[i+1].medal} ${t}</span>`).join('')}</div>
                     <div class="scard-bar"><div class="scard-bar-fill stier-${curTier}" style="width:${Math.round(mProg*100)}%"></div></div>
                     <div class="scard-next">${mNext}</div>
@@ -5751,32 +5765,32 @@
             const stamps = SB_MONTH_ABBR.map((mn, i) => {
                 const ym = sbAlbumYear + '-' + String(i+1).padStart(2,'0');
                 if (ym < SEASON_START_YM) return '';                 // Monate vor dem Start komplett weglassen
-                const pre = false;
                 const future = (sbAlbumYear > cy) || (sbAlbumYear === cy && i > cm);
-                const cnt = (data.byMonth[ym] || new Set()).size;
+                const cnt = life.newByMonth[ym] || 0;
                 const tier = sbMonthTier(cnt);
                 if (tier===3) goldN++; else if (tier===2) silverN++; else if (tier===1) bronzeN++;
                 const isCur = ym === curYM;
-                const medal = pre ? '–' : (SB_TIER[tier].medal || '·');
-                const tierName = pre ? 'vor Start' : (future && !cnt ? 'kommt noch' : (tier ? SB_TIER[tier].name : 'offen'));
-                const clickable = !pre && cnt > 0;
+                const medal = SB_TIER[tier].medal || '·';
+                const tierName = (future && !cnt) ? 'kommt noch' : (tier ? SB_TIER[tier].name : 'offen');
+                const clickable = cnt > 0;
                 let detail = '';
                 if (clickable){
-                    const stt = sbMonthStats(ym);
+                    const dcnt = (life.daysByMonth[ym] || new Set()).size;
+                    const tg = life.newMonthTop[ym] || {}; let tGg=null,tGn=0; for (const g in tg) if (tg[g] > tGn){ tGn = tg[g]; tGg = g; }
                     const nextT = tier < SB_MONTH_TIERS.length ? SB_MONTH_TIERS[tier] : null;
                     detail = `<div class="stampc-detail">`
-                        + sbRow('Arten', cnt + (tier ? ' · '+SB_TIER[tier].name : ''), tier>0)
-                        + sbRow('Beobachtungstage', stt.days)
-                        + (stt.topG ? sbRow('Häufigste Gruppe', (SB_GROUP_LABEL[stt.topG]||stt.topG)+' · '+stt.topN) : '')
-                        + (nextT ? sbRow('Bis '+SB_TIER[tier+1].name, 'noch '+(nextT-cnt)+' Arten') : sbRow('Höchststufe', 'Gold 🥇', true))
+                        + sbRow('Neue Arten', cnt + (tier ? ' · '+SB_TIER[tier].name : ''), tier>0)
+                        + sbRow('Beobachtungstage', dcnt)
+                        + (tGg ? sbRow('Häufigste neue Gruppe', (SB_GROUP_LABEL[tGg]||tGg)+' · '+tGn) : '')
+                        + (nextT ? sbRow('Bis '+SB_TIER[tier+1].name, 'noch '+(nextT-cnt)+' neue Arten') : sbRow('Höchststufe', 'Gold 🥇', true))
                         + `</div>`;
                 }
-                return `<div class="stampc ${SB_TIER[tier].cls} ${pre?'stamp-pre':''} ${future?'stamp-future':''} ${isCur?'stamp-cur':''}"
+                return `<div class="stampc ${SB_TIER[tier].cls} ${future?'stamp-future':''} ${isCur?'stamp-cur':''}"
                              ${clickable ? `onclick="this.classList.toggle('expanded')"` : ''}
                              title="${SB_MONTH_NAMES[i]} ${sbAlbumYear}">
                             <div class="stampc-medal">${medal}</div>
                             <div class="stampc-mon">${mn}</div>
-                            <div class="stampc-cnt">${(pre || (future && !cnt)) ? '' : cnt}</div>
+                            <div class="stampc-cnt">${(future && !cnt) ? '' : cnt}</div>
                             <div class="stampc-tier">${tierName}</div>
                             ${clickable ? `<div class="stampc-hint">▾</div>` : ''}
                             ${detail}
@@ -5793,46 +5807,53 @@
                 </div>
                 <div class="stamp-grid">${stamps}</div>`;
 
-            // ---------- Jahreszeiten (mit Jahresfilter) ----------
-            const seasonYears = [...new Set(Object.keys(data.bySeason).map(k=>+k.split(':')[1]))].sort((a,b)=>a-b);
-            if (!seasonYears.length) seasonYears.push(cy);
-            if (sbSeasonYear === null || !seasonYears.includes(sbSeasonYear)) sbSeasonYear = seasonYears[seasonYears.length-1];
+            // ---------- Jahreszeiten: NEUE Arten der Gruppe je Saison, kommende vorgeladen ----------
+            const syset = new Set([cy]);
+            Object.keys(life.newBySeason).forEach(k => { const p = k.split(':'); const s = SB_SEASONS.find(x => x.key === p[0]); if (s && sbSeasonReachable(s, +p[1])) syset.add(+p[1]); });
+            const seasonYears = [...syset].sort((a,b)=>a-b);
+            if (sbSeasonYear === null || !seasonYears.includes(sbSeasonYear)) sbSeasonYear = seasonYears.includes(cy) ? cy : seasonYears[seasonYears.length-1];
             const syIdx = seasonYears.indexOf(sbSeasonYear);
             const sPrevY = syIdx > 0 ? seasonYears[syIdx-1] : null;
             const sNextY = (syIdx >= 0 && syIdx < seasonYears.length-1) ? seasonYears[syIdx+1] : null;
-            const curSeason = beforeStart ? null : SB_SEASONS.find(s => s.months.includes(cm));
-            const curInst = curSeason ? sbSeasonInstance(curSeason.key, cy, cm) : null;
-            const seasonCards = SB_SEASONS.filter(s => sbSeasonReachable(s, sbSeasonYear)).map(s => {
-                const selN = (data.bySeason[s.key+':'+sbSeasonYear] || new Set()).size;
-                const selAchieved = selN >= s.goal;
-                const isLive = !!curSeason && curSeason.key === s.key && sbSeasonYear === curInst;
-                const prog = Math.max(0, Math.min(1, selN / s.goal));
-                let done=0, bestN=0; const insts=[];
-                Object.entries(data.bySeason).forEach(([k,set])=>{
-                    if (!k.startsWith(s.key+':')) return;
-                    insts.push([+k.split(':')[1], set.size]);
-                    if (set.size >= s.goal) done++;
-                    if (set.size > bestN) bestN = set.size;
-                });
+            const seasonCards = SB_SEASONS.map(s => {
+                let inst = sbSeasonYear;
+                while (!sbSeasonReachable(s, inst)) inst++;              // vor dem Start → nächste erreichbare Instanz vorladen
+                const selN = life.newBySeason[s.key+':'+inst] || 0;
+                const tier = sbTierOf(selN, s.tiers);
+                const nextGoal = tier < s.tiers.length ? s.tiers[tier] : null;
+                const prevGoal = tier > 0 ? s.tiers[tier-1] : 0;
+                const prog = nextGoal === null ? 1 : Math.max(0, Math.min(1, (selN - prevGoal) / (nextGoal - prevGoal)));
+                const instStartYM = s.key==='winter' ? (inst-1)+'-12' : inst+'-'+String(Math.min(...s.months)+1).padStart(2,'0');
+                const instEndYM   = s.key==='winter' ? inst+'-02'      : inst+'-'+String(Math.max(...s.months)+1).padStart(2,'0');
+                const fut = instStartYM > curYM;
+                const isPast = instEndYM < curYM;
+                const isLive = !beforeStart && !fut && !isPast;
+                let goldN=0, bestN=0; const insts=[];
+                Object.keys(life.newBySeason).forEach(k => { const p = k.split(':'); if (p[0]!==s.key || !sbSeasonReachable(s,+p[1])) return; const n = life.newBySeason[k]; insts.push([+p[1], n]); if (n >= s.tiers[2]) goldN++; if (n > bestN) bestN = n; });
                 insts.sort((a,b)=>b[0]-a[0]);
                 const instRows = insts.length
-                    ? insts.map(([y,n])=> sbRow(s.name+' '+y, n+' '+s.groupLabel+(n>=s.goal?' ✓':''), n>=s.goal)).join('')
-                    : `<div class="sd-row"><span>noch keine Beobachtung</span><b></b></div>`;
+                    ? insts.map(([y,n])=>{ const tt = sbTierOf(n, s.tiers); return sbRow(s.name+' '+y, n+' neue Arten'+(tt?' '+SB_TIER[tt].medal:''), tt>0); }).join('')
+                    : `<div class="sd-row"><span>noch keine erreichte Saison</span><b></b></div>`;
+                const tierRows = s.tiers.map((t,i)=> sbRow(`${SB_TIER[i+1].medal} ${SB_TIER[i+1].name}`, selN>=t ? '✓ '+t+' neue Arten' : 'ab '+t+' · noch '+(t-selN), selN>=t)).join('');
                 const detail =
-                    sbRow('Ziel', s.goal+' '+s.groupLabel) +
+                    tierRows +
                     sbRow('Zeitraum', s.range) +
-                    sbRow('Ziel erreicht', done+'×', done>0) +
-                    (bestN ? sbRow('Bestwert', bestN+' Arten') : '') +
-                    `<div class="sd-sub">Alle Jahre</div>` + instRows +
-                    `<div class="sd-note">Nur ${s.groupLabel} in dieser Jahreszeit – überall auffindbar, nicht ortsgebunden.</div>`;
-                const nextTxt = selN===0 ? 'keine Beobachtung' : (selAchieved ? 'Ziel erreicht ✓' : (isLive ? `noch ${s.goal-selN} ${s.groupLabel}` : `${s.goal-selN} fehlten`));
+                    sbRow('Status', fut?'kommt noch':(isLive?'läuft':'abgeschlossen'), isLive) +
+                    sbRow('Gold erreicht', goldN+'×', goldN>0) +
+                    (bestN ? sbRow('Bestwert', bestN+' neue Arten') : '') +
+                    `<div class="sd-sub">Erreichbare Jahre</div>` + instRows +
+                    `<div class="sd-note">Zählt <b>neue Arten</b> (erstmals überhaupt beobachtet, alle Gruppen) in dieser Jahreszeit.</div>`;
+                const tag = isLive ? ' <span class="sbadge-live">läuft</span>' : (fut ? ' <span class="sbadge-soon">kommt</span>' : '');
+                const nextTxt = fut ? 'startet '+SB_MONTH_NAMES[+instStartYM.slice(5,7)-1]+' '+instStartYM.slice(0,4)
+                              : (nextGoal === null ? 'Gold erreicht 🎉' : `noch ${nextGoal-selN} neue bis ${SB_TIER[tier+1].name}`);
                 return `
-                    <div class="scard ${selAchieved?'scard-on':''}" onclick="this.classList.toggle('expanded')">
-                        <div class="scard-hero ${selAchieved?'stier-3':''}">${s.icon}</div>
-                        <div class="scard-title">${s.name} ${sbSeasonYear}${isLive?' <span class="sbadge-live">läuft</span>':''}</div>
-                        <div class="scard-sub">${s.groupLabel} · Ziel ${s.goal} · ${s.range}</div>
-                        <div class="scard-big">${selN}<span class="scard-unit"> / ${s.goal}</span></div>
-                        <div class="scard-bar"><div class="scard-bar-fill stier-3" style="width:${Math.round(prog*100)}%"></div></div>
+                    <div class="scard ${tier>0?'scard-on':''}" onclick="this.classList.toggle('expanded')">
+                        <div class="scard-hero stier-${tier}">${s.icon}</div>
+                        <div class="scard-title">${s.name} ${inst}${tag}</div>
+                        <div class="scard-sub">neue Arten · ${s.range}</div>
+                        <div class="scard-big">${selN}<span class="scard-unit"> neue Arten</span></div>
+                        <div class="scard-tiers">${s.tiers.map((t,i)=>`<span class="stx ${tier>=i+1?'on':''}">${SB_TIER[i+1].medal} ${t}</span>`).join('')}</div>
+                        <div class="scard-bar"><div class="scard-bar-fill stier-${tier}" style="width:${Math.round(prog*100)}%"></div></div>
                         <div class="scard-next">${nextTxt}</div>
                         <div class="scard-hint">▾ Sammelkarte öffnen</div>
                         <div class="scard-detail">${detail}</div>
@@ -6412,14 +6433,14 @@
         // getrackt – so wird ein Übertreten der Schwelle gefeiert, ältere Perioden nicht neu.
         function computeSeasonalLevels(){
             const out = {};
-            const data = sbCompute();
+            const life = sbLifetime();
             const now = new Date();
             const cy = now.getFullYear(), cm = now.getMonth();
             const curYM = cy + '-' + String(cm+1).padStart(2,'0');
 
-            // Monats-Challenge (nur laufender Monat) – Bronze/Silber/Gold
+            // Monats-Challenge (nur laufender Monat) – NEUE Arten, Bronze/Silber/Gold
             if (curYM >= SEASON_START_YM){
-                const cnt = (data.byMonth[curYM] || new Set()).size;
+                const cnt = life.newByMonth[curYM] || 0;
                 out['sb_month:' + curYM] = {
                     level: sbMonthTier(cnt),
                     label: 'Monats-Challenge · ' + SB_MONTH_NAMES[cm],
@@ -6436,20 +6457,19 @@
             if (curSeason){
                 const inst = sbSeasonInstance(curSeason.key, cy, cm);
                 if (inst >= 2027 || (curSeason.key === 'autumn' && inst >= 2026)){   // erste Live-Saison ist Herbst 2026
-                    const n = (data.bySeason[curSeason.key + ':' + inst] || new Set()).size;
+                    const n = life.newBySeason[curSeason.key + ':' + inst] || 0;
                     out['sb_season:' + curSeason.key + ':' + inst] = {
-                        level: n >= curSeason.goal ? 1 : 0,
+                        level: sbTierOf(n, curSeason.tiers),
                         label: curSeason.icon + ' ' + curSeason.name + '-Saison',
                         icon: curSeason.icon,
-                        names: [curSeason.name + ' gemeistert'],
-                        hexTiers: [7],
-                        kicker: 'Saison gemeistert'
+                        names: ['Bronze', 'Silber', 'Gold'],
+                        hexTiers: [1, 3, 5],
+                        kicker: 'Saison-Ziel geschafft'
                     };
                 }
             }
 
             // Serie – Meilenstein der längsten Monatsserie (gesamte Historie)
-            const life = sbLifetime();
             const monthsObj = {}; life.months.forEach(mk => { monthsObj[mk] = 1; });
             const st = sbStreak(monthsObj);
             let slvl = 0; for (let i = 0; i < SB_STREAK_LADDER.length; i++) if (st.longest >= SB_STREAK_LADDER[i]) slvl = i + 1;
