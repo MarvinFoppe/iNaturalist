@@ -5633,6 +5633,11 @@
             for (const yy of ys){ run = (prev !== null && yy === prev+1) ? run+1 : 1; if (run > longest) longest = run; prev = yy; }
             return { current, longest, curActive };
         }
+        // Ist eine Saison-Instanz überhaupt erreichbar (endet am/nach dem Start)?
+        function sbSeasonReachable(s, yearInst){
+            const lastMonth = s.key === 'winter' ? 2 : Math.max(...s.months) + 1;
+            return (yearInst + '-' + String(lastMonth).padStart(2,'0')) >= SEASON_START_YM;
+        }
 
         function renderSeasonalBadges(){
             const host = document.getElementById('seasonBlock');
@@ -5745,10 +5750,11 @@
             let goldN=0, silverN=0, bronzeN=0;
             const stamps = SB_MONTH_ABBR.map((mn, i) => {
                 const ym = sbAlbumYear + '-' + String(i+1).padStart(2,'0');
-                const pre = ym < SEASON_START_YM;
-                const future = !pre && ((sbAlbumYear > cy) || (sbAlbumYear === cy && i > cm));
-                const cnt = pre ? 0 : (data.byMonth[ym] || new Set()).size;
-                const tier = pre ? 0 : sbMonthTier(cnt);
+                if (ym < SEASON_START_YM) return '';                 // Monate vor dem Start komplett weglassen
+                const pre = false;
+                const future = (sbAlbumYear > cy) || (sbAlbumYear === cy && i > cm);
+                const cnt = (data.byMonth[ym] || new Set()).size;
+                const tier = sbMonthTier(cnt);
                 if (tier===3) goldN++; else if (tier===2) silverN++; else if (tier===1) bronzeN++;
                 const isCur = ym === curYM;
                 const medal = pre ? '–' : (SB_TIER[tier].medal || '·');
@@ -5796,7 +5802,7 @@
             const sNextY = (syIdx >= 0 && syIdx < seasonYears.length-1) ? seasonYears[syIdx+1] : null;
             const curSeason = beforeStart ? null : SB_SEASONS.find(s => s.months.includes(cm));
             const curInst = curSeason ? sbSeasonInstance(curSeason.key, cy, cm) : null;
-            const seasonCards = SB_SEASONS.map(s => {
+            const seasonCards = SB_SEASONS.filter(s => sbSeasonReachable(s, sbSeasonYear)).map(s => {
                 const selN = (data.bySeason[s.key+':'+sbSeasonYear] || new Set()).size;
                 const selAchieved = selN >= s.goal;
                 const isLive = !!curSeason && curSeason.key === s.key && sbSeasonYear === curInst;
