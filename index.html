@@ -5565,7 +5565,7 @@
         }
 
         let sbAlbumYear = null;   // gewähltes Jahr im Sammelalbum
-        let sbSeasonYear = null;  // gewähltes Jahr bei den Jahreszeiten
+        let sbSeasonYear = null;  // Fensterposition der Jahreszeiten-Zeitleiste (Index)
         function sbSetAlbumYear(y){ if (y == null) return; sbAlbumYear = y; renderSeasonalBadges(); }
         function sbSetSeasonYear(y){ if (y == null) return; sbSeasonYear = y; renderSeasonalBadges(); }
 
@@ -5807,32 +5807,40 @@
                 </div>
                 <div class="stamp-grid">${stamps}</div>`;
 
-            // ---------- Jahreszeiten: NEUE Arten der Gruppe je Saison, kommende vorgeladen ----------
-            const syset = new Set([cy]);
-            Object.keys(life.newBySeason).forEach(k => { const p = k.split(':'); const s = SB_SEASONS.find(x => x.key === p[0]); if (s && sbSeasonReachable(s, +p[1])) syset.add(+p[1]); });
-            const seasonYears = [...syset].sort((a,b)=>a-b);
-            if (sbSeasonYear === null || !seasonYears.includes(sbSeasonYear)) sbSeasonYear = seasonYears.includes(cy) ? cy : seasonYears[seasonYears.length-1];
-            const syIdx = seasonYears.indexOf(sbSeasonYear);
-            const sPrevY = syIdx > 0 ? seasonYears[syIdx-1] : null;
-            const sNextY = (syIdx >= 0 && syIdx < seasonYears.length-1) ? seasonYears[syIdx+1] : null;
-            const seasonCards = SB_SEASONS.map(s => {
-                let inst = sbSeasonYear;
-                while (!sbSeasonReachable(s, inst)) inst++;              // vor dem Start → nächste erreichbare Instanz vorladen
+            // ---------- Jahreszeiten: chronologische Zeitleiste, Fenster von 4 (mit ‹ › verschiebbar) ----------
+            const seasonLabel = (s, y) => s.key==='winter' ? (s.name+' '+(y-1)+'/'+y) : (s.name+' '+y);
+            const timeline = [];
+            const tlStartY = +SEASON_START_YM.slice(0,4) - 1;
+            for (let y = tlStartY; y <= cy + 3; y++){
+                for (const s of SB_SEASONS){
+                    if (!sbSeasonReachable(s, y)) continue;
+                    const startYM = s.key==='winter' ? (y-1)+'-12' : y+'-'+String(Math.min(...s.months)+1).padStart(2,'0');
+                    const endYM   = s.key==='winter' ? y+'-02'      : y+'-'+String(Math.max(...s.months)+1).padStart(2,'0');
+                    timeline.push({ s, inst:y, startYM, endYM });
+                }
+            }
+            timeline.sort((a,b)=> a.startYM < b.startYM ? -1 : (a.startYM > b.startYM ? 1 : 0));
+            const SEASON_WIN = 4;
+            const seasonMaxPos = Math.max(0, timeline.length - SEASON_WIN);
+            if (sbSeasonYear === null){                                  // Standard: bei der laufenden/nächsten Saison beginnen
+                let dp = timeline.findIndex(t => t.endYM >= curYM);
+                sbSeasonYear = Math.min(dp < 0 ? seasonMaxPos : dp, seasonMaxPos);
+            }
+            const seasonWinStart = Math.max(0, Math.min(sbSeasonYear, seasonMaxPos));
+            const seasonCards = timeline.slice(seasonWinStart, seasonWinStart + SEASON_WIN).map(({s, inst, startYM, endYM}) => {
                 const selN = life.newBySeason[s.key+':'+inst] || 0;
                 const tier = sbTierOf(selN, s.tiers);
                 const nextGoal = tier < s.tiers.length ? s.tiers[tier] : null;
                 const prevGoal = tier > 0 ? s.tiers[tier-1] : 0;
                 const prog = nextGoal === null ? 1 : Math.max(0, Math.min(1, (selN - prevGoal) / (nextGoal - prevGoal)));
-                const instStartYM = s.key==='winter' ? (inst-1)+'-12' : inst+'-'+String(Math.min(...s.months)+1).padStart(2,'0');
-                const instEndYM   = s.key==='winter' ? inst+'-02'      : inst+'-'+String(Math.max(...s.months)+1).padStart(2,'0');
-                const fut = instStartYM > curYM;
-                const isPast = instEndYM < curYM;
+                const fut = startYM > curYM;
+                const isPast = endYM < curYM;
                 const isLive = !beforeStart && !fut && !isPast;
                 let goldN=0, bestN=0; const insts=[];
                 Object.keys(life.newBySeason).forEach(k => { const p = k.split(':'); if (p[0]!==s.key || !sbSeasonReachable(s,+p[1])) return; const n = life.newBySeason[k]; insts.push([+p[1], n]); if (n >= s.tiers[2]) goldN++; if (n > bestN) bestN = n; });
                 insts.sort((a,b)=>b[0]-a[0]);
                 const instRows = insts.length
-                    ? insts.map(([y,n])=>{ const tt = sbTierOf(n, s.tiers); return sbRow(s.name+' '+y, n+' neue Arten'+(tt?' '+SB_TIER[tt].medal:''), tt>0); }).join('')
+                    ? insts.map(([y,n])=>{ const tt = sbTierOf(n, s.tiers); return sbRow(seasonLabel(s,y), n+' neue Arten'+(tt?' '+SB_TIER[tt].medal:''), tt>0); }).join('')
                     : `<div class="sd-row"><span>noch keine erreichte Saison</span><b></b></div>`;
                 const tierRows = s.tiers.map((t,i)=> sbRow(`${SB_TIER[i+1].medal} ${SB_TIER[i+1].name}`, selN>=t ? '✓ '+t+' neue Arten' : 'ab '+t+' · noch '+(t-selN), selN>=t)).join('');
                 const detail =
@@ -5844,12 +5852,12 @@
                     `<div class="sd-sub">Erreichbare Jahre</div>` + instRows +
                     `<div class="sd-note">Zählt <b>neue Arten</b> (erstmals überhaupt beobachtet, alle Gruppen) in dieser Jahreszeit.</div>`;
                 const tag = isLive ? ' <span class="sbadge-live">läuft</span>' : (fut ? ' <span class="sbadge-soon">kommt</span>' : '');
-                const nextTxt = fut ? 'startet '+SB_MONTH_NAMES[+instStartYM.slice(5,7)-1]+' '+instStartYM.slice(0,4)
+                const nextTxt = fut ? 'startet '+SB_MONTH_NAMES[+startYM.slice(5,7)-1]+' '+startYM.slice(0,4)
                               : (nextGoal === null ? 'Gold erreicht 🎉' : `noch ${nextGoal-selN} neue bis ${SB_TIER[tier+1].name}`);
                 return `
                     <div class="scard ${tier>0?'scard-on':''}" onclick="this.classList.toggle('expanded')">
                         <div class="scard-hero stier-${tier}">${s.icon}</div>
-                        <div class="scard-title">${s.name} ${inst}${tag}</div>
+                        <div class="scard-title">${seasonLabel(s, inst)}${tag}</div>
                         <div class="scard-sub">neue Arten · ${s.range}</div>
                         <div class="scard-big">${selN}<span class="scard-unit"> neue Arten</span></div>
                         <div class="scard-tiers">${s.tiers.map((t,i)=>`<span class="stx ${tier>=i+1?'on':''}">${SB_TIER[i+1].medal} ${t}</span>`).join('')}</div>
@@ -5870,11 +5878,10 @@
                 album +
                 `<div class="season-sub">🌦️ Jahreszeiten
                     <span class="season-yearnav">
-                        <button class="syr-btn" ${sPrevY===null?'disabled':''} onclick="sbSetSeasonYear(${sPrevY})">‹</button>
-                        <span class="syr-cur">${sbSeasonYear}</span>
-                        <button class="syr-btn" ${sNextY===null?'disabled':''} onclick="sbSetSeasonYear(${sNextY})">›</button>
+                        <button class="syr-btn" ${seasonWinStart<=0?'disabled':''} onclick="sbSetSeasonYear(${seasonWinStart-1})">‹</button>
+                        <button class="syr-btn" ${seasonWinStart>=seasonMaxPos?'disabled':''} onclick="sbSetSeasonYear(${seasonWinStart+1})">›</button>
                     </span>
-                    <span class="season-note">passende Artengruppe je Saison</span>
+                    <span class="season-note">chronologisch – mit ‹ › verschieben</span>
                  </div>
                  <div class="season-cards">${seasonCards}</div>`;
         }
