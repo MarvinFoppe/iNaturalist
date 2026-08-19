@@ -2273,6 +2273,22 @@
         .tab-panel.active { display: block; animation: tabFade 0.35s ease; }
         @keyframes tabFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
         .badges-intro { color: var(--text-secondary); font-size: 0.95em; margin: -8px 0 22px; text-align: center; }
+        .badge-progress-wrap { margin: -8px 0 26px; }
+        .badge-progress {
+            background: linear-gradient(160deg, rgba(139,195,74,0.12), rgba(15,26,13,0.5));
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 22px;
+            max-width: 540px; margin: 0 auto;
+            text-align: center;
+        }
+        .bp-head { display:flex; align-items:baseline; justify-content:center; gap:10px; flex-wrap:wrap; }
+        .bp-num { font-family:'Playfair Display',serif; font-size:2.1em; font-weight:700; color: var(--accent); line-height:1; }
+        .bp-max { font-size:0.5em; color: var(--text-muted); font-weight:400; }
+        .bp-label { font-size:0.92em; color: var(--text-secondary); }
+        .bp-bar { height:9px; background: rgba(255,255,255,0.08); border-radius:6px; overflow:hidden; margin:13px 0 9px; }
+        .bp-fill { height:100%; border-radius:6px; background: linear-gradient(90deg, var(--primary-light), var(--accent)); transition: width .8s ease; }
+        .bp-sub { font-size:0.8em; color: var(--text-muted); }
 
         /* ===== Hexagon-Medaille ===== */
         .hexm {
@@ -2346,6 +2362,125 @@
             .main-tab { padding: 10px 22px; font-size: 0.92em; }
             .hexm { width: 78px; height: 86px; }
             .hexm .ico { font-size: 1.6em; }
+        }
+
+        /* ===== Saison- & Challenge-Badges (Nebenziele) ===== */
+        .season-wrap { margin-top: 30px; padding-top: 22px; border-top: 1px dashed var(--border); }
+        .season-sub {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent-warm-strong);
+            font-size: 1.1em;
+            margin: 26px 0 14px;
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+        .season-note, .season-yearsum { font-family:'Open Sans',sans-serif; font-size:0.72em; color: var(--text-muted); font-weight:400; }
+        .season-yearnav { display:inline-flex; align-items:center; gap:8px; margin-left: 6px; }
+        .syr-btn { width:28px; height:28px; border-radius:8px; border:1px solid var(--border); background: var(--accent-warm-soft); color: var(--text-secondary); cursor:pointer; font-size:1.05em; line-height:1; display:grid; place-items:center; transition: background .15s, border-color .15s, color .15s; }
+        .syr-btn:hover:not(:disabled){ border-color: var(--accent-warm-strong); color: var(--text-primary); }
+        .syr-btn:disabled { opacity:0.3; cursor:default; }
+        .syr-cur { font-family:'Playfair Display',serif; font-weight:700; color: var(--text-primary); min-width: 4ch; text-align:center; font-size:1.05em; }
+        .season-yearsum { margin-left:auto; }
+
+        .season-cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 16px; }
+
+        .scard {
+            background: linear-gradient(165deg, var(--accent-warm-soft), rgba(15,26,13,0.4));
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 18px 16px;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            cursor: pointer;
+            transition: transform .2s, box-shadow .2s, border-color .2s;
+        }
+        .scard:hover { transform: translateY(-3px); box-shadow: 0 10px 26px var(--shadow); border-color: var(--accent-warm-strong); }
+        .scard-on { border-color: var(--accent-warm-strong); box-shadow: 0 0 16px var(--accent-warm-soft); }
+        .scard-hero {
+            width: 66px; height: 66px; margin: 2px auto 10px; border-radius: 50%;
+            display: grid; place-items: center; font-size: 2.3em; line-height: 1;
+            background: radial-gradient(circle at 40% 32%, rgba(216,180,131,0.28), rgba(15,26,13,0.55));
+            border: 2px solid var(--accent-warm-soft);
+            filter: drop-shadow(0 3px 7px rgba(0,0,0,0.45));
+        }
+        .scard-hero.stier-1 { border-color:#a5642e; background: radial-gradient(circle at 40% 32%, rgba(240,180,106,0.32), rgba(15,26,13,0.55)); }
+        .scard-hero.stier-2 { border-color:#9aa3a9; background: radial-gradient(circle at 40% 32%, rgba(232,238,241,0.28), rgba(15,26,13,0.55)); }
+        .scard-hero.stier-3 { border-color:#d4af37; background: radial-gradient(circle at 40% 32%, rgba(251,225,150,0.34), rgba(15,26,13,0.55)); box-shadow: 0 0 14px rgba(212,175,55,0.35); }
+        .scard-title { font-weight:700; color: var(--text-primary); font-size:1.05em; }
+        .scard-sub { font-size:0.76em; color: var(--text-muted); margin-top:2px; }
+        .scard-big { font-family:'Playfair Display', serif; font-size:2.5em; font-weight:700; color: var(--accent-warm); line-height:1; margin: 8px 0 4px; }
+        .scard-big-muted { color: var(--text-secondary); }
+        .scard-unit { font-size:0.4em; color: var(--text-muted); font-weight:400; }
+        .scard-tiers { display:flex; gap:7px; flex-wrap:wrap; margin: 8px 0 4px; justify-content:center; }
+        .stx { font-size:0.72em; color: var(--text-muted); padding:3px 8px; border-radius:7px; background: rgba(255,255,255,0.05); white-space:nowrap; }
+        .stx.on { color: var(--text-primary); background: var(--accent-warm-soft); }
+        .scard-bar { height:7px; background: rgba(255,255,255,0.08); border-radius:5px; overflow:hidden; margin:9px 0 7px; }
+        .scard-bar-fill { height:100%; border-radius:5px; transition: width 0.8s ease; background: var(--accent-warm-strong); }
+        .scard-next { font-size:0.76em; color: var(--text-secondary); min-height:1em; }
+        .scard-foot { font-size:0.68em; color: var(--text-muted); margin-top:6px; }
+        /* Serie: Tage / Monate / Jahre nebeneinander */
+        .serie-row { display:flex; justify-content:center; gap:6px; margin:10px 0 6px; }
+        .serie-cell { flex:1; background: rgba(255,255,255,0.04); border-radius:10px; padding:8px 4px; }
+        .serie-n { font-family:'Playfair Display', serif; font-size:1.7em; font-weight:700; color: var(--accent-warm); line-height:1; }
+        .serie-l { font-size:0.64em; color: var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; }
+        /* Sammelkarte: aufklappbare Details */
+        .scard-hint { font-size:0.7em; color: var(--text-muted); margin-top:10px; transition: color .2s; }
+        .scard:hover .scard-hint, .scard.expanded .scard-hint { color: var(--accent-warm); }
+        .scard-detail { display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:10px; text-align:left; }
+        .scard.expanded .scard-detail { display:block; animation: sdFade .25s ease; }
+        @keyframes sdFade { from { opacity:0; transform: translateY(-4px);} to { opacity:1; transform:none; } }
+        .sd-row { display:flex; justify-content:space-between; gap:12px; font-size:0.76em; padding:3px 0; color: var(--text-secondary); }
+        .sd-row b { color: var(--text-primary); font-weight:600; text-align:right; white-space:nowrap; }
+        .sd-row.done b { color: var(--accent-warm); }
+        .sd-sub { font-size:0.68em; color: var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin:8px 0 3px; border-top:1px dashed var(--border); padding-top:6px; }
+        .sd-note { font-size:0.68em; color: var(--text-muted); margin-top:8px; line-height:1.4; font-style:italic; }
+
+        /* Tier-Farben (Medaillen) für Balken */
+        .stier-0 { background: rgba(255,255,255,0.15); }
+        .stier-1 { background: linear-gradient(90deg,#a5642e,#f0b46a); }
+        .stier-2 { background: linear-gradient(90deg,#9aa3a9,#e8eef1); }
+        .stier-3 { background: linear-gradient(90deg,#b58e22,#fbe196); }
+
+        /* Sammelalbum – größere, aufklappbare Monatskarten (wie die Tierkarten) */
+        .stamp-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(134px, 1fr)); gap: 12px; align-items:start; }
+        .stampc {
+            border: 1.5px dashed rgba(255,255,255,0.14);
+            border-radius: 13px;
+            background: rgba(15,26,13,0.4);
+            padding: 14px 10px 12px;
+            text-align:center; position:relative;
+            transition: transform .15s, border-color .15s, box-shadow .15s;
+        }
+        .stampc[onclick]{ cursor:pointer; }
+        .stampc[onclick]:hover { transform: translateY(-3px); border-color: var(--accent-warm-strong); box-shadow: 0 8px 18px var(--shadow); }
+        .stampc-medal { font-size: 2.1em; line-height:1; min-height: 1.15em; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); }
+        .stampc-mon { font-size: 0.74em; color: var(--text-muted); text-transform: uppercase; letter-spacing:0.6px; margin-top:4px; }
+        .stampc-cnt { font-family:'Playfair Display', serif; font-size: 1.35em; font-weight:700; color: var(--text-secondary); line-height:1.15; min-height: 1.1em; }
+        .stampc-tier { font-size: 0.66em; color: var(--text-muted); }
+        .stampc-hint { font-size: 0.8em; color: var(--text-muted); margin-top:5px; transition: transform .2s, color .2s; }
+        .stampc[onclick]:hover .stampc-hint { color: var(--accent-warm); }
+        .stampc.expanded .stampc-hint { transform: rotate(180deg); color: var(--accent-warm); }
+        .stampc.expanded { border-style: solid; box-shadow: 0 8px 20px var(--shadow); }
+        .stampc-detail { display:none; margin-top:10px; border-top:1px solid var(--border); padding-top:9px; text-align:left; }
+        .stampc.expanded .stampc-detail { display:block; animation: sdFade .25s ease; }
+        .stamp-future { opacity: 0.4; }
+        .stamp-pre { opacity: 0.3; border-style: dotted; }
+        .stamp-cur { border-style: solid; border-color: var(--accent-warm-strong); box-shadow: 0 0 9px var(--accent-warm-soft); }
+        .stampc.stier-1 { border-color:#a5642e; border-style:solid; background: linear-gradient(160deg, rgba(165,100,46,0.22), rgba(15,26,13,0.4)); }
+        .stampc.stier-2 { border-color:#9aa3a9; border-style:solid; background: linear-gradient(160deg, rgba(154,163,169,0.22), rgba(15,26,13,0.4)); }
+        .stampc.stier-3 { border-color:#d4af37; border-style:solid; background: linear-gradient(160deg, rgba(212,175,55,0.25), rgba(15,26,13,0.4)); box-shadow: 0 0 11px rgba(212,175,55,0.25); }
+        .stampc.stier-1 .stampc-cnt, .stampc.stier-2 .stampc-cnt, .stampc.stier-3 .stampc-cnt { color: var(--text-primary); }
+
+        .sbadge-live { font-family:'Open Sans',sans-serif; font-size:0.55em; background: var(--accent-warm-strong); color:#1a1206; padding:2px 7px; border-radius:6px; vertical-align:middle; margin-left:4px; font-weight:700; }
+
+        @media (max-width: 768px) {
+            .season-cards { grid-template-columns: 1fr 1fr; }
+            .stamp-grid { grid-template-columns: repeat(3, 1fr); }
+            .season-yearsum { width:100%; margin-left:0; }
+        }
+        @media (max-width: 480px) {
+            .season-cards { grid-template-columns: 1fr; }
+            .stamp-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
@@ -2601,6 +2736,7 @@
         <div class="section">
             <h2 class="section-title">🏅 Badges <span style="font-size:0.5em;color:var(--text-muted);font-weight:400;">nur Research Grade</span></h2>
             <div class="badges-intro" id="badgesHint"></div>
+            <div class="badge-progress-wrap" id="badgesProgress"></div>
 
             <div class="badges-subtitle">🌟 Sammel-Ränge</div>
             <div class="badges-grid" id="badgesOverview"></div>
@@ -2616,6 +2752,13 @@
 
             <div class="badges-subtitle">🧬 Arten je Gruppe <span style="font-size:0.6em;color:var(--text-muted);font-weight:400;">(Staffelung nach weltweiter Artenzahl)</span></div>
             <div class="badges-grid" id="badgesGroups"></div>
+
+            <div class="season-wrap">
+                <div class="badges-subtitle" style="color:var(--accent-warm);">🗓️ Saison &amp; Challenges
+                    <span style="font-size:0.6em;color:var(--text-muted);font-weight:400;">(dauerhafte Nebenziele – setzen regelmäßig zurück)</span>
+                </div>
+                <div id="seasonBlock"></div>
+            </div>
         </div>
 
         <div class="mc-section" id="mcSection" style="display:none;">
@@ -5298,6 +5441,32 @@
             document.getElementById('badgesHint').innerHTML =
                 `🐾 ${trName ? trName + ' · ' : ''}${m.totalSpecies.toLocaleString('de-DE')} Arten · 🌍 ${m.countries.size} Länder · 🗺️ ${m.continents.size} Kontinente · 📅 ${m.days.size} Tage`;
 
+            // Badge-Fortschritt: erreichte Rang-Stufen von maximal möglichen (nur Hauptbadges)
+            let bpEarned = 0, bpMax = 0, bpCats = 0, bpMaxed = 0;
+            const bpAdd = (value, ladder) => {
+                const lv = rankFor(value, ladder).level;
+                bpEarned += lv; bpMax += ladder.length; bpCats++;
+                if (lv === ladder.length) bpMaxed++;
+            };
+            bpAdd(m.totalSpecies, LADDERS.total);
+            bpAdd(rarityScoreTotal(), LADDERS.rarity);
+            bpAdd(m.countries.size, LADDERS.laender);
+            bpAdd(m.continents.size, LADDERS.kontinente);
+            bpAdd(m.days.size, LADDERS.kalender);
+            bpAdd(m.bioblitz, LADDERS.bioblitz);
+            Object.keys(taxaConfig).forEach(key => bpAdd(m.groupSpecies[key]?.size || 0, GROUP_LADDERS[key] || GROUP_LADDER_BC));
+            const bpPct = bpMax ? Math.round(bpEarned / bpMax * 100) : 0;
+            const bpEl = document.getElementById('badgesProgress');
+            if (bpEl) bpEl.innerHTML = `
+                <div class="badge-progress">
+                    <div class="bp-head">
+                        <span class="bp-num">${bpEarned}<span class="bp-max"> / ${bpMax}</span></span>
+                        <span class="bp-label">Rang-Stufen freigeschaltet</span>
+                    </div>
+                    <div class="bp-bar"><div class="bp-fill" style="width:${bpPct}%"></div></div>
+                    <div class="bp-sub">🏆 ${bpMaxed} von ${bpCats} Kategorien auf Höchstrang · ${bpPct}%</div>
+                </div>`;
+
             // Weltkarte (falls offen) neu einfärben
             _visitedISO = new Set([...m.countries].map(c => COUNTRY_META[c]?.[0]).filter(Boolean));
             if (countryGeoLayer) countryGeoLayer.setStyle(countryStyle);
@@ -5305,6 +5474,382 @@
             // Kalender (falls offen) aktualisieren
             _coveredDays = m.days;
             if (document.getElementById('calYear')?.classList.contains('visible')) renderYearCalendar();
+
+            try { renderSeasonalBadges(); } catch (e) {}
+        }
+
+        // ===== SAISON- & CHALLENGE-BADGES (Nebenziele) ==========================
+        // Wiederkehrende, ortsUNabhängige Ziele (nur Arten/Aktivität/Vielfalt) –
+        // setzen regelmäßig zurück, damit es dauerhaft etwas zu erreichen gibt.
+        // Frischer Start: gezählt wird erst ab dem 01.09.2026.
+        const SEASON_START = '2026-09-01';
+        const SEASON_START_YM = '2026-09';
+
+        const SB_MONTH_NAMES = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+        const SB_MONTH_ABBR  = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+
+        // Monats-Challenge: verschiedene Arten in EINEM Kalendermonat → Bronze/Silber/Gold
+        // Kalibriert aus echten RG-Beobachtungen seit März 2025 (Urlaubs-Peaks herausgerechnet).
+        const SB_MONTH_TIERS = [25, 50, 75];
+        const SB_TIER = [
+            { name: 'offen',  medal: '',   cls: 'stier-0' },
+            { name: 'Bronze', medal: '🥉', cls: 'stier-1' },
+            { name: 'Silber', medal: '🥈', cls: 'stier-2' },
+            { name: 'Gold',   medal: '🥇', cls: 'stier-3' }
+        ];
+        function sbMonthTier(count){ let t = 0; for (let i = 0; i < SB_MONTH_TIERS.length; i++) if (count >= SB_MONTH_TIERS[i]) t = i + 1; return t; }
+
+        // Serie: Meilensteine für aufeinanderfolgende aktive Monate
+        const SB_STREAK_LADDER = [3, 6, 12, 24, 36, 60, 120];
+        const SB_STREAK_NAMES  = ['3 Monate', 'Halbjahr', '1 Jahr', '2 Jahre', '3 Jahre', '5 Jahre', '10 Jahre'];
+
+        // Saison-Badges: je Jahreszeit eine passende (überall auffindbare) Artengruppe
+        // Saison-Ziele kalibriert aus echten Beobachtungen seit März 2025 (Urlaubs-Peaks raus).
+        const SB_SEASONS = [
+            { key:'spring', name:'Frühling', icon:'🌸', months:[2,3,4],  group:'Plantae', groupLabel:'Pflanzenarten', range:'Mär–Mai', goal:30 },
+            { key:'summer', name:'Sommer',   icon:'🦋', months:[5,6,7],  group:'Insecta', groupLabel:'Insektenarten', range:'Jun–Aug', goal:50 },
+            { key:'autumn', name:'Herbst',   icon:'🍄', months:[8,9,10], group:'Fungi',   groupLabel:'Pilzarten',     range:'Sep–Nov', goal:20 },
+            { key:'winter', name:'Winter',   icon:'🐦', months:[11,0,1], group:'Aves',    groupLabel:'Vogelarten',    range:'Dez–Feb', goal:40 }
+        ];
+        function sbSeasonInstance(seasonKey, year, monthIdx){
+            // Winter (Dez–Feb) gehört zum Jahr des Januars → Dez zählt zum Folgejahr
+            if (seasonKey === 'winter') return monthIdx === 11 ? year + 1 : year;
+            return year;
+        }
+
+        // Rohdaten: Research-Grade ab Start, gruppiert nach Monat / Jahr / Saison-Instanz
+        function sbCompute(){
+            const research = allObservations.filter(o =>
+                o.quality === 'research' && o.taxonId && o.date && o.date.length >= 7 && o.date >= SEASON_START);
+            const byMonth = {}, byYear = {}, bySeason = {};
+            research.forEach(o => {
+                const ym = o.date.slice(0,7), y = o.date.slice(0,4);
+                (byMonth[ym] ||= new Set()).add(o.taxonId);
+                (byYear[y]  ||= new Set()).add(o.taxonId);
+            });
+            SB_SEASONS.forEach(s => {
+                research.forEach(o => {
+                    if (o.taxon !== s.group) return;
+                    const mo = parseInt(o.date.slice(5,7), 10) - 1;
+                    if (!s.months.includes(mo)) return;
+                    const inst = sbSeasonInstance(s.key, parseInt(o.date.slice(0,4),10), mo);
+                    (bySeason[s.key + ':' + inst] ||= new Set()).add(o.taxonId);
+                });
+            });
+            return { byMonth, byYear, bySeason };
+        }
+
+        // Serie: aufeinanderfolgende aktive Monate (aktuell & längste)
+        function sbStreak(byMonth, now){
+            now = now || new Date();
+            const active = new Set(Object.keys(byMonth));
+            const key = (y,m) => y + '-' + String(m+1).padStart(2,'0');
+            let y = now.getFullYear(), m = now.getMonth();
+            const curActive = active.has(key(y,m));
+            if (!curActive){ m--; if (m < 0){ m = 11; y--; } }   // laufenden (leeren) Monat überspringen
+            let current = 0;
+            while (active.has(key(y,m))){ current++; m--; if (m < 0){ m = 11; y--; } }
+            const keys = [...active].sort();
+            let longest = 0, run = 0, prev = null;
+            for (const k of keys){
+                if (prev){
+                    const [py,pm] = prev.split('-').map(Number);
+                    let ny = py, nm = pm + 1; if (nm > 12){ nm = 1; ny++; }
+                    run = (k === ny + '-' + String(nm).padStart(2,'0')) ? run + 1 : 1;
+                } else run = 1;
+                if (run > longest) longest = run;
+                prev = k;
+            }
+            return { current, longest, curActive };
+        }
+
+        let sbAlbumYear = null;   // gewähltes Jahr im Sammelalbum
+        let sbSeasonYear = null;  // gewähltes Jahr bei den Jahreszeiten
+        function sbSetAlbumYear(y){ if (y == null) return; sbAlbumYear = y; renderSeasonalBadges(); }
+        function sbSetSeasonYear(y){ if (y == null) return; sbSeasonYear = y; renderSeasonalBadges(); }
+
+        // Deutsche Gruppen-Namen (für die Sammelkarten-Details)
+        const SB_GROUP_LABEL = {
+            Aves:'Vögel', Mammalia:'Säugetiere', Reptilia:'Reptilien', Amphibia:'Amphibien',
+            Actinopterygii:'Fische', Insecta:'Insekten', Arachnida:'Spinnentiere', Mollusca:'Weichtiere',
+            Plantae:'Pflanzen', Fungi:'Pilze', Animalia:'Tiere', Protozoa:'Einzeller', Chromista:'Algen'
+        };
+        function sbFmtMonth(ym){ const p = ym.split('-'); return SB_MONTH_ABBR[+p[1]-1] + ' ' + p[0]; }
+        function sbRow(label, val, done){ return `<div class="sd-row ${done?'done':''}"><span>${label}</span><b>${val}</b></div>`; }
+
+        // Tage & häufigste Gruppe in einem Monat (für die Detail-Ansicht der Sammelkarte)
+        function sbMonthStats(ym){
+            const days = new Set(), groups = {}, seen = new Set();
+            for (const o of allObservations){
+                if (o.quality !== 'research' || !o.taxonId || !o.date || o.date < SEASON_START) continue;
+                if (o.date.slice(0,7) !== ym) continue;
+                days.add(o.date);
+                if (!seen.has(o.taxonId)){ seen.add(o.taxonId); groups[o.taxon] = (groups[o.taxon]||0)+1; }
+            }
+            let topG=null, topN=0; for (const g in groups) if (groups[g] > topN){ topN = groups[g]; topG = g; }
+            return { days: days.size, topG, topN };
+        }
+
+        // Lifetime-Basis: GESAMTE Historie (ohne Start-Filter) – für Serien & neue Arten pro Jahr
+        function sbLifetime(){
+            const days = new Set(), months = new Set(), years = new Set(), firstSeen = {};
+            for (const o of allObservations){
+                if (o.quality !== 'research' || !o.taxonId || !o.date || o.date.length < 10) continue;
+                const d = o.date.slice(0,10);
+                days.add(d); months.add(d.slice(0,7)); years.add(d.slice(0,4));
+                if (!firstSeen[o.taxonId] || d < firstSeen[o.taxonId]) firstSeen[o.taxonId] = d;
+            }
+            const newByYear = {};
+            for (const tid in firstSeen){ const y = firstSeen[tid].slice(0,4); newByYear[y] = (newByYear[y]||0) + 1; }
+            return { days, months, years, newByYear };
+        }
+        // Tagesserie: aufeinanderfolgende Kalendertage mit Beobachtung
+        function sbDayStreak(daysSet, now){
+            const DAY = 86400000;
+            const key = t => new Date(t).toISOString().slice(0,10);
+            let t = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+            const curActive = daysSet.has(key(t));
+            if (!curActive) t -= DAY;
+            let current = 0;
+            while (daysSet.has(key(t))){ current++; t -= DAY; }
+            const sorted = [...daysSet].sort();
+            let longest = 0, run = 0, prev = null;
+            for (const k of sorted){
+                if (prev !== null){ run = (Date.parse(k+'T00:00:00Z') - Date.parse(prev+'T00:00:00Z') === DAY) ? run+1 : 1; }
+                else run = 1;
+                if (run > longest) longest = run;
+                prev = k;
+            }
+            return { current, longest, curActive };
+        }
+        // Jahresserie: aufeinanderfolgende Kalenderjahre mit Beobachtung
+        function sbYearStreak(yearsSet, now){
+            const cy = now.getFullYear();
+            const curActive = yearsSet.has(String(cy));
+            let y = curActive ? cy : cy - 1, current = 0;
+            while (yearsSet.has(String(y))){ current++; y--; }
+            const ys = [...yearsSet].map(Number).sort((a,b)=>a-b);
+            let longest = 0, run = 0, prev = null;
+            for (const yy of ys){ run = (prev !== null && yy === prev+1) ? run+1 : 1; if (run > longest) longest = run; prev = yy; }
+            return { current, longest, curActive };
+        }
+
+        function renderSeasonalBadges(){
+            const host = document.getElementById('seasonBlock');
+            if (!host) return;
+            const data = sbCompute();
+            const life = sbLifetime();          // gesamte Historie (Serien + neue Arten/Jahr)
+            const now = new Date();
+            const cy = now.getFullYear(), cm = now.getMonth();
+            const curYM = cy + '-' + String(cm+1).padStart(2,'0');
+            const beforeStart = curYM < SEASON_START_YM;
+
+            // ---------- Monats-Challenge (laufender Monat) ----------
+            const curCount = (data.byMonth[curYM] || new Set()).size;
+            const curTier  = sbMonthTier(curCount);
+            const nextGoal = curTier < SB_MONTH_TIERS.length ? SB_MONTH_TIERS[curTier] : null;
+            const prevGoal = curTier > 0 ? SB_MONTH_TIERS[curTier-1] : 0;
+            const mProg = nextGoal === null ? 1 : Math.max(0, Math.min(1, (curCount - prevGoal) / (nextGoal - prevGoal)));
+            const mNext = nextGoal === null ? 'Gold erreicht 🎉' : `noch ${nextGoal - curCount} Arten bis ${SB_TIER[curTier+1].name}`;
+            let bestMN = 0, bestMK = null;
+            Object.entries(data.byMonth).forEach(([k,s])=>{ if (s.size > bestMN){ bestMN = s.size; bestMK = k; } });
+            const mStats = beforeStart ? { days:0, topG:null, topN:0 } : sbMonthStats(curYM);
+            const monthDetail =
+                SB_MONTH_TIERS.map((t,i)=> sbRow(`${SB_TIER[i+1].medal} ${SB_TIER[i+1].name}`, curCount>=t ? '✓ '+t+' Arten' : 'ab '+t+' · noch '+(t-curCount), curCount>=t)).join('') +
+                sbRow('Beobachtungstage im Monat', mStats.days) +
+                (mStats.topG ? sbRow('Häufigste Gruppe', (SB_GROUP_LABEL[mStats.topG]||mStats.topG)+' · '+mStats.topN+' Arten') : '') +
+                (bestMK ? sbRow('Bester Monat bisher', bestMN+' Arten · '+sbFmtMonth(bestMK)) : '') +
+                `<div class="sd-note">Zählt verschiedene Arten in diesem Kalendermonat. Setzt am Monatsersten zurück.</div>`;
+            const monthCard = beforeStart ? `
+                <div class="scard" onclick="this.classList.toggle('expanded')">
+                    <div class="scard-hero">📅</div>
+                    <div class="scard-title">Monats-Challenge</div>
+                    <div class="scard-sub">startet am 01.09.2026</div>
+                    <div class="scard-big">–</div>
+                    <div class="scard-tiers">${SB_MONTH_TIERS.map((t,i)=>`<span class="stx">${SB_TIER[i+1].medal} ${t}</span>`).join('')}</div>
+                    <div class="scard-next">Ab September zählt jede Art, die du in dem Monat findest.</div>
+                </div>` : `
+                <div class="scard ${curTier>0?'scard-on':''}" onclick="this.classList.toggle('expanded')">
+                    <div class="scard-hero stier-${curTier}">${SB_TIER[curTier].medal || '📅'}</div>
+                    <div class="scard-title">Monats-Challenge</div>
+                    <div class="scard-sub">${SB_MONTH_NAMES[cm]} ${cy} · Arten-Vielfalt</div>
+                    <div class="scard-big">${curCount}<span class="scard-unit"> Arten</span></div>
+                    <div class="scard-tiers">${SB_MONTH_TIERS.map((t,i)=>`<span class="stx ${curTier>=i+1?'on':''}">${SB_TIER[i+1].medal} ${t}</span>`).join('')}</div>
+                    <div class="scard-bar"><div class="scard-bar-fill stier-${curTier}" style="width:${Math.round(mProg*100)}%"></div></div>
+                    <div class="scard-next">${mNext}</div>
+                    <div class="scard-hint">▾ Sammelkarte öffnen</div>
+                    <div class="scard-detail">${monthDetail}</div>
+                </div>`;
+
+            // ---------- Serie (Tages- / Monats- / Jahresserie, gesamte Historie) ----------
+            const monthsObj = {}; life.months.forEach(mk => { monthsObj[mk] = 1; });
+            const dS = sbDayStreak(life.days, now);
+            const mS = sbStreak(monthsObj, now);
+            const yS = sbYearStreak(life.years, now);
+            const streakDetail =
+                sbRow('🌞 Tagesserie aktuell', dS.current+' '+(dS.current===1?'Tag':'Tage'), dS.current>0) +
+                sbRow('🌞 Längste Tagesserie', dS.longest+' '+(dS.longest===1?'Tag':'Tage')) +
+                sbRow('📅 Monatsserie aktuell', mS.current+' '+(mS.current===1?'Monat':'Monate'), mS.current>0) +
+                sbRow('📅 Längste Monatsserie', mS.longest+' '+(mS.longest===1?'Monat':'Monate')) +
+                sbRow('📆 Jahresserie aktuell', yS.current+' '+(yS.current===1?'Jahr':'Jahre'), yS.current>0) +
+                sbRow('📆 Längste Jahresserie', yS.longest+' '+(yS.longest===1?'Jahr':'Jahre')) +
+                `<div class="sd-note">Ununterbrochene Tage / Monate / Jahre mit mindestens einer Beobachtung (gesamte Historie).</div>`;
+            const streakCard = `
+                <div class="scard ${mS.current>0?'scard-on':''}" onclick="this.classList.toggle('expanded')">
+                    <div class="scard-hero">🔥</div>
+                    <div class="scard-title">Serie</div>
+                    <div class="scard-sub">in Folge aktiv</div>
+                    <div class="serie-row">
+                        <div class="serie-cell"><div class="serie-n">${dS.current}</div><div class="serie-l">Tage</div></div>
+                        <div class="serie-cell"><div class="serie-n">${mS.current}</div><div class="serie-l">Monate</div></div>
+                        <div class="serie-cell"><div class="serie-n">${yS.current}</div><div class="serie-l">Jahre</div></div>
+                    </div>
+                    <div class="scard-next">${dS.curActive ? 'heute schon draußen ✓' : (mS.curActive ? 'diesen Monat aktiv ✓' : 'diesen Monat noch offen')}</div>
+                    <div class="scard-hint">▾ Sammelkarte öffnen</div>
+                    <div class="scard-detail">${streakDetail}</div>
+                </div>`;
+
+            // ---------- Jahres-Ziel (NEUE Arten / Lebensliste, gesamte Historie) ----------
+            const cyNew = life.newByYear[String(cy)] || 0;
+            const lyNew = life.newByYear[String(cy-1)] || 0;
+            let bestYear = 0, bestYearN = 0;
+            Object.entries(life.newByYear).forEach(([y,n])=>{ if (+y < cy && n > bestYearN){ bestYearN = n; bestYear = +y; } });
+            const beat = lyNew > 0 && cyNew >= lyNew;
+            const yProg = lyNew > 0 ? Math.max(0, Math.min(1, cyNew / lyNew)) : (cyNew>0?1:0);
+            const yNext = lyNew === 0 ? 'kein Vorjahr zum Vergleich – jede neue Art zählt!'
+                        : (beat ? `Vorjahr übertroffen (+${cyNew-lyNew}) 🎉` : `noch ${lyNew-cyNew} bis Vorjahr (${lyNew})`);
+            const yearRows = Object.keys(life.newByYear).sort().reverse().map(y => sbRow('Neue Arten '+y, life.newByYear[y] + (+y===cy?' · läuft':''), +y===cy)).join('');
+            const yearDetail =
+                yearRows +
+                (bestYear ? sbRow('Bestes Jahr bisher', bestYearN+' ('+bestYear+')') : '') +
+                `<div class="sd-note">Gezählt werden <b>neue Arten</b> (erstmals überhaupt beobachtet = Lebensliste) im Kalenderjahr – über deine <b>gesamte</b> iNaturalist-Historie.</div>`;
+            const yearCard = `
+                <div class="scard ${beat?'scard-on':''}" onclick="this.classList.toggle('expanded')">
+                    <div class="scard-hero ${beat?'stier-3':''}">📈</div>
+                    <div class="scard-title">Jahres-Ziel ${cy}</div>
+                    <div class="scard-sub">neue Arten dieses Jahr</div>
+                    <div class="scard-big">${cyNew}<span class="scard-unit"> neue Arten</span></div>
+                    <div class="scard-bar"><div class="scard-bar-fill stier-2" style="width:${Math.round(yProg*100)}%"></div></div>
+                    <div class="scard-next">${yNext}</div>
+                    <div class="scard-hint">▾ Sammelkarte öffnen</div>
+                    <div class="scard-detail">${yearDetail}</div>
+                </div>`;
+
+            // ---------- Monats-Sammelalbum ----------
+            const years = [...new Set(Object.keys(data.byMonth).map(k=>+k.slice(0,4)))].sort((a,b)=>a-b);
+            if (!years.length) years.push(cy);
+            if (sbAlbumYear === null || !years.includes(sbAlbumYear)) sbAlbumYear = years[years.length-1];
+            const ayIdx = years.indexOf(sbAlbumYear);
+            const prevY = ayIdx > 0 ? years[ayIdx-1] : null;
+            const nextY = (ayIdx >= 0 && ayIdx < years.length-1) ? years[ayIdx+1] : null;
+            let goldN=0, silverN=0, bronzeN=0;
+            const stamps = SB_MONTH_ABBR.map((mn, i) => {
+                const ym = sbAlbumYear + '-' + String(i+1).padStart(2,'0');
+                const pre = ym < SEASON_START_YM;
+                const future = !pre && ((sbAlbumYear > cy) || (sbAlbumYear === cy && i > cm));
+                const cnt = pre ? 0 : (data.byMonth[ym] || new Set()).size;
+                const tier = pre ? 0 : sbMonthTier(cnt);
+                if (tier===3) goldN++; else if (tier===2) silverN++; else if (tier===1) bronzeN++;
+                const isCur = ym === curYM;
+                const medal = pre ? '–' : (SB_TIER[tier].medal || '·');
+                const tierName = pre ? 'vor Start' : (future && !cnt ? 'kommt noch' : (tier ? SB_TIER[tier].name : 'offen'));
+                const clickable = !pre && cnt > 0;
+                let detail = '';
+                if (clickable){
+                    const stt = sbMonthStats(ym);
+                    const nextT = tier < SB_MONTH_TIERS.length ? SB_MONTH_TIERS[tier] : null;
+                    detail = `<div class="stampc-detail">`
+                        + sbRow('Arten', cnt + (tier ? ' · '+SB_TIER[tier].name : ''), tier>0)
+                        + sbRow('Beobachtungstage', stt.days)
+                        + (stt.topG ? sbRow('Häufigste Gruppe', (SB_GROUP_LABEL[stt.topG]||stt.topG)+' · '+stt.topN) : '')
+                        + (nextT ? sbRow('Bis '+SB_TIER[tier+1].name, 'noch '+(nextT-cnt)+' Arten') : sbRow('Höchststufe', 'Gold 🥇', true))
+                        + `</div>`;
+                }
+                return `<div class="stampc ${SB_TIER[tier].cls} ${pre?'stamp-pre':''} ${future?'stamp-future':''} ${isCur?'stamp-cur':''}"
+                             ${clickable ? `onclick="this.classList.toggle('expanded')"` : ''}
+                             title="${SB_MONTH_NAMES[i]} ${sbAlbumYear}">
+                            <div class="stampc-medal">${medal}</div>
+                            <div class="stampc-mon">${mn}</div>
+                            <div class="stampc-cnt">${(pre || (future && !cnt)) ? '' : cnt}</div>
+                            <div class="stampc-tier">${tierName}</div>
+                            ${clickable ? `<div class="stampc-hint">▾</div>` : ''}
+                            ${detail}
+                        </div>`;
+            }).join('');
+            const album = `
+                <div class="season-sub">📖 Monats-Sammelalbum
+                    <span class="season-yearnav">
+                        <button class="syr-btn" ${prevY===null?'disabled':''} onclick="sbSetAlbumYear(${prevY})">‹</button>
+                        <span class="syr-cur">${sbAlbumYear}</span>
+                        <button class="syr-btn" ${nextY===null?'disabled':''} onclick="sbSetAlbumYear(${nextY})">›</button>
+                    </span>
+                    <span class="season-yearsum">🥇 ${goldN} · 🥈 ${silverN} · 🥉 ${bronzeN}</span>
+                </div>
+                <div class="stamp-grid">${stamps}</div>`;
+
+            // ---------- Jahreszeiten (mit Jahresfilter) ----------
+            const seasonYears = [...new Set(Object.keys(data.bySeason).map(k=>+k.split(':')[1]))].sort((a,b)=>a-b);
+            if (!seasonYears.length) seasonYears.push(cy);
+            if (sbSeasonYear === null || !seasonYears.includes(sbSeasonYear)) sbSeasonYear = seasonYears[seasonYears.length-1];
+            const syIdx = seasonYears.indexOf(sbSeasonYear);
+            const sPrevY = syIdx > 0 ? seasonYears[syIdx-1] : null;
+            const sNextY = (syIdx >= 0 && syIdx < seasonYears.length-1) ? seasonYears[syIdx+1] : null;
+            const curSeason = beforeStart ? null : SB_SEASONS.find(s => s.months.includes(cm));
+            const curInst = curSeason ? sbSeasonInstance(curSeason.key, cy, cm) : null;
+            const seasonCards = SB_SEASONS.map(s => {
+                const selN = (data.bySeason[s.key+':'+sbSeasonYear] || new Set()).size;
+                const selAchieved = selN >= s.goal;
+                const isLive = !!curSeason && curSeason.key === s.key && sbSeasonYear === curInst;
+                const prog = Math.max(0, Math.min(1, selN / s.goal));
+                let done=0, bestN=0; const insts=[];
+                Object.entries(data.bySeason).forEach(([k,set])=>{
+                    if (!k.startsWith(s.key+':')) return;
+                    insts.push([+k.split(':')[1], set.size]);
+                    if (set.size >= s.goal) done++;
+                    if (set.size > bestN) bestN = set.size;
+                });
+                insts.sort((a,b)=>b[0]-a[0]);
+                const instRows = insts.length
+                    ? insts.map(([y,n])=> sbRow(s.name+' '+y, n+' '+s.groupLabel+(n>=s.goal?' ✓':''), n>=s.goal)).join('')
+                    : `<div class="sd-row"><span>noch keine Beobachtung</span><b></b></div>`;
+                const detail =
+                    sbRow('Ziel', s.goal+' '+s.groupLabel) +
+                    sbRow('Zeitraum', s.range) +
+                    sbRow('Ziel erreicht', done+'×', done>0) +
+                    (bestN ? sbRow('Bestwert', bestN+' Arten') : '') +
+                    `<div class="sd-sub">Alle Jahre</div>` + instRows +
+                    `<div class="sd-note">Nur ${s.groupLabel} in dieser Jahreszeit – überall auffindbar, nicht ortsgebunden.</div>`;
+                const nextTxt = selN===0 ? 'keine Beobachtung' : (selAchieved ? 'Ziel erreicht ✓' : (isLive ? `noch ${s.goal-selN} ${s.groupLabel}` : `${s.goal-selN} fehlten`));
+                return `
+                    <div class="scard ${selAchieved?'scard-on':''}" onclick="this.classList.toggle('expanded')">
+                        <div class="scard-hero ${selAchieved?'stier-3':''}">${s.icon}</div>
+                        <div class="scard-title">${s.name} ${sbSeasonYear}${isLive?' <span class="sbadge-live">läuft</span>':''}</div>
+                        <div class="scard-sub">${s.groupLabel} · Ziel ${s.goal} · ${s.range}</div>
+                        <div class="scard-big">${selN}<span class="scard-unit"> / ${s.goal}</span></div>
+                        <div class="scard-bar"><div class="scard-bar-fill stier-3" style="width:${Math.round(prog*100)}%"></div></div>
+                        <div class="scard-next">${nextTxt}</div>
+                        <div class="scard-hint">▾ Sammelkarte öffnen</div>
+                        <div class="scard-detail">${detail}</div>
+                    </div>`;
+            }).join('');
+
+            const startNote = beforeStart
+                ? `<div class="season-note" style="margin:-4px 0 10px;">🗓️ Die Challenges starten am <b style="color:var(--accent-warm);">01.09.2026</b> – ab dann füllt sich hier alles automatisch.</div>`
+                : '';
+
+            host.innerHTML =
+                `<div class="season-sub">🎯 Dieser Monat &amp; dieses Jahr</div>${startNote}
+                 <div class="season-cards">${monthCard}${streakCard}${yearCard}</div>` +
+                album +
+                `<div class="season-sub">🌦️ Jahreszeiten
+                    <span class="season-yearnav">
+                        <button class="syr-btn" ${sPrevY===null?'disabled':''} onclick="sbSetSeasonYear(${sPrevY})">‹</button>
+                        <span class="syr-cur">${sbSeasonYear}</span>
+                        <button class="syr-btn" ${sNextY===null?'disabled':''} onclick="sbSetSeasonYear(${sNextY})">›</button>
+                    </span>
+                    <span class="season-note">passende Artengruppe je Saison</span>
+                 </div>
+                 <div class="season-cards">${seasonCards}</div>`;
         }
 
         // ---- Länder-Weltkarte (lazy) ----
@@ -5852,6 +6397,78 @@
                 const ladder = GROUP_LADDERS[key] || GROUP_LADDER_BC;
                 add(key, cfg.name, cfg.icon, count, ladder, RANK_NAMES[key] || BADGE_RANKS.map(x=>x.name));
             });
+            Object.assign(out, computeSeasonalLevels());   // Saison-/Challenge-Erfolge mitfeiern
+            return out;
+        }
+
+        // Aktuelle "Stufen" der Saison-/Challenge-Badges für die Feier-Mechanik.
+        // Es werden nur die AKTUELLE Periode (Monat/Saison/Jahr) + die längste Serie
+        // getrackt – so wird ein Übertreten der Schwelle gefeiert, ältere Perioden nicht neu.
+        function computeSeasonalLevels(){
+            const out = {};
+            const data = sbCompute();
+            const now = new Date();
+            const cy = now.getFullYear(), cm = now.getMonth();
+            const curYM = cy + '-' + String(cm+1).padStart(2,'0');
+
+            // Monats-Challenge (nur laufender Monat) – Bronze/Silber/Gold
+            if (curYM >= SEASON_START_YM){
+                const cnt = (data.byMonth[curYM] || new Set()).size;
+                out['sb_month:' + curYM] = {
+                    level: sbMonthTier(cnt),
+                    label: 'Monats-Challenge · ' + SB_MONTH_NAMES[cm],
+                    icon: '📅',
+                    names: ['Bronze', 'Silber', 'Gold'],
+                    icons: ['🥉', '🥈', '🥇'],
+                    hexTiers: [1, 3, 5],
+                    kicker: 'Monats-Ziel geschafft'
+                };
+            }
+
+            // Laufende Saison – Ziel erreicht?
+            const curSeason = SB_SEASONS.find(s => s.months.includes(cm));
+            if (curSeason){
+                const inst = sbSeasonInstance(curSeason.key, cy, cm);
+                if (inst >= 2027 || (curSeason.key === 'autumn' && inst >= 2026)){   // erste Live-Saison ist Herbst 2026
+                    const n = (data.bySeason[curSeason.key + ':' + inst] || new Set()).size;
+                    out['sb_season:' + curSeason.key + ':' + inst] = {
+                        level: n >= curSeason.goal ? 1 : 0,
+                        label: curSeason.icon + ' ' + curSeason.name + '-Saison',
+                        icon: curSeason.icon,
+                        names: [curSeason.name + ' gemeistert'],
+                        hexTiers: [7],
+                        kicker: 'Saison gemeistert'
+                    };
+                }
+            }
+
+            // Serie – Meilenstein der längsten Monatsserie (gesamte Historie)
+            const life = sbLifetime();
+            const monthsObj = {}; life.months.forEach(mk => { monthsObj[mk] = 1; });
+            const st = sbStreak(monthsObj);
+            let slvl = 0; for (let i = 0; i < SB_STREAK_LADDER.length; i++) if (st.longest >= SB_STREAK_LADDER[i]) slvl = i + 1;
+            out['sb_streak'] = {
+                level: slvl,
+                label: '🔥 Serie',
+                icon: '🔥',
+                names: SB_STREAK_NAMES,
+                kicker: 'Neuer Serien-Rekord'
+            };
+
+            // Jahres-Ziel – Vorjahr an NEUEN Arten übertroffen (gesamte Historie)
+            const cyNew = life.newByYear[String(cy)] || 0;
+            const lyNew = life.newByYear[String(cy-1)] || 0;
+            if (lyNew > 0){
+                out['sb_year:' + cy] = {
+                    level: cyNew >= lyNew ? 1 : 0,
+                    label: '📈 Jahres-Ziel ' + cy,
+                    icon: '📈',
+                    names: ['Vorjahr übertroffen'],
+                    hexTiers: [5],
+                    kicker: 'Jahres-Rekord'
+                };
+            }
+
             return out;
         }
 
@@ -5879,10 +6496,14 @@
                 const was = (key in seen) ? seen[key] : now;   // unbekannter Key → als gesehen behandeln (keine Fehl-Feier)
                 if(now > was){
                     const names = cur[key].names || BADGE_RANKS.map(x=>x.name);
+                    const icons = cur[key].icons, hexTiers = cur[key].hexTiers, kicker = cur[key].kicker;
                     for(let lvl = was+1; lvl <= now; lvl++){    // jede übersprungene Stufe einzeln feiern
                         events.push({
-                            key, label: cur[key].label, icon: cur[key].icon,
+                            key, label: cur[key].label,
+                            icon: (icons && icons[lvl-1]) || cur[key].icon,
                             level: lvl, total: names.length,
+                            hexTier: hexTiers ? hexTiers[lvl-1] : null,
+                            kicker: kicker || null,
                             toName: names[lvl-1] || ('Stufe '+lvl),
                             fromName: lvl>1 ? (names[lvl-2] || ('Stufe '+(lvl-1))) : 'Kein Rang'
                         });
@@ -5902,7 +6523,7 @@
             const hex = document.getElementById('rankIconHex');
             const ico = document.getElementById('rankIconIco');
             if(ico) ico.textContent = top ? top.icon : '🏅';
-            if(hex) hex.className = 'rk-hex htier' + Math.max(1, Math.min(7, top ? top.level : 1));
+            if(hex) hex.className = 'rk-hex htier' + Math.max(1, Math.min(7, top ? (top.hexTier || top.level) : 1));
             const up = el.querySelector('.rk-up'); if(up) up.textContent = n>1 ? n : '▲';
             const sp = document.getElementById('rewardIcon');   // ggf. über dem New-species-Icon parken
             el.classList.toggle('stacked', !!(sp && sp.style.display && sp.style.display!=='none'));
@@ -5978,15 +6599,16 @@
 
                 function render(){
                     const ev = events[idx];
-                    const tier = Math.max(1, Math.min(7, ev.level));
+                    const tier = Math.max(1, Math.min(7, ev.hexTier || ev.level));
+                    const single = ev.total <= 1;   // Saison/Jahr: einstufige Erfolge schlichter zeigen
                     fx.innerHTML='';
                     stage.innerHTML = `
-                        <div class="rankup-kicker">Neuer Rang erreicht</div>
+                        <div class="rankup-kicker">${rwEsc(ev.kicker || 'Neuer Rang erreicht')}</div>
                         <div class="rankup-cat">${ev.icon} ${rwEsc(ev.label)}</div>
                         <div class="rankup-hex htier${tier}"><div class="plate"></div><div class="inner"></div><div class="ico">${ev.icon}</div><div class="sheen"></div></div>
                         <div class="rankup-name">${rwEsc(ev.toName)}</div>
-                        <div class="rankup-fromto"><b>${rwEsc(ev.fromName)}</b> &nbsp;→&nbsp; <b>${rwEsc(ev.toName)}</b> · Stufe ${ev.level} / ${ev.total}</div>
-                        <div class="rankup-pips">${pipsHTML(ev)}</div>`;
+                        <div class="rankup-fromto">${single ? '🎉 geschafft' : `<b>${rwEsc(ev.fromName)}</b> &nbsp;→&nbsp; <b>${rwEsc(ev.toName)}</b> · Stufe ${ev.level} / ${ev.total}`}</div>
+                        ${single ? '' : `<div class="rankup-pips">${pipsHTML(ev)}</div>`}`;
                     hint.textContent = idx>=events.length-1 ? 'Tippen zum Schließen' : `Tippen für nächsten Rang (${idx+1}/${events.length})`;
                     setTimeout(()=>{ if(!done) celebrate(ev); }, 550);
                 }
