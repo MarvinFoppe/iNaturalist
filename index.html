@@ -2479,8 +2479,22 @@
             .stamp-grid { grid-template-columns: repeat(3, 1fr); }
             .season-yearsum { width:100%; margin-left:0; }
         }
-        @media (max-width: 480px) {
-            .season-cards { grid-template-columns: 1fr; }
+        @media (max-width: 560px) {
+            /* Handy: Challenges & Jahreszeiten als horizontale Swipe-Zeile statt gestapelt */
+            .season-cards {
+                display: flex;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+                gap: 12px;
+                padding-bottom: 8px;
+                scroll-padding-left: 2px;
+            }
+            .season-cards > .scard {
+                flex: 0 0 74%;
+                scroll-snap-align: start;
+            }
+            .season-cards > .scard:hover { transform: none; }
             .stamp-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
