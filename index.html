@@ -3595,10 +3595,17 @@
             },
             'Actinopterygii': {
                 icon: '🐟',
-                name: 'Fische',
+                name: 'Knochenfische',
                 color: '#3d8ba8',
-                desc: 'Wasserlebende Wirbeltiere mit Kiemen und Flossen. Die artenreichste Gruppe der Wirbeltiere.',
+                desc: 'Fische mit verknöchertem Skelett und Flossenstrahlen (Strahlenflosser). Die artenreichste Gruppe der Wirbeltiere.',
                 speciesCount: '~35.000'
+            },
+            'Chondrichthyes': {
+                icon: '🦈',
+                name: 'Knorpelfische',
+                color: '#5b7f9c',
+                desc: 'Fische mit einem Skelett aus Knorpel statt Knochen. Dazu gehören Haie, Rochen und Seekatzen.',
+                speciesCount: '~1.200'
             },
             'Insecta': {
                 icon: '🦋',
@@ -3621,6 +3628,27 @@
                 desc: 'Wirbellose Tiere mit weichem Körper, oft mit Schale. Schnecken, Muscheln und Tintenfische.',
                 speciesCount: '~85.000'
             },
+            'Crustacea': {
+                icon: '🦀',
+                name: 'Krebstiere',
+                color: '#c56b4a',
+                desc: 'Gliederfüßer mit Panzer und Kiemen, meist im Wasser. Krabben, Garnelen, Hummer, Asseln und Seepocken.',
+                speciesCount: '~67.000'
+            },
+            'Echinodermata': {
+                icon: '⭐',
+                name: 'Stachelhäuter',
+                color: '#cf7391',
+                desc: 'Meeresbewohner mit fünfstrahligem Körperbau und Kalkskelett. Seesterne, Seeigel, Seegurken und Schlangensterne.',
+                speciesCount: '~7.000'
+            },
+            'Cnidaria': {
+                icon: '🪼',
+                name: 'Nesseltiere',
+                color: '#6f8fd0',
+                desc: 'Einfach gebaute Wassertiere mit Nesselzellen. Quallen, Korallen, Seeanemonen und Hydrozoen.',
+                speciesCount: '~11.000'
+            },
             'Plantae': {
                 icon: '🌿',
                 name: 'Pflanzen',
@@ -3636,11 +3664,11 @@
                 speciesCount: '~150.000'
             },
             'Animalia': {
-                icon: '🦀',
+                icon: '🐾',
                 name: 'Andere Tiere',
                 color: '#8a8f98',
-                desc: 'Weitere Tiergruppen wie Krebstiere, Würmer, Quallen, Seesterne und viele mehr.',
-                speciesCount: '~1.500.000+'
+                desc: 'Weitere wirbellose Tiergruppen wie Würmer, Schwämme, Tausendfüßer, Moostierchen und viele mehr.',
+                speciesCount: '~1.300.000+'
             }
         };
 
@@ -3741,6 +3769,25 @@
             map.addLayer(markers);
         }
 
+        // Feinere Gruppierung innerhalb des Sammel-Reichs "Animalia":
+        // bekannte Vorfahren-IDs (iNat-Taxon-IDs) -> eigene App-Gruppe.
+        // Die Untergruppen sind disjunkt, Reihenfolge ist daher egal.
+        const ANIMALIA_SUBGROUPS = [
+            { id: 47273, key: 'Chondrichthyes' }, // Knorpelfische (Haie & Rochen)
+            { id: 85493, key: 'Crustacea' },      // Krebstiere (inkl. Ruderfußkrebse)
+            { id: 47549, key: 'Echinodermata' },  // Stachelhäuter (Seesterne, Seeigel …)
+            { id: 47534, key: 'Cnidaria' }        // Nesseltiere (Quallen, Korallen …)
+        ];
+        // iconic_taxon_name -> App-Gruppenschlüssel; "Animalia" wird ggf. verfeinert
+        function taxonGroupKey(taxon) {
+            const iconic = taxon?.iconic_taxon_name || '';
+            if (iconic === 'Animalia') {
+                const anc = taxon?.ancestor_ids || [];
+                for (const sg of ANIMALIA_SUBGROUPS) if (anc.includes(sg.id)) return sg.key;
+            }
+            return iconic;
+        }
+
         // Rohes API-Objekt -> schlankes internes Beobachtungsobjekt
         function mapObservation(obs) {
             return {
@@ -3757,7 +3804,7 @@
                 country: extractCountry(obs.place_guess) || getCountryByDate(obs.observed_on),
                 url: `https://www.inaturalist.org/observations/${obs.id}`,
                 image: obs.photos?.[0]?.url?.replace('square', 'medium') || '',
-                taxon: obs.taxon?.iconic_taxon_name || '',
+                taxon: taxonGroupKey(obs.taxon),
                 quality: obs.quality_grade || '',
                 taxonId: obs.taxon?.id,
                 rank: obs.taxon?.rank || '',
@@ -5280,9 +5327,13 @@
             'Reptilia':       ['Gelege', 'Schlüpfling', 'Jungtier', 'Häuter', 'Schuppenträger', 'Sonnenkönig', 'Drache'],
             'Amphibia':       ['Laich', 'Kaulquappe', 'Landgänger', 'Springer', 'Lurch', 'Quaker', 'Froschkönig'],
             'Actinopterygii': ['Laich', 'Larve', 'Brütling', 'Jungfisch', 'Fisch', 'Schwarm', 'Großschwarm'],
+            'Chondrichthyes': ['Eikapsel', 'Embryo', 'Jungtier', 'Jäger', 'Knorpelfisch', 'Räuber', 'Schwarm'],
             'Insecta':        ['Ei', 'Larve', 'Puppe', 'Imago', 'Flieger', 'Schwarm', 'Volk'],
             'Arachnida':      ['Kokon', 'Jungspinne', 'Häuter', 'Netzbauer', 'Spinne', 'Jägerin', 'Kolonie'],
             'Mollusca':       ['Gelege', 'Larve', 'Jungtier', 'Schalenträger', 'Weichtier', 'Perlträger', 'Kolonie'],
+            'Crustacea':      ['Ei', 'Larve', 'Häutling', 'Jungkrebs', 'Krebstier', 'Panzerträger', 'Kolonie'],
+            'Echinodermata':  ['Ei', 'Larve', 'Jungtier', 'Fünfstern', 'Stachelhäuter', 'Riffwächter', 'Kolonie'],
+            'Cnidaria':       ['Larve', 'Polyp', 'Knospe', 'Qualle', 'Nesseltier', 'Schwarm', 'Riff'],
             'Plantae':        ['Samen', 'Keimling', 'Setzling', 'Spross', 'Pflanze', 'Blüte', 'Dickicht'],
             'Fungi':          ['Spore', 'Myzel', 'Knopf', 'Fruchtkörper', 'Pilz', 'Hexenring', 'Pilzwald'],
             'Animalia':       ['Ei', 'Larve', 'Jungtier', 'Krabbler', 'Wirbelloses', 'Gruppe', 'Kolonie']
@@ -5305,8 +5356,9 @@
         const GROUP_LADDER_BC = [25, 100, 500, 1000, 2500, 5000, 10000];  // alle übrigen
         const GROUP_LADDERS = {
             'Aves': GROUP_LADDER_A, 'Mammalia': GROUP_LADDER_A, 'Reptilia': GROUP_LADDER_A, 'Amphibia': GROUP_LADDER_A,
+            'Chondrichthyes': GROUP_LADDER_A, 'Echinodermata': GROUP_LADDER_A, 'Cnidaria': GROUP_LADDER_A,
             'Actinopterygii': GROUP_LADDER_BC, 'Insecta': GROUP_LADDER_BC, 'Arachnida': GROUP_LADDER_BC,
-            'Mollusca': GROUP_LADDER_BC, 'Plantae': GROUP_LADDER_BC, 'Fungi': GROUP_LADDER_BC, 'Animalia': GROUP_LADDER_BC
+            'Mollusca': GROUP_LADDER_BC, 'Crustacea': GROUP_LADDER_BC, 'Plantae': GROUP_LADDER_BC, 'Fungi': GROUP_LADDER_BC, 'Animalia': GROUP_LADDER_BC
         };
 
         // Rang für einen Wert bestimmen
@@ -5586,8 +5638,9 @@
         // Deutsche Gruppen-Namen (für die Sammelkarten-Details)
         const SB_GROUP_LABEL = {
             Aves:'Vögel', Mammalia:'Säugetiere', Reptilia:'Reptilien', Amphibia:'Amphibien',
-            Actinopterygii:'Fische', Insecta:'Insekten', Arachnida:'Spinnentiere', Mollusca:'Weichtiere',
-            Plantae:'Pflanzen', Fungi:'Pilze', Animalia:'Tiere', Protozoa:'Einzeller', Chromista:'Algen'
+            Actinopterygii:'Knochenfische', Chondrichthyes:'Knorpelfische', Insecta:'Insekten', Arachnida:'Spinnentiere',
+            Mollusca:'Weichtiere', Crustacea:'Krebstiere', Echinodermata:'Stachelhäuter', Cnidaria:'Nesseltiere',
+            Plantae:'Pflanzen', Fungi:'Pilze', Animalia:'Andere Tiere', Protozoa:'Einzeller', Chromista:'Algen'
         };
         function sbFmtMonth(ym){ const p = ym.split('-'); return SB_MONTH_ABBR[+p[1]-1] + ' ' + p[0]; }
         function sbRow(label, val, done){ return `<div class="sd-row ${done?'done':''}"><span>${label}</span><b>${val}</b></div>`; }
@@ -6092,13 +6145,17 @@
                 Mammalia:{de:'Säugetiere',emoji:'🦊',c:'#c9803f'},
                 Reptilia:{de:'Reptilien',emoji:'🦎',c:'#5fa855'},
                 Amphibia:{de:'Amphibien',emoji:'🐸',c:'#3fae9a'},
-                Actinopterygii:{de:'Fische',emoji:'🐟',c:'#3d8fc9'},
+                Actinopterygii:{de:'Knochenfische',emoji:'🐟',c:'#3d8fc9'},
+                Chondrichthyes:{de:'Knorpelfische',emoji:'🦈',c:'#5b7f9c'},
                 Mollusca:{de:'Weichtiere',emoji:'🐌',c:'#9b6fc0'},
                 Insecta:{de:'Insekten',emoji:'🦋',c:'#e0a53a'},
                 Arachnida:{de:'Spinnentiere',emoji:'🕷️',c:'#6b5b4a'},
+                Crustacea:{de:'Krebstiere',emoji:'🦀',c:'#c56b4a'},
+                Echinodermata:{de:'Stachelhäuter',emoji:'⭐',c:'#cf7391'},
+                Cnidaria:{de:'Nesseltiere',emoji:'🪼',c:'#6f8fd0'},
                 Plantae:{de:'Pflanzen',emoji:'🌿',c:'#5aa54f'},
                 Fungi:{de:'Pilze',emoji:'🍄',c:'#c0553e'},
-                Animalia:{de:'Tiere',emoji:'🐾',c:'#7a7f8a'},
+                Animalia:{de:'Andere Tiere',emoji:'🐾',c:'#7a7f8a'},
                 Protozoa:{de:'Protozoen',emoji:'🦠',c:'#b0679b'},
                 Chromista:{de:'Algen',emoji:'🌊',c:'#4a97a8'}
             };
