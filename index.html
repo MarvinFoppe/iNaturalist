@@ -8277,9 +8277,25 @@
         }
 
         // ========== LOCALSTORAGE CACHING ==========
-        const CACHE_KEY_BASE = 'inat_observations_cache';
+        // Schema-Version: bei Änderungen an mapObservation/Gruppierung hochzählen,
+        // damit alte Caches verworfen und einmalig komplett neu gemappt werden.
+        // v2: Animalia-Sammeltopf in Knorpelfische/Krebstiere/Stachelhäuter/Nesseltiere aufgeteilt.
+        const CACHE_SCHEMA = 'v2';
+        const CACHE_KEY_BASE = `inat_observations_cache_${CACHE_SCHEMA}`;
         const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
         function cacheKey() { return `${CACHE_KEY_BASE}_${USER_ID}`; }  // Cache pro Nutzer
+
+        // Einmalige Aufräum-Aktion: veraltete Cache-Einträge früherer Schema-Versionen entfernen
+        (function purgeLegacyObsCaches() {
+            try {
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith('inat_observations_cache') && !k.startsWith(CACHE_KEY_BASE)) {
+                        localStorage.removeItem(k);
+                    }
+                }
+            } catch (e) {}
+        })();
 
         function saveToCache(data) {
             const cacheData = {
