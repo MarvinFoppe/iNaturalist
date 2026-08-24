@@ -8088,6 +8088,10 @@
             updateFsExportButtons();
             updateCountryFilterLabel();
             updateCountryDropdownSelection();
+            // Belohnungs-Icons/-Serien des vorherigen Profils entfernen (kein "Nachziehen" beim Wechsel)
+            try { hideRewardIcon(); hideRankIcon(); } catch (e) {}
+            rewardPendingCards = null; rewardPendingIds = null;
+            rankPendingEvents = null; rankPendingSnapshot = null;
         }
 
         // Nutzer wechseln (validieren -> laden)
