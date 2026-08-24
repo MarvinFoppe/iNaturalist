@@ -2536,6 +2536,50 @@
         .sbadge-live { font-family:'Open Sans',sans-serif; font-size:0.55em; background: var(--accent-warm-strong); color:#1a1206; padding:2px 7px; border-radius:6px; vertical-align:middle; margin-left:4px; font-weight:700; }
         .sbadge-soon { font-family:'Open Sans',sans-serif; font-size:0.55em; background: rgba(255,255,255,0.1); color: var(--text-secondary); padding:2px 7px; border-radius:6px; vertical-align:middle; margin-left:4px; font-weight:700; border:1px solid var(--border); }
 
+        /* ===== Willkommens-Fenster beim ersten Öffnen ===== */
+        .welcome-overlay{position:fixed; inset:0; z-index:13000; display:none;
+            place-items:center; padding:22px;
+            background:radial-gradient(ellipse at center,rgba(10,18,13,.55) 0%,rgba(8,14,10,.85) 100%);
+            backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);}
+        .welcome-overlay.active{display:grid;}
+        .welcome-box{position:relative; width:min(430px,100%);
+            background:linear-gradient(150deg,var(--bg-medium) 0%,#16281a 55%,var(--primary-dark) 100%);
+            border:1px solid var(--border); border-radius:22px;
+            box-shadow:0 26px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.04);
+            padding:38px 34px 30px; text-align:center; animation:wPop .5s cubic-bezier(.2,.8,.3,1.35) both;}
+        @keyframes wPop{0%{opacity:0; transform:translateY(14px) scale(.94);}100%{opacity:1; transform:none;}}
+        @media (prefers-reduced-motion:reduce){.welcome-box{animation:none;}}
+        .welcome-box::before{content:''; position:absolute; inset:0 0 auto 0; height:3px; border-radius:22px 22px 0 0;
+            background:linear-gradient(90deg,transparent,var(--accent),var(--accent-warm),transparent); opacity:.7;}
+        .welcome-emblem{width:66px; height:66px; margin:0 auto 18px; border-radius:50%; display:grid; place-items:center;
+            background:radial-gradient(circle at 35% 30%,rgba(155,204,95,.28),rgba(45,78,52,.25));
+            border:1px solid var(--border); box-shadow:0 6px 20px rgba(0,0,0,.4);}
+        .welcome-emblem .icon{width:34px; height:34px; color:var(--accent-light);}
+        .welcome-eyebrow{font-size:0.72rem; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin-bottom:10px;}
+        .welcome-box h2{font-size:1.55rem; line-height:1.2; font-weight:700; text-wrap:balance; margin-bottom:10px;}
+        .welcome-sub{font-size:0.95rem; line-height:1.55; color:var(--text-secondary); max-width:34ch; margin:0 auto 22px;}
+        .welcome-field{display:flex; align-items:center; background:rgba(15,23,18,.6); border:1px solid var(--border);
+            border-radius:12px; overflow:hidden; transition:border-color .15s ease, box-shadow .15s ease;}
+        .welcome-field:focus-within{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow);}
+        .welcome-field .at{padding:0 4px 0 15px; color:var(--text-muted); font-size:1.05rem; font-weight:600;}
+        .welcome-field input{flex:1; min-width:0; background:transparent; border:none; outline:none; color:var(--text-primary);
+            font-family:'Open Sans',sans-serif; font-size:1rem; padding:14px 15px 14px 4px;}
+        .welcome-field input::placeholder{color:var(--text-muted);}
+        .welcome-cta{margin-top:16px; width:100%; padding:15px 18px; border:none; border-radius:12px; cursor:pointer;
+            font-family:'Open Sans',sans-serif; font-size:1.02rem; font-weight:700; color:#0f1712;
+            background:linear-gradient(135deg,var(--accent-light) 0%,var(--accent) 100%);
+            transition:transform .15s ease, box-shadow .15s ease;}
+        .welcome-cta:hover{transform:translateY(-2px); box-shadow:0 8px 22px var(--accent-glow);}
+        .welcome-cta:disabled{opacity:.6; cursor:wait; transform:none;}
+        .welcome-cta:focus-visible{outline:3px solid var(--accent-light); outline-offset:3px;}
+        .welcome-error{min-height:1.1em; margin-top:10px; font-size:0.84rem; color:#ff8a80;}
+        .welcome-secondary{margin-top:6px; font-size:0.88rem; color:var(--text-secondary);}
+        .welcome-secondary a{color:var(--accent-light); font-weight:600; text-decoration:none; cursor:pointer; border-bottom:1px solid transparent;}
+        .welcome-secondary a:hover{border-bottom-color:var(--accent-light);}
+        .welcome-hint{margin-top:22px; padding-top:16px; border-top:1px solid var(--border); font-size:0.78rem; line-height:1.5; color:var(--text-muted);}
+        .welcome-hint b{color:var(--text-secondary); font-weight:600;}
+        @media (max-width:520px){ .welcome-box{padding:32px 22px 26px;} .welcome-box h2{font-size:1.35rem;} }
+
         @media (max-width: 768px) {
             .season-cards { grid-template-columns: 1fr 1fr; }
             .stamp-grid { grid-template-columns: repeat(3, 1fr); }
@@ -2595,6 +2639,25 @@
         <div class="loading-spinner"></div>
         <div class="loading-text">Naturbeobachtungen werden geladen...</div>
         <div id="loadingProgress" class="loading-progress">0 / ? geladen</div>
+    </div>
+
+    <!-- Willkommens-Fenster beim ersten Öffnen -->
+    <div class="welcome-overlay" id="welcomeOverlay">
+        <div class="welcome-box" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+            <div class="welcome-emblem"><svg class="icon"><use href="#icon-leaf"/></svg></div>
+            <div class="welcome-eyebrow">Willkommen</div>
+            <h2 id="welcomeTitle">Wessen Beobachtungen möchtest&nbsp;du sehen?</h2>
+            <p class="welcome-sub">Gib deinen iNaturalist-Namen ein – dann siehst du deine eigenen Beobachtungen, Ränge und neu freigeschalteten Arten.</p>
+            <label class="welcome-field">
+                <span class="at">@</span>
+                <input type="text" id="welcomeInput" placeholder="dein iNaturalist-Name" aria-label="iNaturalist-Name" autocomplete="off"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); welcomeSubmit();}">
+            </label>
+            <button class="welcome-cta" id="welcomeCta" onclick="welcomeSubmit()">Los geht’s</button>
+            <div class="welcome-error" id="welcomeError"></div>
+            <div class="welcome-secondary">Nur umschauen? <a onclick="welcomeSkip()">Beispielprofil ansehen</a></div>
+            <div class="welcome-hint">Der Name wird nur auf <b>diesem Gerät</b> gespeichert – kein Login, kein Passwort. Du kannst ihn später oben jederzeit ändern.</div>
+        </div>
     </div>
 
     <div class="header">
@@ -6228,6 +6291,53 @@
             const input = document.getElementById('userInput'); if(input) input.value = mine;
             switchUser(mine);
         }
+
+        // ===== Willkommens-Fenster beim ersten Öffnen =====
+        function shouldShowWelcome(){
+            if(isOwnerDevice()) return false;                                     // dein Gerät -> direkt dein Profil
+            if(new URLSearchParams(location.search).get('user')) return false;    // gezielter Profil-Link
+            if(localStorage.getItem('inat_onboarded')) return false;              // schon einmal begrüßt
+            if(localStorage.getItem('inat_my_user')) return false;               // eigenes Profil bereits festgelegt
+            return true;
+        }
+        function showWelcome(){
+            const ov = document.getElementById('welcomeOverlay'); if(!ov) return;
+            ov.classList.add('active');
+            const inp = document.getElementById('welcomeInput');
+            if(inp) setTimeout(() => { try { inp.focus(); } catch(e){} }, 60);
+        }
+        function hideWelcome(){
+            const ov = document.getElementById('welcomeOverlay'); if(ov) ov.classList.remove('active');
+        }
+        async function welcomeSubmit(){
+            const inp = document.getElementById('welcomeInput');
+            const name = ((inp && inp.value) || '').trim().replace(/^@/, '');
+            const errEl = document.getElementById('welcomeError');
+            if(errEl) errEl.textContent = '';
+            if(!name){ if(errEl) errEl.textContent = 'Bitte deinen iNaturalist-Namen eingeben.'; return; }
+            if(!isOwnerDevice() && name.toLowerCase() === DEFAULT_USER.toLowerCase()){
+                if(errEl) errEl.textContent = 'Dieser Name ist geschützt. Bitte deinen eigenen Namen eingeben.'; return;
+            }
+            const btn = document.getElementById('welcomeCta');
+            if(btn){ btn.disabled = true; btn.textContent = 'Prüft…'; }
+            const user = await loadUserProfile(name);
+            if(btn){ btn.disabled = false; btn.textContent = 'Los geht’s'; }
+            if(!user){ if(errEl) errEl.textContent = `Nutzer „${name}" nicht gefunden.`; return; }
+            localStorage.setItem('inat_my_user', user.login);
+            localStorage.setItem('inat_onboarded', '1');
+            hideWelcome();
+            updateMyNameUI();
+            const box = document.getElementById('myNameBox'); if(box) box.open = false;
+            if(user.login.toLowerCase() !== String(USER_ID).toLowerCase()){
+                switchUser(user.login);
+            } else {
+                maybeShowSpeciesRewards(); maybeShowRankRewards(); updateBackToMineBtn();
+            }
+        }
+        function welcomeSkip(){
+            localStorage.setItem('inat_onboarded', '1');   // nicht erneut anzeigen; Beispielprofil bleibt geladen
+            hideWelcome();
+        }
         (async () => {
             try {
                 const u = new URL(location.href);
@@ -8510,6 +8620,7 @@
             localStorage.setItem('inat_current_user', USER_ID);
 
             try { updateMyNameUI(); } catch (e) {}   // Feld "Mein iNaturalist-Name" mit gespeichertem Wert vorbelegen
+            try { if (shouldShowWelcome()) showWelcome(); } catch (e) {}   // erstes Öffnen: nach eigenem Namen fragen
 
             loadFiltersFromURL();
             try { initMap(); } catch (e) { console.warn('initMap fehlgeschlagen:', e); }
