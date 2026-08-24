@@ -1635,6 +1635,68 @@
             font-size: 0.82em;
             flex-basis: 100%;
         }
+        /* Einklappbares Feld: "Mein iNaturalist-Name" (Basis für Belohnungen) */
+        .my-name-box {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-card);
+            overflow: hidden;
+        }
+        .my-name-box > summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 8px 12px;
+            font-size: 0.88em;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+        }
+        .my-name-box > summary::-webkit-details-marker { display: none; }
+        .my-name-box > summary::before { content: '👤'; }
+        .my-name-box > summary::after {
+            content: '▾';
+            margin-left: auto;
+            transition: transform 0.2s ease;
+            opacity: 0.6;
+        }
+        .my-name-box[open] > summary::after { transform: rotate(180deg); }
+        .my-name-current { font-weight: 400; color: var(--text-secondary); font-size: 0.92em; }
+        .my-name-body {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            padding: 0 12px 12px;
+        }
+        .my-name-hint { flex-basis: 100%; margin: 0; font-size: 0.8em; color: var(--text-secondary); line-height: 1.4; }
+        .my-name-clear-btn {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+        .my-name-clear-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        /* "Zurück zu meinem Profil" – erscheint beim Betrachten eines fremden Profils */
+        .back-to-mine-btn {
+            width: 100%;
+            padding: 9px 14px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent) 100%);
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .back-to-mine-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 14px var(--accent-glow); }
 
         .author-section::before {
             content: '';
@@ -2549,6 +2611,18 @@
             <div class="last-update">Letzte Aktualisierung: <span id="lastUpdate">-</span></div>
         </div>
         <div class="header-controls">
+            <button class="back-to-mine-btn" id="backToMineBtn" style="display:none" onclick="backToMyProfile()">← Zurück zu meinem Profil</button>
+            <details class="my-name-box" id="myNameBox">
+                <summary>Mein iNaturalist-Name <span class="my-name-current" id="myNameCurrent"></span></summary>
+                <div class="my-name-body">
+                    <p class="my-name-hint">Lege hier deinen eigenen iNaturalist-Namen fest, damit du Belohnungen (neue Arten &amp; Rang-Aufstiege) für <b>dein</b> Profil bekommst. Zum bloßen Anschauen anderer Profile nutze „Anzeigen".</p>
+                    <input type="text" id="myNameInput" class="user-input" placeholder="dein iNaturalist-Name"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault(); setMyName(this.value);}">
+                    <button class="user-switch-btn" id="myNameSaveBtn" onclick="setMyName(document.getElementById('myNameInput').value)">Speichern</button>
+                    <button class="my-name-clear-btn" onclick="clearMyName()">Zurücksetzen</button>
+                    <span id="myNameError" class="user-error"></span>
+                </div>
+            </details>
             <div class="user-switcher">
                 <input type="text" id="userInput" class="user-input" placeholder="iNaturalist-Nutzername"
                        onkeydown="if(event.key==='Enter'){event.preventDefault(); switchUser(this.value);}">
@@ -6091,6 +6165,69 @@
             return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
         }
         function isOwnerDevice(){ return localStorage.getItem('inat_owner') === '1'; }
+        // "Ich selbst" auf diesem Gerät: Owner => sein Standardprofil, sonst der im Feld "Mein iNaturalist-Name" festgelegte Name.
+        // Belohnungen (Icon + Popup) erscheinen NUR auf dem eigenen Profil – Fremde sehen bei deinem Namen nichts.
+        function myClaimedUser(){
+            if(isOwnerDevice()) return DEFAULT_USER;                     // dein freigeschaltetes Gerät
+            const m = localStorage.getItem('inat_my_user') || '';
+            if(m.toLowerCase() === DEFAULT_USER.toLowerCase()) return ''; // dein Name ist geschützt – Fremde können ihn nicht beanspruchen
+            return m;
+        }
+        function isOwnProfile(){ const m = myClaimedUser(); return !!m && String(USER_ID).toLowerCase() === m.toLowerCase(); }
+
+        // Feld "Mein iNaturalist-Name": eigenes Profil festlegen (Basis für Belohnungen)
+        function updateMyNameUI(){
+            const lbl = document.getElementById('myNameCurrent');
+            const inp = document.getElementById('myNameInput');
+            const cur = isOwnerDevice() ? DEFAULT_USER : (localStorage.getItem('inat_my_user') || '');
+            if(lbl) lbl.textContent = cur ? ('· ' + cur) : '· nicht festgelegt';
+            if(inp && cur && !inp.value) inp.value = cur;
+        }
+        async function setMyName(rawName){
+            const name = (rawName || '').trim().replace(/^@/, '');
+            const errEl = document.getElementById('myNameError');
+            if(errEl) errEl.textContent = '';
+            if(!name){ if(errEl) errEl.textContent = 'Bitte deinen iNaturalist-Namen eingeben.'; return; }
+            if(!isOwnerDevice() && name.toLowerCase() === DEFAULT_USER.toLowerCase()){
+                if(errEl) errEl.textContent = 'Dieser Name ist geschützt und kann nicht festgelegt werden.'; return;
+            }
+            const btn = document.getElementById('myNameSaveBtn');
+            if(btn){ btn.disabled = true; btn.textContent = 'Prüft…'; }
+            const user = await loadUserProfile(name);
+            if(btn){ btn.disabled = false; btn.textContent = 'Speichern'; }
+            if(!user){ if(errEl) errEl.textContent = `Nutzer „${name}" nicht gefunden.`; return; }
+            localStorage.setItem('inat_my_user', user.login);
+            updateMyNameUI();
+            const box = document.getElementById('myNameBox'); if(box) box.open = false;
+            // Direkt zum eigenen Profil wechseln (bzw. Belohnungen neu prüfen, wenn schon aktiv)
+            if(user.login.toLowerCase() !== String(USER_ID).toLowerCase()){
+                switchUser(user.login);
+            } else {
+                maybeShowSpeciesRewards(); maybeShowRankRewards();
+            }
+        }
+        function clearMyName(){
+            localStorage.removeItem('inat_my_user');
+            const inp = document.getElementById('myNameInput'); if(inp) inp.value = '';
+            const errEl = document.getElementById('myNameError'); if(errEl) errEl.textContent = '';
+            updateMyNameUI();
+            updateBackToMineBtn();
+            hideRewardIcon();
+        }
+        // "Zurück zu meinem Profil": nur sichtbar, wenn ein eigenes Profil festgelegt ist UND gerade ein fremdes angezeigt wird
+        function updateBackToMineBtn(){
+            const btn = document.getElementById('backToMineBtn');
+            if(!btn) return;
+            const mine = myClaimedUser();
+            const show = !!mine && String(USER_ID).toLowerCase() !== mine.toLowerCase();
+            btn.style.display = show ? '' : 'none';
+        }
+        function backToMyProfile(){
+            const mine = myClaimedUser();
+            if(!mine) return;
+            const input = document.getElementById('userInput'); if(input) input.value = mine;
+            switchUser(mine);
+        }
         (async () => {
             try {
                 const u = new URL(location.href);
@@ -6245,8 +6382,9 @@
         // Haupteinstieg: neue RG-Arten seit letztem Besuch ermitteln und ggf. Popup-Serie starten
         // Prüft neue RG-Arten und zeigt bei Fund NUR das Icon oben rechts (öffnet nicht automatisch).
         async function maybeShowSpeciesRewards(){
-            if(!isOwnerDevice()) return;                                             // nur auf deinen freigeschalteten Geräten
-            if(String(USER_ID).toLowerCase() !== DEFAULT_USER.toLowerCase()) return; // nur eigenes Profil
+            // In-App-Belohnung: für JEDEN Nutzer auf SEINEM eigenen Profil (gesehen-Stand pro Name im localStorage).
+            // Echte Push bleibt weiterhin nur auf Owner-Geräten (siehe Push-Abschnitt).
+            if(!isOwnProfile()) return;                                              // nur das eigene Profil dieses Geräts
             if(rewardActive) return;                                                 // Serie läuft gerade
             const currentIds = rgSpeciesIdsFrom(allObservations);
             if(!currentIds.length) return;
@@ -6578,8 +6716,7 @@
 
         // Haupteinstieg: Rang-Aufstiege seit letztem Besuch finden → Ruhe-Icon zeigen (öffnet nicht automatisch)
         async function maybeShowRankRewards(){
-            if(!isOwnerDevice()) return;                                             // nur auf freigeschalteten Geräten
-            if(String(USER_ID).toLowerCase() !== DEFAULT_USER.toLowerCase()) return; // nur eigenes Profil
+            if(!isOwnProfile()) return;                                              // nur das eigene Profil dieses Geräts
             if(rankActive) return;                                                   // Serie läuft gerade
             const cur = computeBadgeLevels();
             const snapshot = {}; Object.keys(cur).forEach(k => snapshot[k] = cur[k].level);
@@ -7796,6 +7933,8 @@
             // Eingabefeld mit aktuellem Login vorbelegen
             const input = document.getElementById('userInput');
             if (input) input.value = login;
+
+            updateBackToMineBtn();   // "Zurück zu meinem Profil" ein-/ausblenden
         }
 
         function setUserError(msg) {
@@ -8369,6 +8508,8 @@
             const urlUser = new URLSearchParams(location.search).get('user');
             USER_ID = ((urlUser || localStorage.getItem('inat_current_user') || DEFAULT_USER) + '').trim().replace(/^@/, '') || DEFAULT_USER;
             localStorage.setItem('inat_current_user', USER_ID);
+
+            try { updateMyNameUI(); } catch (e) {}   // Feld "Mein iNaturalist-Name" mit gespeichertem Wert vorbelegen
 
             loadFiltersFromURL();
             try { initMap(); } catch (e) { console.warn('initMap fehlgeschlagen:', e); }
