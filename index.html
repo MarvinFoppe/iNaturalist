@@ -2580,6 +2580,17 @@
         .welcome-hint b{color:var(--text-secondary); font-weight:600;}
         @media (max-width:520px){ .welcome-box{padding:32px 22px 26px;} .welcome-box h2{font-size:1.35rem;} }
 
+        /* Beispiel-Ansicht: Hinweisleiste oben (im Fluss, schiebt Inhalt nach unten) */
+        .demo-banner{ display:none; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;
+            padding:9px 16px; position:relative; z-index:50; color:var(--text-primary); font-size:0.9em;
+            background:linear-gradient(135deg, rgba(216,180,131,0.18), rgba(155,204,95,0.14));
+            border-bottom:1px solid var(--border); }
+        .demo-banner-txt{ opacity:.95; }
+        .demo-banner-btn{ padding:6px 14px; border-radius:8px; border:none; cursor:pointer; font-weight:700; font-size:0.92em;
+            color:#0f1712; background:linear-gradient(135deg, var(--accent-light), var(--accent));
+            transition:transform .15s ease, box-shadow .15s ease; }
+        .demo-banner-btn:hover{ transform:translateY(-1px); box-shadow:0 4px 14px var(--accent-glow); }
+
         @media (max-width: 768px) {
             .season-cards { grid-template-columns: 1fr 1fr; }
             .stamp-grid { grid-template-columns: repeat(3, 1fr); }
@@ -2639,6 +2650,12 @@
         <div class="loading-spinner"></div>
         <div class="loading-text">Naturbeobachtungen werden geladen...</div>
         <div id="loadingProgress" class="loading-progress">0 / ? geladen</div>
+    </div>
+
+    <!-- Beispiel-Ansicht: Hinweisleiste -->
+    <div class="demo-banner" id="demoBanner" style="display:none">
+        <span class="demo-banner-txt">🔍 <b>Beispiel-Ansicht</b> – so sieht die App mit Daten aus. Alle Funktionen zum Ausprobieren (Belohnungen, Ränge, Seltenheit …).</span>
+        <button class="demo-banner-btn" onclick="demoEnterName()">Eigenen Namen eingeben</button>
     </div>
 
     <!-- Willkommens-Fenster beim ersten Öffnen -->
@@ -3419,6 +3436,8 @@
         // State
         let allObservations = [];
         let filteredObservations = [];
+        let demoMode = false;          // Beispiel-Ansicht ("Beispielseite" im Willkommens-Fenster)
+        let DEMO_DATA = null;          // geladener Schnappschuss (demo-data.json)
 
         // --- Backend (Vercel /api) optional erkennen; sonst Direkt-Modus (z. B. GitHub Pages) ---
         let BACKEND_READY = false;
@@ -3993,6 +4012,7 @@
 
         // Gemeinsame Nachverarbeitung nach jeder Datenaktualisierung
         function afterObservationsUpdated() {
+            if (demoMode) return;   // Beispiel-Ansicht aktiv -> kein Überschreiben durch Hintergrund-Load
             reapplyCountries();  // manuelle Zuordnungen + Ortscache berücksichtigen
 
             // Nicht erkannte Orte protokollieren
@@ -4027,6 +4047,7 @@
                 const { results } = await fetchObservationsRaw('', (n, t) => {
                     progress.textContent = `${n} / ${t} geladen`;
                 });
+                if (demoMode) { overlay.classList.add('hidden'); return; }   // Beispiel-Ansicht nicht überschreiben
                 allObservations = results.map(mapObservation);
                 afterObservationsUpdated();
                 overlay.classList.add('hidden');
@@ -6335,9 +6356,42 @@
             }
         }
         function welcomeSkip(){
-            localStorage.setItem('inat_onboarded', '1');   // nicht erneut anzeigen; Beispielprofil bleibt geladen
-            hideWelcome();
+            localStorage.setItem('inat_onboarded', '1');   // nicht erneut anzeigen
+            startDemo();
         }
+
+        // ===== Beispiel-Ansicht (Demo) =====
+        async function startDemo(){
+            hideWelcome();
+            try { document.getElementById('loadingOverlay').classList.remove('hidden'); } catch(e){}
+            let demo = null;
+            try { demo = await (await fetch('demo-data.json', { cache: 'no-store' })).json(); } catch(e){ demo = null; }
+            if(!demo || !Array.isArray(demo.observations) || !demo.observations.length){
+                demoMode = false; loadUser(); return;   // Fallback: normales Live-Profil
+            }
+            demoMode = true; DEMO_DATA = demo;
+            USER_ID = DEFAULT_USER;                       // Chrome zeigt Marvins Profil
+            if(demo.rarityCounts) Object.assign(rarityCounts, demo.rarityCounts);   // Seltenheit ohne Netz
+            try { applyUserChrome(demo.profile || null, DEFAULT_USER); } catch(e){}
+            allObservations = demo.observations;
+            reapplyCountries();
+            populateCountryFilter();
+            applyFilters();                               // rendert Stats/Karte/Filter/Badges/Seltenheit
+            try { document.getElementById('loadingOverlay').classList.add('hidden'); } catch(e){}
+            const lu = document.getElementById('lastUpdate'); if(lu) lu.textContent = 'Beispiel-Ansicht';
+            showDemoBanner();
+            maybeShowSpeciesRewards();                     // Demo-Icons (neue Arten + Rang)
+            maybeShowRankRewards();
+            updateBackToMineBtn();
+        }
+        function exitDemo(){
+            demoMode = false; DEMO_DATA = null;
+            try { hideRewardIcon(); hideRankIcon(); } catch(e){}
+            hideDemoBanner();
+        }
+        function showDemoBanner(){ const b = document.getElementById('demoBanner'); if(b) b.style.display = 'flex'; }
+        function hideDemoBanner(){ const b = document.getElementById('demoBanner'); if(b) b.style.display = 'none'; }
+        function demoEnterName(){ exitDemo(); showWelcome(); }   // aus dem Banner: eigenen Namen eintragen
         (async () => {
             try {
                 const u = new URL(location.href);
@@ -6494,8 +6548,9 @@
         async function maybeShowSpeciesRewards(){
             // In-App-Belohnung: für JEDEN Nutzer auf SEINEM eigenen Profil (gesehen-Stand pro Name im localStorage).
             // Echte Push bleibt weiterhin nur auf Owner-Geräten (siehe Push-Abschnitt).
-            if(!isOwnProfile()) return;                                              // nur das eigene Profil dieses Geräts
             if(rewardActive) return;                                                 // Serie läuft gerade
+            if(demoMode){ await showDemoSpeciesReward(); return; }                    // Beispiel-Ansicht: eigene Demo-Baseline
+            if(!isOwnProfile()) return;                                              // nur das eigene Profil dieses Geräts
             const currentIds = rgSpeciesIdsFrom(allObservations);
             if(!currentIds.length) return;
             // "gesehen"-Stand lokal + geräteübergreifend (Server) vereinen
@@ -6516,6 +6571,22 @@
             await Promise.all(cards.map(c=>rwFetchFacts(c.taxonId)));
             rewardPendingCards = cards;
             rewardPendingIds = currentIds;          // dieser Stand gilt als "gesehen", sobald man die Serie durchgeklickt hat
+            showRewardIcon(cards.length);
+        }
+
+        // Beispiel-Ansicht: ein paar Arten als "neu" zeigen, OHNE etwas zu speichern
+        async function showDemoSpeciesReward(){
+            const currentIds = rgSpeciesIdsFrom(allObservations);
+            if(!currentIds.length) return;
+            let newIds = ((DEMO_DATA && DEMO_DATA.newSpecies) || []).filter(id => currentIds.includes(id));
+            if(!newIds.length) newIds = currentIds.slice(-5);   // Fallback
+            const cards = rwRepObsFor(new Set(newIds));
+            if(!cards.length) return;
+            const missing = newIds.filter(id => rarityCounts[id] === undefined);
+            if(missing.length){ try{ await fetchRarityCounts(missing); }catch(e){} }
+            await Promise.all(cards.map(c => rwFetchFacts(c.taxonId)));
+            rewardPendingCards = cards;
+            rewardPendingIds = currentIds;
             showRewardIcon(cards.length);
         }
 
@@ -6542,9 +6613,11 @@
             const cards = rewardPendingCards, ids = rewardPendingIds;
             try{ await runRewardFlow(cards); }
             finally{
-                const finalIds = ids || rgSpeciesIdsFrom(allObservations);
-                saveSeenSpecies(finalIds);
-                saveServerSeen(finalIds);          // geräteübergreifend merken
+                if(!demoMode){
+                    const finalIds = ids || rgSpeciesIdsFrom(allObservations);
+                    saveSeenSpecies(finalIds);
+                    saveServerSeen(finalIds);          // geräteübergreifend merken
+                }
                 rewardPendingCards = null; rewardPendingIds = null;
                 rewardActive = false;
             }
@@ -6828,8 +6901,9 @@
 
         // Haupteinstieg: Rang-Aufstiege seit letztem Besuch finden → Ruhe-Icon zeigen (öffnet nicht automatisch)
         async function maybeShowRankRewards(){
-            if(!isOwnProfile()) return;                                              // nur das eigene Profil dieses Geräts
             if(rankActive) return;                                                   // Serie läuft gerade
+            if(demoMode){ showDemoRankReward(); return; }                             // Beispiel-Ansicht: Demo-Aufstieg
+            if(!isOwnProfile()) return;                                              // nur das eigene Profil dieses Geräts
             const cur = computeBadgeLevels();
             const snapshot = {}; Object.keys(cur).forEach(k => snapshot[k] = cur[k].level);
 
@@ -6871,6 +6945,39 @@
             showRankIcon(events.length, top);
         }
 
+        // Beispiel-Ansicht: 2 Kategorien als frisch aufgestiegen zeigen, OHNE zu speichern
+        function showDemoRankReward(){
+            const cur = computeBadgeLevels();
+            const seen = {}; Object.keys(cur).forEach(k => seen[k] = cur[k].level);
+            // Kandidaten: normale Kategorien (keine Saison-Keys) mit Level >= 1, höchste zuerst
+            const cand = Object.keys(cur).filter(k => cur[k].level >= 1 && !k.startsWith('sb_'))
+                                         .sort((a,b) => cur[b].level - cur[a].level);
+            const keys = (DEMO_DATA && DEMO_DATA.rankKeys && DEMO_DATA.rankKeys.length) ? DEMO_DATA.rankKeys : cand.slice(0, 2);
+            keys.forEach(k => { if(k in seen) seen[k] = Math.max(0, seen[k] - 1); });   // eine Stufe darunter -> Aufstieg
+            const events = [];
+            for(const key of Object.keys(cur)){
+                const now = cur[key].level;
+                const was = (key in seen) ? seen[key] : now;
+                if(now > was){
+                    const names = cur[key].names || BADGE_RANKS.map(x=>x.name);
+                    const icons = cur[key].icons, hexTiers = cur[key].hexTiers, kicker = cur[key].kicker;
+                    for(let lvl = was+1; lvl <= now; lvl++){
+                        events.push({ key, label: cur[key].label,
+                            icon: (icons && icons[lvl-1]) || cur[key].icon,
+                            level: lvl, total: names.length,
+                            hexTier: hexTiers ? hexTiers[lvl-1] : null, kicker: kicker || null,
+                            toName: names[lvl-1] || ('Stufe '+lvl),
+                            fromName: lvl>1 ? (names[lvl-2] || ('Stufe '+(lvl-1))) : 'Kein Rang' });
+                    }
+                }
+            }
+            if(!events.length){ hideRankIcon(); return; }
+            const top = events.reduce((a,b)=> b.level>a.level ? b : a, events[0]);
+            rankPendingEvents = events;
+            rankPendingSnapshot = {};    // im Demo nichts persistieren
+            showRankIcon(events.length, top);
+        }
+
         function showRankIcon(n, top){
             const el = document.getElementById('rankIcon'); if(!el) return;
             const hex = document.getElementById('rankIconHex');
@@ -6892,8 +6999,10 @@
             const events = rankPendingEvents, snap = rankPendingSnapshot;
             try{ await runRankupFlow(events); }
             finally{
-                saveSeenLevels(snap);
-                saveServerLevels(snap);              // geräteübergreifend merken
+                if(!demoMode){
+                    saveSeenLevels(snap);
+                    saveServerLevels(snap);              // geräteübergreifend merken
+                }
                 rankPendingEvents = null; rankPendingSnapshot = null;
                 rankActive = false;
             }
@@ -8098,7 +8207,8 @@
         async function switchUser(rawName) {
             const name = (rawName || '').trim().replace(/^@/, '');
             if (!name) { setUserError('Bitte einen Nutzernamen eingeben.'); return; }
-            if (name.toLowerCase() === USER_ID.toLowerCase()) { setUserError(''); return; }
+            if (!demoMode && name.toLowerCase() === USER_ID.toLowerCase()) { setUserError(''); return; }
+            if (demoMode) exitDemo();   // Beispiel-Ansicht verlassen, sobald ein echtes Profil geladen wird
 
             const btn = document.querySelector('.user-switch-btn');
             if (btn) { btn.disabled = true; btn.textContent = 'Lädt…'; }
@@ -8626,7 +8736,10 @@
             localStorage.setItem('inat_current_user', USER_ID);
 
             try { updateMyNameUI(); } catch (e) {}   // Feld "Mein iNaturalist-Name" mit gespeichertem Wert vorbelegen
-            try { if (shouldShowWelcome()) showWelcome(); } catch (e) {}   // erstes Öffnen: nach eigenem Namen fragen
+            const _wantDemo = new URLSearchParams(location.search).get('demo') === '1';   // teilbarer Demo-Link
+            let _showWelcome = false;
+            try { _showWelcome = !_wantDemo && shouldShowWelcome(); } catch (e) { _showWelcome = false; }
+            if (_showWelcome) { try { showWelcome(); } catch (e) {} }   // erstes Öffnen: nach eigenem Namen fragen
 
             loadFiltersFromURL();
             try { initMap(); } catch (e) { console.warn('initMap fehlgeschlagen:', e); }
@@ -8636,8 +8749,10 @@
             // In try/catch, damit ein Chrome-Fehler NIE das Laden der Daten blockiert.
             try { applyUserChrome(null, USER_ID); } catch (e) { console.warn('applyUserChrome fehlgeschlagen:', e); }
 
-            // Profil + Daten des aktuellen Nutzers laden
-            loadUser();
+            // Profil + Daten laden – aber beim ersten Öffnen erst nach Auswahl im Willkommens-Fenster
+            // (dort entscheidet der Nutzer: eigener Name -> switchUser, oder "Beispielseite" -> startDemo)
+            if (_wantDemo) { startDemo(); }              // ?demo=1 -> direkt Beispiel-Ansicht
+            else if (!_showWelcome) loadUser();
         });
 
         // Service Worker registrieren (ermöglicht App-Installation; funktioniert nur über HTTPS/GitHub Pages)
