@@ -6501,9 +6501,11 @@
             // "gesehen"-Stand lokal + geräteübergreifend (Server) vereinen
             const localSeen = loadSeenSpecies();
             const serverSeen = await fetchServerSeen();
-            let seen = (localSeen || serverSeen) ? [...new Set([...(localSeen||[]), ...(serverSeen||[])])] : null;
-            if(seen==null){ saveSeenSpecies(currentIds); saveServerSeen(currentIds); return; }  // Baseline: beim ersten Mal nichts zeigen
-            const seenSet = new Set(seen);
+            const merged = [...new Set([...(localSeen||[]), ...(serverSeen||[])])];
+            // Baseline: LEERE oder fehlende Liste = erstes Mal -> nur merken, nichts feiern.
+            // (Wichtig: der Server liefert für neue Nutzer [] – ein leeres Array ist truthy!)
+            if(!merged.length){ saveSeenSpecies(currentIds); saveServerSeen(currentIds); return; }
+            const seenSet = new Set(merged);
             const newIds = currentIds.filter(id=>!seenSet.has(id));
             if(!newIds.length){ saveSeenSpecies(currentIds); hideRewardIcon(); return; }
             const cards = rwRepObsFor(new Set(newIds));
