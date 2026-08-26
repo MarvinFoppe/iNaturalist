@@ -2731,6 +2731,7 @@
         <button class="main-tab" id="tabBtnBadges" onclick="switchMainTab('badges')">🏅 Badges</button>
         <button class="main-tab" id="tabBtnRarity" onclick="switchMainTab('rarity')">⭐ Seltenheit</button>
         <button class="main-tab" id="tabBtnStats" onclick="switchMainTab('stats')">📊 Statistiken</button>
+        <button class="main-tab" id="tabBtnNearby" onclick="switchMainTab('nearby')">📍 In meiner Nähe</button>
         <button class="main-tab" id="tabBtnFriends" onclick="switchMainTab('friends')">👥 Freunde</button>
     </div>
 
@@ -3094,6 +3095,99 @@
             </div>
         </div>
     </div><!-- /tab-stats -->
+
+    <div id="tab-nearby" class="tab-panel">
+        <style>
+            #tab-nearby .nb-intro{color:var(--text-secondary);margin-bottom:16px;max-width:820px}
+            #tab-nearby #nearbyMap{height:380px;border-radius:14px;overflow:hidden;border:1px solid var(--border);margin-bottom:16px}
+            #tab-nearby .nb-controls{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:16px}
+            #tab-nearby .nb-radius{display:flex;flex-direction:column;gap:6px;min-width:220px}
+            #tab-nearby .nb-radius input[type=range]{width:100%;accent-color:var(--accent)}
+            #tab-nearby .nb-owned{display:flex;flex-direction:column;gap:6px}
+            #tab-nearby .nb-owned > label, #tab-nearby .nb-radius > label{font-size:.8em;color:var(--text-secondary)}
+            #tab-nearby .seg{display:inline-flex;background:var(--bg-light);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+            #tab-nearby .seg-btn{background:transparent;border:none;color:var(--text-secondary);padding:8px 14px;cursor:pointer;font-size:.9em;font-family:inherit}
+            #tab-nearby .seg-btn.active{background:var(--accent);color:#10231a;font-weight:600}
+            #tab-nearby .nb-btn{background:var(--bg-light);border:1px solid var(--border);color:var(--text-primary);padding:10px 16px;border-radius:10px;cursor:pointer;font-size:.9em;font-family:inherit}
+            #tab-nearby .nb-btn-primary{background:var(--accent);color:#10231a;font-weight:600;border-color:var(--accent)}
+            #tab-nearby .stx-filter{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 16px}
+            #tab-nearby .stx-chip{background:var(--bg-light);border:1px solid var(--border);color:var(--text-secondary);border-radius:999px;padding:6px 12px;font-size:.85em;cursor:pointer;font-family:inherit}
+            #tab-nearby .stx-chip.active{background:rgba(155,204,95,.15);color:var(--text-primary);border-color:var(--accent)}
+            #tab-nearby .stx-chip.stx-disabled{opacity:.38;cursor:not-allowed}
+            #tab-nearby .stx-n{opacity:.6;font-size:.9em}
+            #tab-nearby .nb-meta{color:var(--text-muted);font-size:.85em;margin-bottom:12px}
+            #tab-nearby .nb-status{color:var(--text-muted);padding:24px;text-align:center}
+            #tab-nearby .nb-results{display:block}
+            #tab-nearby .nb-row{display:flex;gap:14px;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-decoration:none;color:inherit;transition:border-color .2s}
+            #tab-nearby .nb-row:hover{border-color:var(--accent)}
+            #tab-nearby .nb-thumb{width:56px;height:56px;border-radius:10px;background-size:cover;background-position:center;background-color:var(--bg-light);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:1.6em}
+            #tab-nearby .nb-info{flex:1;min-width:0}
+            #tab-nearby .nb-name{font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            #tab-nearby .nb-sci{font-size:.82em;color:var(--text-muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            #tab-nearby .nb-tags{margin-top:4px}
+            #tab-nearby .nb-grp{font-size:.72em;padding:2px 8px;border-radius:999px}
+            #tab-nearby .nb-stats{flex:0 0 auto;text-align:right;min-width:132px}
+            #tab-nearby .nb-count{color:var(--accent);font-size:.95em}
+            #tab-nearby .nb-last{color:var(--text-muted);font-size:.78em;margin-top:4px}
+            #tab-nearby .nb-empty{text-align:center;padding:50px 20px}
+            #tab-nearby .nb-empty-emoji{font-size:3em;margin-bottom:12px}
+            #tab-nearby .nb-empty-title{font-family:'Playfair Display',serif;color:var(--accent);font-size:1.3em;margin-bottom:6px}
+            #tab-nearby .nb-empty-sub{color:var(--text-secondary)}
+            #tab-nearby .nb-map-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-card);border:1px solid var(--accent);border-radius:10px;padding:8px 14px;margin-bottom:10px;font-size:.9em;color:var(--text-primary)}
+            #tab-nearby .nb-mb-clear{background:var(--bg-light);border:1px solid var(--border);color:var(--text-secondary);border-radius:8px;padding:4px 10px;cursor:pointer;font-family:inherit;white-space:nowrap}
+            #tab-nearby .rarity-rare-card{position:relative}
+            #tab-nearby .rarity-rare-card.nb-selected{outline:2px solid var(--accent);outline-offset:1px}
+            #tab-nearby .nb-inat-link{position:absolute;bottom:8px;right:8px;z-index:12;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:.78em}
+            #tab-nearby .nb-inat-link:hover{background:var(--accent);color:#10231a}
+        </style>
+        <div class="section">
+            <h2 class="section-title">📍 In meiner Nähe</h2>
+            <p class="nb-intro">Setze deinen Standort auf die Karte (Klick oder Pin ziehen) oder nutze deinen echten
+                Standort, wähle einen Umkreis und finde Arten, die hier schon in Forschungsqualität beobachtet
+                wurden – die dir aber noch fehlen.</p>
+            <div id="nbMapBanner" class="nb-map-banner" style="display:none"></div>
+            <div id="nearbyMap"></div>
+            <div class="nb-controls">
+                <button class="nb-btn" onclick="nearbyUseMyLocation()">📍 Meinen Standort verwenden</button>
+                <div class="nb-radius">
+                    <label>Umkreis: <strong id="nbRadiusVal">10 km</strong></label>
+                    <input type="range" id="nbRadius" min="1" max="50" step="1" value="10" oninput="setNearbyRadius(this.value)">
+                </div>
+                <div class="nb-owned">
+                    <label>„Schon gefunden" zählt</label>
+                    <div class="seg" id="nbOwnedSeg">
+                        <button class="seg-btn active" data-v="all" onclick="setNearbyOwnedMode('all')">Alle Beobachtungen</button>
+                        <button class="seg-btn" data-v="fq" onclick="setNearbyOwnedMode('fq')">Nur FQ</button>
+                    </div>
+                </div>
+                <div class="nb-owned">
+                    <label>Seltenheit</label>
+                    <div class="multi-select-container" id="nbLevelContainer" style="min-width:200px">
+                        <button type="button" class="multi-select-btn" onclick="toggleMultiSelect('nbLevel')">
+                            <span id="nbLevelLabel">Alle Stufen</span>
+                            <span class="arrow">▼</span>
+                        </button>
+                        <div class="multi-select-dropdown" id="nbLevelDropdown">
+                            <div class="multi-select-option" data-level="1" onclick="toggleNearbyLevel(1)"><span class="multi-select-checkbox"></span><span class="rarity-swatch lvl-1"></span><span>★1 · Sehr häufig</span></div>
+                            <div class="multi-select-option" data-level="2" onclick="toggleNearbyLevel(2)"><span class="multi-select-checkbox"></span><span class="rarity-swatch lvl-2"></span><span>★2 · Häufig</span></div>
+                            <div class="multi-select-option" data-level="3" onclick="toggleNearbyLevel(3)"><span class="multi-select-checkbox"></span><span class="rarity-swatch lvl-3"></span><span>★3 · Verbreitet</span></div>
+                            <div class="multi-select-option" data-level="4" onclick="toggleNearbyLevel(4)"><span class="multi-select-checkbox"></span><span class="rarity-swatch lvl-4"></span><span>★4 · Regelmäßig</span></div>
+                            <div class="multi-select-option" data-level="5" onclick="toggleNearbyLevel(5)"><span class="multi-select-checkbox"></span><span class="rarity-swatch lvl-5"></span><span>★5 · Ungewöhnlich</span></div>
+                            <div class="multi-select-option" data-level="6" onclick="toggleNearbyLevel(6)"><span class="multi-select-checkbox"></span><span class="rarity-swatch lvl-6"></span><span>★6 · Selten</span></div>
+                            <div class="multi-select-option" data-level="7" onclick="toggleNearbyLevel(7)"><span class="multi-select-checkbox"></span><span class="rarity-swatch lvl-7"></span><span>★7 · Sehr selten</span></div>
+                            <div class="multi-select-option" data-level="8" onclick="toggleNearbyLevel(8)"><span class="multi-select-checkbox"></span><span class="rarity-swatch lvl-8"></span><span>★8 · Rar</span></div>
+                            <div class="multi-select-option" data-level="9" onclick="toggleNearbyLevel(9)"><span class="multi-select-checkbox"></span><span class="rarity-swatch lvl-9"></span><span>★9 · Außergewöhnlich</span></div>
+                            <div class="multi-select-option" data-level="10" onclick="toggleNearbyLevel(10)"><span class="multi-select-checkbox"></span><span class="rarity-swatch lvl-10"></span><span>★10 · Legendär</span></div>
+                        </div>
+                    </div>
+                </div>
+                <button class="nb-btn nb-btn-primary" onclick="nearbyCheck()">🔎 Umgebung prüfen</button>
+            </div>
+            <div id="nbTaxaFilter" class="stx-filter"></div>
+            <div id="nbMeta" class="nb-meta"></div>
+            <div id="nbResults" class="nb-results"><div class="nb-status">Wähle Standort &amp; Umkreis und tippe auf „🔎 Umgebung prüfen".</div></div>
+        </div>
+    </div><!-- /tab-nearby -->
 
     <div class="author-section" id="authorSection">
         <div class="author-container">
@@ -7489,11 +7583,14 @@
             document.getElementById('tabBtnRarity').classList.toggle('active', name === 'rarity');
             const sbtn = document.getElementById('tabBtnStats');
             if (sbtn) sbtn.classList.toggle('active', name === 'stats');
+            const nbtn = document.getElementById('tabBtnNearby');
+            if (nbtn) nbtn.classList.toggle('active', name === 'nearby');
             const fbtn = document.getElementById('tabBtnFriends');
             if (fbtn) fbtn.classList.toggle('active', name === 'friends');
             if (name === 'badges' && countryMap) setTimeout(() => countryMap.invalidateSize(), 60);
             if (name === 'rarity') renderRarityDashboard();
             if (name === 'stats') renderStats();
+            if (name === 'nearby') renderNearby();
             if (name === 'friends') renderFriendsTab();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -9109,6 +9206,327 @@
             renderStatsKpis(base);
             renderStatsTimeChart(base);
             renderStatsTaxaChart(base);
+        }
+
+        // ========================================================================
+        // "In meiner Nähe"-Tab
+        // ========================================================================
+        let nearbyMap = null, nearbyMarker = null, nearbyCircle = null;
+        let nearbySpeciesLayer = null, nearbySelectedTid = null;   // Fundpunkte der angeklickten Art
+        let nearbyLat = 50.9375, nearbyLon = 6.9603;   // Fallback: Köln
+        let nearbyRadius = 10;                          // km
+        let nearbyOwnedMode = 'all';                    // 'all' | 'fq' (welche eigenen Arten abgezogen werden)
+        let nearbySelectedTaxa = [];                    // Gruppen-Filter
+        let nearbyPool = [];                            // Arten im Umkreis (FQ)
+        let nearbyLoading = false;
+        let nearbyDateCache = {};                       // taxonId -> "zuletzt"-Datumstext
+        let nearbyObserver = null;
+        let nearbyTotalAvailable = 0, nearbyFetched = 0;
+        let nearbyCentered = false;
+        // Alle Artengruppen (auch die ohne Treffer im Umkreis werden als Filter angezeigt, dann ausgegraut)
+        const NEARBY_ALL_GROUPS = ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Chondrichthyes',
+            'Insecta', 'Arachnida', 'Mollusca', 'Crustacea', 'Echinodermata', 'Cnidaria',
+            'Plantae', 'Fungi', 'Protozoa', 'Chromista', 'Animalia'];
+        let nearbySelectedLevels = new Set();   // gewählte Seltenheits-Stufen (leer = alle)
+        let nearbyView = [], nearbyShown = 0;   // Batch-Rendering
+        const NB_BATCH = 60;
+        let nearbyMoreObserver = null;
+
+        // Seltenheits-Level einer Art (globale RG-Zahl, sonst globale Beobachtungszahl als Fallback)
+        function nearbyLevelOf(x) { return rwRarityLevel(rarityCounts[x.id] || x.obsCount); }
+
+        // Startzentrum: jüngste eigene Beobachtung mit Koordinaten, sonst Köln
+        function nearbyDefaultCenter() {
+            const withGeo = (allObservations || []).filter(o => o.lat && o.lon);
+            if (withGeo.length) {
+                withGeo.sort((a, b) => (b.created || b.date || '').localeCompare(a.created || a.date || ''));
+                return [withGeo[0].lat, withGeo[0].lon];
+            }
+            return [50.9375, 6.9603];
+        }
+
+        function initNearbyMap() {
+            if (nearbyMap) return;
+            if (!nearbyCentered) { const c = nearbyDefaultCenter(); nearbyLat = c[0]; nearbyLon = c[1]; nearbyCentered = true; }
+            nearbyMap = L.map('nearbyMap', { minZoom: 2 }).setView([nearbyLat, nearbyLon], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', noWrap: true }).addTo(nearbyMap);
+            nearbyMarker = L.marker([nearbyLat, nearbyLon], { draggable: true }).addTo(nearbyMap);
+            nearbyCircle = L.circle([nearbyLat, nearbyLon], { radius: nearbyRadius * 1000, color: '#8bc34a', fillColor: '#8bc34a', fillOpacity: 0.12, weight: 2.5, dashArray: '6 7' }).addTo(nearbyMap);
+            nearbySpeciesLayer = L.layerGroup().addTo(nearbyMap);
+            nearbyMarker.on('drag', e => { const p = e.target.getLatLng(); setNearbyCenter(p.lat, p.lng, false); });
+            nearbyMap.on('click', e => { setNearbyCenter(e.latlng.lat, e.latlng.lng, true); });
+        }
+
+        function setNearbyCenter(lat, lon, pan) {
+            nearbyLat = lat; nearbyLon = lon; nearbyCentered = true;
+            if (nearbyMarker) nearbyMarker.setLatLng([lat, lon]);
+            if (nearbyCircle) nearbyCircle.setLatLng([lat, lon]);
+            if (pan && nearbyMap) nearbyMap.panTo([lat, lon]);
+            updateNearbyMeta();
+        }
+
+        // Zoomstufe passend zum Radius (deterministisch statt fitBounds)
+        function nearbyZoomForRadius(km) { return Math.max(6, Math.min(14, Math.round(14 - Math.log2(km)))); }
+
+        function setNearbyRadius(km) {
+            nearbyRadius = +km;
+            const v = document.getElementById('nbRadiusVal'); if (v) v.textContent = nearbyRadius + ' km';
+            if (nearbyCircle) nearbyCircle.setRadius(nearbyRadius * 1000);
+            if (nearbyMap) nearbyMap.setView([nearbyLat, nearbyLon], nearbyZoomForRadius(nearbyRadius));
+            updateNearbyMeta();
+        }
+
+        function nearbyUseMyLocation() {
+            if (!navigator.geolocation) { alert('Standortbestimmung wird von diesem Gerät nicht unterstützt.'); return; }
+            navigator.geolocation.getCurrentPosition(
+                pos => { setNearbyCenter(pos.coords.latitude, pos.coords.longitude, true); if (nearbyMap) nearbyMap.setView([nearbyLat, nearbyLon], nearbyZoomForRadius(nearbyRadius)); },
+                err => { alert('Standort konnte nicht ermittelt werden: ' + err.message); },
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
+        }
+
+        function setNearbyOwnedMode(m) {
+            nearbyOwnedMode = m;
+            document.querySelectorAll('#nbOwnedSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === m));
+            if (nearbyPool.length) renderNearbyResults();
+        }
+
+        function toggleNearbyTaxa(g) {
+            const i = nearbySelectedTaxa.indexOf(g);
+            if (i >= 0) nearbySelectedTaxa.splice(i, 1); else nearbySelectedTaxa.push(g);
+            renderNearbyResults();
+        }
+        function clearNearbyTaxa() { nearbySelectedTaxa = []; renderNearbyResults(); }
+        function toggleNearbyLevel(n) {
+            if (nearbySelectedLevels.has(n)) nearbySelectedLevels.delete(n); else nearbySelectedLevels.add(n);
+            updateNearbyLevelUI();
+            if (nearbyPool.length) renderNearbyResults();
+        }
+        function updateNearbyLevelUI() {
+            const label = document.getElementById('nbLevelLabel');
+            if (label) {
+                if (nearbySelectedLevels.size === 0) label.textContent = 'Alle Stufen';
+                else if (nearbySelectedLevels.size === 1) label.textContent = '★' + [...nearbySelectedLevels][0];
+                else label.textContent = nearbySelectedLevels.size + ' Stufen';
+            }
+            document.querySelectorAll('#nbLevelDropdown .multi-select-option').forEach(opt => {
+                opt.classList.toggle('selected', nearbySelectedLevels.has(+opt.dataset.level));
+            });
+        }
+
+        // Set der eigenen Arten (taxonId), je nach Modus alle oder nur Forschungsqualität
+        function nearbyOwnedSet() {
+            const s = new Set();
+            for (const o of (allObservations || [])) {
+                if (o.taxonId == null) continue;
+                if (nearbyOwnedMode === 'fq' && o.quality !== 'research') continue;
+                s.add(o.taxonId);
+            }
+            return s;
+        }
+
+        async function nearbyCheck() {
+            if (nearbyLoading) return;
+            nearbyLoading = true;
+            nearbyDateCache = {};
+            nearbySelectedTaxa = [];
+            const resEl = document.getElementById('nbResults');
+            const btnLabel = '🔎 Suche Arten im Umkreis …';
+            resEl.innerHTML = `<div class="nb-status">${btnLabel}</div>`;
+            document.getElementById('nbTaxaFilter').innerHTML = '';
+            try {
+                const PER = 500, MAX_PAGES = 30;   // alle Arten laden (iNat erlaubt bis 500/Seite)
+                let all = [], total = Infinity;
+                for (let p = 1; p <= MAX_PAGES; p++) {
+                    const url = `${API_BASE}/observations/species_counts?lat=${nearbyLat}&lng=${nearbyLon}&radius=${nearbyRadius}&quality_grade=research&locale=de&per_page=${PER}&page=${p}`;
+                    const r = await inatFetch(url);
+                    const j = await r.json();
+                    total = j.total_results ?? all.length;
+                    all.push(...(j.results || []));
+                    resEl.innerHTML = `<div class="nb-status">🔎 Lade Arten im Umkreis … ${all.length.toLocaleString('de-DE')}/${(total || 0).toLocaleString('de-DE')}</div>`;
+                    if (all.length >= total || (j.results || []).length < PER) break;
+                }
+                nearbyTotalAvailable = total; nearbyFetched = all.length;
+                nearbyPool = all.map(row => ({
+                    id: row.taxon?.id,
+                    name: row.taxon?.preferred_common_name || row.taxon?.name || 'Unbekannt',
+                    sci: row.taxon?.name || '',
+                    group: taxonGroupKey(row.taxon),
+                    count: row.count || 0,
+                    obsCount: row.taxon?.observations_count || 0,
+                    image: row.taxon?.default_photo?.medium_url || row.taxon?.default_photo?.square_url || '',
+                    url: row.taxon?.id ? `https://www.inaturalist.org/taxa/${row.taxon.id}` : '#'
+                })).filter(x => x.id != null);
+                renderNearbyResults();
+            } catch (e) {
+                resEl.innerHTML = `<div class="nb-status">⚠️ Fehler beim Laden: ${String(e)}</div>`;
+            } finally {
+                nearbyLoading = false;
+            }
+        }
+
+        function renderNearbyTaxaFilter(list) {
+            const el = document.getElementById('nbTaxaFilter'); if (!el) return;
+            const freq = {};
+            list.forEach(x => { if (x.group) freq[x.group] = (freq[x.group] || 0) + 1; });
+            const present = NEARBY_ALL_GROUPS.filter(g => freq[g]).sort((a, b) => freq[b] - freq[a]);
+            const absent = NEARBY_ALL_GROUPS.filter(g => !freq[g]);
+            const allActive = nearbySelectedTaxa.length === 0;
+            let html = `<button class="stx-chip ${allActive ? 'active' : ''}" onclick="clearNearbyTaxa()">Alle Gruppen</button>`;
+            html += present.map(g => {
+                const t = rwIconicType(g); const on = nearbySelectedTaxa.includes(g);
+                return `<button class="stx-chip ${on ? 'active' : ''}" style="${on ? `border-color:${t.c};` : ''}" onclick="toggleNearbyTaxa('${g}')">${t.emoji} ${t.de} <span class="stx-n">${freq[g]}</span></button>`;
+            }).join('');
+            // Gruppen ohne fehlende Arten im Umkreis: ausgegraut, nicht wählbar
+            html += absent.map(g => {
+                const t = rwIconicType(g);
+                return `<button class="stx-chip stx-disabled" disabled title="Keine fehlenden Arten dieser Gruppe im Umkreis">${t.emoji} ${t.de}</button>`;
+            }).join('');
+            el.innerHTML = html;
+        }
+
+        function nearbyCardHtml(x) {
+            const t = rwIconicType(x.group);
+            const level = nearbyLevelOf(x);
+            const rareCls = level >= 9 ? ' rrc-legendary' : level >= 7 ? ' rrc-rare' : '';
+            return `<div class="rarity-rare-card${rareCls}" data-tid="${x.id}" onclick="nearbySelectSpecies(${x.id})" style="--type:${t.c}; cursor:pointer" title="Fundpunkte auf der Karte anzeigen">
+                ${level ? `<span class="rarity-badge lvl-${level}" style="position:absolute; top:8px; left:8px;">★ ${level}</span>` : ''}
+                <span class="rrc-type" style="background:${t.c}">${t.emoji}</span>
+                <a class="nb-inat-link" href="${x.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Auf iNaturalist ansehen">↗</a>
+                ${x.image ? `<img src="${x.image}" alt="${x.name}" loading="lazy" onerror="this.style.display='none'">` : `<div class="rrc-noimg">${t.emoji}</div>`}
+                <div class="rarity-rare-info">
+                    <div class="rr-name">${x.name}</div>
+                    ${x.sci ? `<div class="rr-sci">${x.sci}</div>` : ''}
+                    <div class="rr-meta">${level ? `★${level} · ${RARITY_TIER_NAMES[level]}<br>` : ''}<strong>${x.count}×</strong> FQ im Umkreis<br><span class="nb-last" data-taxon="${x.id}">zuletzt: <span class="nb-last-val">…</span></span></div>
+                </div>
+            </div>`;
+        }
+
+        function renderNearbyResults() {
+            const resEl = document.getElementById('nbResults');
+            const metaEl = document.getElementById('nbMeta');
+            const owned = nearbyOwnedSet();
+            let list = nearbyPool.filter(x => !owned.has(x.id));   // nur noch fehlende Arten
+            renderNearbyTaxaFilter(list);                          // Gruppen-Chips aus der Rohliste (vor Gruppen-/Seltenheitsfilter)
+            if (nearbySelectedTaxa.length) list = list.filter(x => nearbySelectedTaxa.includes(x.group));
+            if (nearbySelectedLevels.size) list = list.filter(x => nearbySelectedLevels.has(nearbyLevelOf(x)));
+            list.sort((a, b) => b.count - a.count);
+            nearbyView = list; nearbyShown = 0;
+
+            if (metaEl) {
+                const lvlTxt = nearbySelectedLevels.size ? ` · Seltenheit ${[...nearbySelectedLevels].sort((a, b) => a - b).map(n => '★' + n).join(', ')}` : '';
+                metaEl.textContent = `${list.length.toLocaleString('de-DE')} noch fehlende Art(en) im Umkreis ${nearbyRadius} km${lvlTxt} · gezählt werden FQ-Beobachtungen`;
+            }
+
+            if (!list.length) {
+                const msg = nearbySelectedLevels.size
+                    ? `<div class="nb-empty"><div class="nb-empty-emoji">🔍</div><div class="nb-empty-title">Keine fehlenden Arten in dieser Seltenheit.</div><div class="nb-empty-sub">Wähle andere Stufen oder vergrößere den Umkreis.</div></div>`
+                    : `<div class="nb-empty"><div class="nb-empty-emoji">🔍</div><div class="nb-empty-title">Du hast alle Arten in dieser Region gefunden.</div><div class="nb-empty-sub">Bist du die erste Person, die etwas Neues entdeckt?</div></div>`;
+                resEl.innerHTML = msg;
+                return;
+            }
+            const hint = (nearbyTotalAvailable > nearbyFetched)
+                ? `<div class="nb-status" style="padding:6px 0;text-align:left">Sehr viele Arten – ausgewertet wurden die ${nearbyFetched.toLocaleString('de-DE')} häufigsten von ${nearbyTotalAvailable.toLocaleString('de-DE')}.</div>` : '';
+            resEl.innerHTML = hint + `<div class="rarity-rare-grid" id="nbGrid"></div><div id="nbSentinel" style="height:1px"></div>`;
+            nearbyAppendBatch();
+        }
+
+        // Karten in Schüben rendern (Endlos-Scroll), damit tausende Karten flüssig bleiben
+        function nearbyAppendBatch() {
+            const grid = document.getElementById('nbGrid'); if (!grid) return;
+            const next = nearbyView.slice(nearbyShown, nearbyShown + NB_BATCH);
+            grid.insertAdjacentHTML('beforeend', next.map(nearbyCardHtml).join(''));
+            nearbyShown += next.length;
+            observeNearbyDates();
+            const sentinel = document.getElementById('nbSentinel');
+            if (nearbyMoreObserver) nearbyMoreObserver.disconnect();
+            if (sentinel && nearbyShown < nearbyView.length) {
+                nearbyMoreObserver = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) nearbyAppendBatch(); }, { rootMargin: '500px' });
+                nearbyMoreObserver.observe(sentinel);
+            }
+        }
+
+        // Art angeklickt -> ihre Fundpunkte (FQ) im Umkreis auf der Karte anzeigen
+        async function nearbySelectSpecies(tid) {
+            if (!nearbyMap) return;
+            nearbySelectedTid = tid;
+            document.querySelectorAll('#nbResults .rarity-rare-card').forEach(c => c.classList.toggle('nb-selected', +c.dataset.tid === tid));
+            const sp = nearbyPool.find(x => x.id === tid);
+            const t = rwIconicType(sp ? sp.group : '');
+            const banner = document.getElementById('nbMapBanner');
+            if (banner) { banner.style.display = ''; banner.innerHTML = `<span class="nb-mb-txt">📍 <strong>${sp ? sp.name : 'Art'}</strong> · lade Fundpunkte …</span>`; }
+            const mapEl = document.getElementById('nearbyMap'); if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            try {
+                const url = `${API_BASE}/observations?taxon_id=${tid}&lat=${nearbyLat}&lng=${nearbyLon}&radius=${nearbyRadius}&quality_grade=research&per_page=50&order_by=created_at&order=desc&locale=de`;
+                const r = await inatFetch(url);
+                const j = await r.json();
+                if (nearbySelectedTid !== tid) return;   // zwischenzeitlich andere Art gewählt
+                const obs = (j.results || []).map(mapObservation).filter(o => o.lat && o.lon);
+                nearbySpeciesLayer.clearLayers();
+                const pts = [];
+                for (const o of obs) {
+                    pts.push([o.lat, o.lon]);
+                    const m = L.circleMarker([o.lat, o.lon], { radius: 6, color: '#fff', weight: 1, fillColor: t.c, fillOpacity: 0.85 });
+                    m.bindPopup(`<div style="text-align:center;min-width:150px">${o.image ? `<img src="${o.image}" style="width:100%;max-width:180px;border-radius:8px;margin-bottom:6px">` : ''}<div style="font-weight:600">${sp ? sp.name : o.name}</div><div style="font-size:.85em;color:#888">${o.date || ''}${o.place ? '<br>' + o.place : ''}</div><a href="${o.url}" target="_blank" rel="noopener">Beobachtung ansehen →</a></div>`);
+                    nearbySpeciesLayer.addLayer(m);
+                }
+                const more = (j.total_results && j.total_results > obs.length) ? ` (von ${j.total_results.toLocaleString('de-DE')})` : '';
+                if (banner) banner.innerHTML = `<span class="nb-mb-txt">📍 <strong>${sp ? sp.name : 'Art'}</strong> · ${obs.length} Fundpunkt(e) im Umkreis${more}</span><button class="nb-mb-clear" onclick="nearbyClearSpecies()">× ausblenden</button>`;
+                if (pts.length) nearbyMap.fitBounds(pts, { padding: [30, 30], maxZoom: 15 });
+            } catch (e) {
+                if (banner) banner.innerHTML = `<span class="nb-mb-txt">⚠️ Fundpunkte konnten nicht geladen werden.</span><button class="nb-mb-clear" onclick="nearbyClearSpecies()">×</button>`;
+            }
+        }
+
+        function nearbyClearSpecies() {
+            nearbySelectedTid = null;
+            if (nearbySpeciesLayer) nearbySpeciesLayer.clearLayers();
+            const banner = document.getElementById('nbMapBanner'); if (banner) banner.style.display = 'none';
+            document.querySelectorAll('#nbResults .rarity-rare-card.nb-selected').forEach(c => c.classList.remove('nb-selected'));
+            if (nearbyMap) nearbyMap.setView([nearbyLat, nearbyLon], nearbyZoomForRadius(nearbyRadius));
+        }
+
+        // "zuletzt hinzugefügt": pro sichtbarer Zeile lazy nachladen (mit Cache)
+        function observeNearbyDates() {
+            if (nearbyObserver) nearbyObserver.disconnect();
+            nearbyObserver = new IntersectionObserver(entries => {
+                for (const en of entries) {
+                    if (!en.isIntersecting) continue;
+                    const el = en.target; nearbyObserver.unobserve(el);
+                    fillNearbyDate(el, +el.dataset.taxon);
+                }
+            }, { rootMargin: '150px' });
+            document.querySelectorAll('#nbResults .nb-last').forEach(el => nearbyObserver.observe(el));
+        }
+
+        async function fillNearbyDate(el, tid) {
+            const valEl = el.querySelector('.nb-last-val'); if (!valEl) return;
+            if (nearbyDateCache[tid]) { valEl.textContent = nearbyDateCache[tid]; return; }
+            try {
+                const url = `${API_BASE}/observations?taxon_id=${tid}&lat=${nearbyLat}&lng=${nearbyLon}&radius=${nearbyRadius}&quality_grade=research&order_by=created_at&order=desc&per_page=1`;
+                const r = await inatFetch(url);
+                const j = await r.json();
+                const c = j.results?.[0]?.created_at;
+                let txt = '—';
+                if (c) { const d = new Date(c); if (!isNaN(d)) txt = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+                nearbyDateCache[tid] = txt; valEl.textContent = txt;
+            } catch (e) { valEl.textContent = '—'; }
+        }
+
+        function updateNearbyMeta() {
+            const el = document.getElementById('nbMeta'); if (!el) return;
+            if (!nearbyPool.length) el.textContent = `Zentrum: ${nearbyLat.toFixed(4)}, ${nearbyLon.toFixed(4)} · Umkreis ${nearbyRadius} km`;
+        }
+
+        function renderNearby() {
+            if (!document.getElementById('tab-nearby')) return;
+            initNearbyMap();
+            setTimeout(() => { if (nearbyMap) { nearbyMap.invalidateSize(); nearbyMap.setView([nearbyLat, nearbyLon], nearbyZoomForRadius(nearbyRadius)); } }, 160);
+            document.querySelectorAll('#nbOwnedSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === nearbyOwnedMode));
+            const rad = document.getElementById('nbRadius'); if (rad) rad.value = nearbyRadius;
+            const rv = document.getElementById('nbRadiusVal'); if (rv) rv.textContent = nearbyRadius + ' km';
+            updateNearbyLevelUI();
+            updateNearbyMeta();
         }
     </script>
 </body>
