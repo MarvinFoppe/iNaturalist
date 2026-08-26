@@ -2730,6 +2730,7 @@
         <button class="main-tab active" id="tabBtnOverview" onclick="switchMainTab('overview')">🌍 Übersicht</button>
         <button class="main-tab" id="tabBtnBadges" onclick="switchMainTab('badges')">🏅 Badges</button>
         <button class="main-tab" id="tabBtnRarity" onclick="switchMainTab('rarity')">⭐ Seltenheit</button>
+        <button class="main-tab" id="tabBtnStats" onclick="switchMainTab('stats')">📊 Statistiken</button>
         <button class="main-tab" id="tabBtnFriends" onclick="switchMainTab('friends')">👥 Freunde</button>
     </div>
 
@@ -3016,6 +3017,83 @@
             <div id="friendsCards" class="friends-cards"></div>
         </div>
     </div><!-- /tab-friends -->
+
+    <div id="tab-stats" class="tab-panel">
+        <style>
+            #tab-stats .stats-toolbar{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:16px}
+            #tab-stats .st-field{display:flex;flex-direction:column;gap:6px}
+            #tab-stats .st-field > label{font-size:.8em;color:var(--text-secondary)}
+            #tab-stats .seg{display:inline-flex;background:var(--bg-light);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+            #tab-stats .seg-btn{background:transparent;border:none;color:var(--text-secondary);padding:8px 14px;cursor:pointer;font-size:.9em;font-family:inherit}
+            #tab-stats .seg-btn.active{background:var(--accent);color:#10231a;font-weight:600}
+            #tab-stats .stx-filter{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 20px}
+            #tab-stats .stx-chip{background:var(--bg-light);border:1px solid var(--border);color:var(--text-secondary);border-radius:999px;padding:6px 12px;font-size:.85em;cursor:pointer;font-family:inherit}
+            #tab-stats .stx-chip.active{background:rgba(155,204,95,.15);color:var(--text-primary);border-color:var(--accent)}
+            #tab-stats .stats-container{margin:0 0 22px}
+            #tab-stats .tc-cols{display:flex;gap:6px;align-items:flex-end;height:240px;overflow-x:auto;padding:14px 2px 0}
+            #tab-stats .tc-col{flex:1 1 0;min-width:26px;display:flex;flex-direction:column;align-items:center;height:100%}
+            #tab-stats .tc-val{font-size:.72em;color:var(--text-secondary);margin-bottom:4px;min-height:1em}
+            #tab-stats .tc-bar-wrap{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
+            #tab-stats .tc-bar{width:100%;max-width:52px;background:linear-gradient(180deg,var(--accent) 0%,var(--primary) 100%);border-radius:6px 6px 0 0;min-height:2px;transition:height .3s}
+            #tab-stats .tc-lbl{font-size:.72em;color:var(--text-muted);margin-top:6px;white-space:nowrap}
+            #tab-stats .stx-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+            #tab-stats .stx-name{width:140px;font-size:.85em;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            #tab-stats .stx-bar-wrap{flex:1;background:var(--bg-light);border-radius:8px;height:18px;overflow:hidden}
+            #tab-stats .stx-bar{display:block;height:100%;border-radius:8px;min-width:2px}
+            #tab-stats .stx-count{width:44px;text-align:right;font-size:.85em;color:var(--text-primary)}
+        </style>
+        <div class="section">
+            <h2 class="section-title">📊 Statistiken</h2>
+            <p style="color:var(--text-secondary);margin-bottom:18px;max-width:780px;">
+                Wie sich deine Funde über die Zeit entwickeln. Wechsle zwischen Gesamt-Beobachtungen und
+                neu entdeckten Arten, wähle die Zeitbasis und filtere nach Qualität und Artengruppe.
+            </p>
+            <div class="stats-toolbar">
+                <div class="st-field">
+                    <label>Anzeige</label>
+                    <div class="seg" id="stMetricSeg">
+                        <button class="seg-btn active" data-v="observations" onclick="setStatsMetric('observations')">Beobachtungen</button>
+                        <button class="seg-btn" data-v="species" onclick="setStatsMetric('species')">Neue Arten</button>
+                    </div>
+                </div>
+                <div class="st-field">
+                    <label>Zeitbasis</label>
+                    <div class="seg" id="stTimeSeg">
+                        <button class="seg-btn active" data-v="year" onclick="setStatsTimebase('year')">Jahr</button>
+                        <button class="seg-btn" data-v="month" onclick="setStatsTimebase('month')">Monat</button>
+                        <button class="seg-btn" data-v="day" onclick="setStatsTimebase('day')">Tag</button>
+                    </div>
+                </div>
+                <div class="st-field" id="stYearWrap" style="display:none">
+                    <label>Jahr</label>
+                    <select id="stYear" class="filter-select" onchange="setStatsYear(this.value)"></select>
+                </div>
+                <div class="st-field" id="stMonthWrap" style="display:none">
+                    <label>Monat</label>
+                    <select id="stMonth" class="filter-select" onchange="setStatsMonth(this.value)"></select>
+                </div>
+                <div class="st-field">
+                    <label>Qualität</label>
+                    <select id="stQuality" class="filter-select" onchange="setStatsQuality(this.value)">
+                        <option value="all">Alle Beobachtungen</option>
+                        <option value="research">Forschungsqualität (FQ)</option>
+                        <option value="casual">Hobbyqualität</option>
+                        <option value="needs_id">Need ID</option>
+                    </select>
+                </div>
+            </div>
+            <div id="stTaxaFilter" class="stx-filter"></div>
+            <div id="stKpis" class="stats-container"></div>
+            <div class="chart-container" style="margin-bottom:22px">
+                <div class="chart-title" id="stTimeTitle">Beobachtungen pro Jahr</div>
+                <div id="stTimeChart"></div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Taxonomische Verteilung</div>
+                <div id="stTaxaChart"></div>
+            </div>
+        </div>
+    </div><!-- /tab-stats -->
 
     <div class="author-section" id="authorSection">
         <div class="author-container">
@@ -7409,10 +7487,13 @@
             document.getElementById('tabBtnOverview').classList.toggle('active', name === 'overview');
             document.getElementById('tabBtnBadges').classList.toggle('active', name === 'badges');
             document.getElementById('tabBtnRarity').classList.toggle('active', name === 'rarity');
+            const sbtn = document.getElementById('tabBtnStats');
+            if (sbtn) sbtn.classList.toggle('active', name === 'stats');
             const fbtn = document.getElementById('tabBtnFriends');
             if (fbtn) fbtn.classList.toggle('active', name === 'friends');
             if (name === 'badges' && countryMap) setTimeout(() => countryMap.invalidateSize(), 60);
             if (name === 'rarity') renderRarityDashboard();
+            if (name === 'stats') renderStats();
             if (name === 'friends') renderFriendsTab();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -8847,6 +8928,188 @@
             }
         }
         initInstallButton();
+
+        // ========================================================================
+        // Statistiken-Tab
+        // ========================================================================
+        let statsMetric = 'observations';   // 'observations' | 'species'
+        let statsTimebase = 'year';          // 'year' | 'month' | 'day'
+        let statsQuality = 'all';            // 'all' | 'research' | 'needs_id' | 'casual'
+        let statsSelectedTaxa = [];          // Gruppen-Keys (leer = alle)
+        let statsYear = null;                // gewähltes Jahr (Monat-/Tag-Ansicht)
+        let statsMonth = null;               // gewählter Monat 1–12 (Tag-Ansicht)
+        const MONTH_NAMES_DE = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+
+        // Basisliste: alle Beobachtungen mit Datum, nach Qualität + Gruppe gefiltert
+        function statsBaseList() {
+            return (allObservations || []).filter(o => {
+                if (!o.date) return false;
+                if (statsQuality !== 'all' && o.quality !== statsQuality) return false;
+                if (statsSelectedTaxa.length && !statsSelectedTaxa.includes(o.taxon)) return false;
+                return true;
+            });
+        }
+
+        // Für "Neue Arten": je taxonId die früheste Beobachtung (innerhalb der gefilterten Liste)
+        function statsFirstSeenList(list) {
+            const first = {};
+            for (const o of list) {
+                if (o.taxonId == null) continue;
+                if (!first[o.taxonId] || o.date < first[o.taxonId].date) first[o.taxonId] = o;
+            }
+            return Object.values(first);
+        }
+
+        function setStatsMetric(m) { statsMetric = m; renderStats(); }
+        function setStatsTimebase(t) { statsTimebase = t; if (t !== 'day') statsMonth = null; renderStats(); }
+        function setStatsQuality(q) { statsQuality = q; renderStats(); }
+        function setStatsYear(y) { statsYear = y; statsMonth = null; renderStats(); }
+        function setStatsMonth(m) { statsMonth = +m; renderStats(); }
+        function clearStatsTaxa() { statsSelectedTaxa = []; renderStats(); }
+        function toggleStatsTaxa(key) {
+            const i = statsSelectedTaxa.indexOf(key);
+            if (i >= 0) statsSelectedTaxa.splice(i, 1); else statsSelectedTaxa.push(key);
+            renderStats();
+        }
+
+        function statsYearsAvailable() {
+            return [...new Set((allObservations || []).filter(o => o.date).map(o => o.date.slice(0, 4)))].sort();
+        }
+
+        function updateStatsControlStates() {
+            document.querySelectorAll('#stMetricSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === statsMetric));
+            document.querySelectorAll('#stTimeSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === statsTimebase));
+            const q = document.getElementById('stQuality'); if (q) q.value = statsQuality;
+
+            const years = statsYearsAvailable();
+            const yw = document.getElementById('stYearWrap');
+            const mw = document.getElementById('stMonthWrap');
+            if (statsTimebase === 'year') {
+                yw.style.display = 'none'; mw.style.display = 'none';
+            } else {
+                yw.style.display = '';
+                document.getElementById('stYear').innerHTML = years.map(y => `<option value="${y}" ${y === statsYear ? 'selected' : ''}>${y}</option>`).join('');
+                if (statsTimebase === 'day') {
+                    mw.style.display = '';
+                    if (statsMonth == null) {
+                        const monthsWithData = [...new Set((allObservations || []).filter(o => o.date && o.date.slice(0, 4) === statsYear).map(o => +o.date.slice(5, 7)))].sort((a, b) => a - b);
+                        statsMonth = monthsWithData.length ? monthsWithData[monthsWithData.length - 1] : 1;
+                    }
+                    document.getElementById('stMonth').innerHTML = MONTH_NAMES_DE.map((nm, i) => `<option value="${i + 1}" ${(i + 1) === +statsMonth ? 'selected' : ''}>${nm}</option>`).join('');
+                } else {
+                    mw.style.display = 'none';
+                }
+            }
+        }
+
+        function renderStatsTaxaFilter() {
+            const el = document.getElementById('stTaxaFilter'); if (!el) return;
+            const freq = {};
+            (allObservations || []).forEach(o => { if (o.taxon) freq[o.taxon] = (freq[o.taxon] || 0) + 1; });
+            const groups = Object.keys(freq).sort((a, b) => freq[b] - freq[a]);
+            const allActive = statsSelectedTaxa.length === 0;
+            let html = `<button class="stx-chip ${allActive ? 'active' : ''}" onclick="clearStatsTaxa()">Alle Gruppen</button>`;
+            html += groups.map(g => {
+                const t = rwIconicType(g);
+                const on = statsSelectedTaxa.includes(g);
+                return `<button class="stx-chip ${on ? 'active' : ''}" style="${on ? `border-color:${t.c};` : ''}" onclick="toggleStatsTaxa('${g}')">${t.emoji} ${t.de}</button>`;
+            }).join('');
+            el.innerHTML = html;
+        }
+
+        function renderStatsKpis(base) {
+            const el = document.getElementById('stKpis'); if (!el) return;
+            const obs = base.length;
+            const species = new Set(base.map(o => o.taxonId).filter(x => x != null)).size;
+            const countries = new Set(base.map(o => o.country).filter(Boolean)).size;
+            const byYear = {};
+            base.forEach(o => { const y = o.date.slice(0, 4); byYear[y] = (byYear[y] || 0) + 1; });
+            let topYear = '–', topYearN = 0;
+            for (const [y, n] of Object.entries(byYear)) if (n > topYearN) { topYearN = n; topYear = y; }
+            const cards = [
+                { n: obs, l: 'Beobachtungen' },
+                { n: species, l: 'Arten' },
+                { n: countries, l: 'Länder' },
+                { n: topYear, l: topYear === '–' ? 'Aktivstes Jahr' : `Aktivstes Jahr (${topYearN})` }
+            ];
+            el.innerHTML = cards.map(c => `<div class="stat-card"><div class="stat-number">${c.n}</div><div class="stat-label">${c.l}</div></div>`).join('');
+        }
+
+        function renderStatsTimeChart(base) {
+            const el = document.getElementById('stTimeChart');
+            const titleEl = document.getElementById('stTimeTitle');
+            if (!el) return;
+            const recs = statsMetric === 'species' ? statsFirstSeenList(base) : base;
+
+            let buckets = [], keyOf;
+            if (statsTimebase === 'year') {
+                buckets = statsYearsAvailable().map(y => ({ key: y, label: y }));
+                keyOf = d => d.slice(0, 4);
+            } else if (statsTimebase === 'month') {
+                buckets = MONTH_NAMES_DE.map((nm, i) => ({ key: `${statsYear}-${String(i + 1).padStart(2, '0')}`, label: nm }));
+                keyOf = d => d.slice(0, 7);
+            } else {
+                const days = new Date(+statsYear, +statsMonth, 0).getDate();
+                for (let d = 1; d <= days; d++) buckets.push({ key: `${statsYear}-${String(statsMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`, label: String(d) });
+                keyOf = d => d.slice(0, 10);
+            }
+
+            const counts = {};
+            for (const o of recs) { const k = keyOf(o.date); counts[k] = (counts[k] || 0) + 1; }
+            const max = Math.max(1, ...buckets.map(b => counts[b.key] || 0));
+            const total = buckets.reduce((s, b) => s + (counts[b.key] || 0), 0);
+
+            const metricLabel = statsMetric === 'species' ? 'Neue Arten' : 'Beobachtungen';
+            const ctx = statsTimebase === 'year' ? 'pro Jahr'
+                : statsTimebase === 'month' ? `pro Monat · ${statsYear}`
+                : `pro Tag · ${MONTH_NAMES_DE[+statsMonth - 1]} ${statsYear}`;
+            if (titleEl) titleEl.textContent = `${metricLabel} ${ctx} · gesamt ${total}`;
+
+            if (!buckets.length) { el.innerHTML = '<div style="color:var(--text-muted);padding:16px">Keine Daten für diesen Zeitraum.</div>'; return; }
+            el.innerHTML = `<div class="tc-cols">` + buckets.map(b => {
+                const c = counts[b.key] || 0;
+                const h = Math.round(100 * c / max);
+                return `<div class="tc-col" title="${b.label}: ${c}">
+                    <div class="tc-val">${c || ''}</div>
+                    <div class="tc-bar-wrap"><div class="tc-bar" style="height:${h}%"></div></div>
+                    <div class="tc-lbl">${b.label}</div>
+                </div>`;
+            }).join('') + `</div>`;
+        }
+
+        function renderStatsTaxaChart(base) {
+            const el = document.getElementById('stTaxaChart'); if (!el) return;
+            const recs = statsMetric === 'species' ? statsFirstSeenList(base) : base;
+            const cnt = {};
+            for (const o of recs) { const g = o.taxon || 'Animalia'; cnt[g] = (cnt[g] || 0) + 1; }
+            const entries = Object.entries(cnt).sort((a, b) => b[1] - a[1]);
+            const max = Math.max(1, ...entries.map(e => e[1]));
+            el.innerHTML = entries.map(([g, c]) => {
+                const t = rwIconicType(g);
+                return `<div class="stx-row">
+                    <span class="stx-name">${t.emoji} ${t.de}</span>
+                    <span class="stx-bar-wrap"><span class="stx-bar" style="width:${Math.round(100 * c / max)}%; background:${t.c}"></span></span>
+                    <span class="stx-count">${c}</span>
+                </div>`;
+            }).join('') || '<div style="color:var(--text-muted);padding:16px">Keine Daten.</div>';
+        }
+
+        function renderStats() {
+            if (!document.getElementById('tab-stats')) return;
+            if (!allObservations || !allObservations.length) {
+                const tc = document.getElementById('stTimeChart');
+                if (tc) tc.innerHTML = '<div style="color:var(--text-muted);padding:20px">Noch keine Daten geladen.</div>';
+                return;
+            }
+            const years = statsYearsAvailable();
+            if (statsYear == null || !years.includes(statsYear)) statsYear = years[years.length - 1];
+            updateStatsControlStates();
+            const base = statsBaseList();
+            renderStatsTaxaFilter();
+            renderStatsKpis(base);
+            renderStatsTimeChart(base);
+            renderStatsTaxaChart(base);
+        }
     </script>
 </body>
 </html>
