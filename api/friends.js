@@ -1,10 +1,8 @@
 // Freundesliste des Owners server-seitig spiegeln, damit der Cron (server-seitig)
 // weiß, wessen Uploads er beobachten soll. Die Liste liegt sonst nur im localStorage.
 // GET: Liste lesen (offen). POST: Liste setzen (nur mit Owner-Token).
-import crypto from 'crypto';
 import { getRedis, OWNER } from './_redis.js';
-
-const OWNER_TOKEN_HASH = '2e19de2ea3bba6b438471ee1c9eef4a76537fe582a921713167afe569803b2f2';
+import { isOwner, readBody } from './_auth.js';
 
 // iNat-Logins normalisieren: klein, ohne @, nur erlaubte Zeichen, max. 60 Einträge.
 function cleanLogins(arr) {
@@ -38,10 +36,8 @@ export default async function handler(req, res) {
       return;
     }
     if (req.method === 'POST') {
-      const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || req.query.key || '';
-      const hash = crypto.createHash('sha256').update(token).digest('hex');
-      if (hash !== OWNER_TOKEN_HASH) { res.status(401).json({ error: 'unauthorized' }); return; }
-      const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+      if (!isOwner(req)) { res.status(401).json({ error: 'unauthorized' }); return; }
+      const body = readBody(req);
       const list = cleanLogins(body.friends);
       await redis.set('friends:' + user, list);
       res.status(200).json({ ok: true, count: list.length });

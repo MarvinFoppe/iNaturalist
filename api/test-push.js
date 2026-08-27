@@ -4,7 +4,10 @@ import { getRedis } from './_redis.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  if (process.env.CRON_SECRET && req.query.key !== process.env.CRON_SECRET) { res.status(401).json({ error: 'unauthorized' }); return; }
+  if (req.method !== 'POST') { res.status(405).json({ error: 'method not allowed' }); return; }
+  // Secret wie im Cron per Authorization-Header (Bearer) – nicht mehr als Query-Param.
+  const auth = req.headers.authorization || '';
+  if (process.env.CRON_SECRET && auth !== `Bearer ${process.env.CRON_SECRET}`) { res.status(401).json({ error: 'unauthorized' }); return; }
   if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) { res.status(500).json({ error: 'vapid missing' }); return; }
   try {
     webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:m.foppe@more-fire.com', process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
