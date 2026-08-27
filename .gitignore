@@ -4,5 +4,7 @@
 
 # Quell-/Arbeitsdateien (nicht fürs Deployment benötigt)
 app-icon-1024.png
-Gemini_Generated_Image_*.png
+Gemini_Generated_Image_*
+author.jpg
 _archiv/
+_dev/
