@@ -40,7 +40,14 @@
             --text-muted: #83a889;
             --border: rgba(155, 204, 95, 0.16);
             --shadow: rgba(0, 0, 0, 0.32);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.18);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.45);
             --radius: 14px;
+            /* Theme-unabhängige Akzent-/Tier-Farben (bleiben in Light & Dark gleich) */
+            --on-accent: #10231a;   /* dunkler Text auf --accent-/Gold-Flächen */
+            --gold: #e9c65a;
+            --gold-strong: #f0cf63;
+            --tier-legendary: #b48ad6;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -405,6 +412,8 @@
             --text-muted: #a99e8c;
             --border: #e7dece;
             --shadow: rgba(90, 68, 40, 0.09);
+            --shadow-sm: 0 2px 8px rgba(90, 68, 40, 0.10);
+            --shadow-lg: 0 12px 40px rgba(90, 68, 40, 0.16);
         }
 
         /* Light: warme, dezente Hintergrund-Schleier statt grün */
@@ -419,6 +428,17 @@
             background: linear-gradient(135deg, #fffdf9 0%, #f1e8d9 100%);
         }
         body.light-theme .header .header-left h1 { color: var(--accent-warm-strong); }
+
+        /* Segment-Umschalter & Taxon-Chips – gemeinsam für Statistik- und Nähe-Reiter
+           (früher pro Tab dupliziert; hier einmal zentral) */
+        .seg{display:inline-flex;background:var(--bg-light);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+        .seg-btn{background:transparent;border:none;color:var(--text-secondary);padding:8px 14px;cursor:pointer;font-size:.9em;font-family:inherit}
+        .seg-btn.active{background:var(--accent);color:var(--on-accent);font-weight:600}
+        .stx-filter{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 16px}
+        .stx-chip{background:var(--bg-light);border:1px solid var(--border);color:var(--text-secondary);border-radius:999px;padding:6px 12px;font-size:.85em;cursor:pointer;font-family:inherit}
+        .stx-chip.active{background:rgba(155,204,95,.15);color:var(--text-primary);border-color:var(--accent)}
+        .stx-chip.stx-disabled{opacity:.38;cursor:not-allowed}
+        .stx-n{opacity:.6;font-size:.9em}
 
         /* Sort Controls */
         .sort-controls {
@@ -2726,16 +2746,16 @@
         </div>
     </div>
 
-    <div class="main-tabs">
-        <button class="main-tab active" id="tabBtnOverview" onclick="switchMainTab('overview')">🌍 Übersicht</button>
-        <button class="main-tab" id="tabBtnBadges" onclick="switchMainTab('badges')">🏅 Badges</button>
-        <button class="main-tab" id="tabBtnRarity" onclick="switchMainTab('rarity')">⭐ Seltenheit</button>
-        <button class="main-tab" id="tabBtnStats" onclick="switchMainTab('stats')">📊 Statistiken</button>
-        <button class="main-tab" id="tabBtnNearby" onclick="switchMainTab('nearby')">📍 In meiner Nähe</button>
-        <button class="main-tab" id="tabBtnFriends" onclick="switchMainTab('friends')">👥 Freunde</button>
+    <div class="main-tabs" role="tablist" aria-label="Ansicht wählen">
+        <button class="main-tab active" id="tabBtnOverview" role="tab" aria-controls="tab-overview" aria-selected="true" onclick="switchMainTab('overview')">🌍 Übersicht</button>
+        <button class="main-tab" id="tabBtnBadges" role="tab" aria-controls="tab-badges" aria-selected="false" onclick="switchMainTab('badges')">🏅 Badges</button>
+        <button class="main-tab" id="tabBtnRarity" role="tab" aria-controls="tab-rarity" aria-selected="false" onclick="switchMainTab('rarity')">⭐ Seltenheit</button>
+        <button class="main-tab" id="tabBtnStats" role="tab" aria-controls="tab-stats" aria-selected="false" onclick="switchMainTab('stats')">📊 Statistiken</button>
+        <button class="main-tab" id="tabBtnNearby" role="tab" aria-controls="tab-nearby" aria-selected="false" onclick="switchMainTab('nearby')">📍 In meiner Nähe</button>
+        <button class="main-tab" id="tabBtnFriends" role="tab" aria-controls="tab-friends" aria-selected="false" onclick="switchMainTab('friends')">👥 Freunde</button>
     </div>
 
-    <div id="tab-overview" class="tab-panel active">
+    <div id="tab-overview" class="tab-panel active" role="tabpanel" aria-labelledby="tabBtnOverview">
     <div class="filter-section">
       <details class="filter-details" id="filterDetails">
         <summary class="filter-summary">
@@ -2903,7 +2923,7 @@
     </div>
     </div><!-- /tab-overview -->
 
-    <div id="tab-badges" class="tab-panel">
+    <div id="tab-badges" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnBadges">
         <div class="section">
             <h2 class="section-title">🏅 Badges <span style="font-size:0.5em;color:var(--text-muted);font-weight:400;">nur Research Grade</span></h2>
             <div class="badges-intro" id="badgesHint"></div>
@@ -2951,7 +2971,7 @@
         </div>
     </div><!-- /tab-badges -->
 
-    <div id="tab-rarity" class="tab-panel">
+    <div id="tab-rarity" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnRarity">
         <div class="section">
             <h2 class="section-title">⭐ Seltenheit</h2>
             <p style="color: var(--text-secondary); margin-bottom: 18px; max-width: 780px;">
@@ -3000,7 +3020,7 @@
         </div>
     </div><!-- /tab-rarity -->
 
-    <div id="tab-friends" class="tab-panel">
+    <div id="tab-friends" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnFriends">
         <div class="section">
             <h2 class="section-title">👥 Freunde-Vergleich</h2>
             <p style="color: var(--text-secondary); margin-bottom: 16px; max-width: 780px;">
@@ -3019,17 +3039,12 @@
         </div>
     </div><!-- /tab-friends -->
 
-    <div id="tab-stats" class="tab-panel">
+    <div id="tab-stats" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnStats">
         <style>
             #tab-stats .stats-toolbar{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:16px}
             #tab-stats .st-field{display:flex;flex-direction:column;gap:6px}
             #tab-stats .st-field > label{font-size:.8em;color:var(--text-secondary)}
-            #tab-stats .seg{display:inline-flex;background:var(--bg-light);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-            #tab-stats .seg-btn{background:transparent;border:none;color:var(--text-secondary);padding:8px 14px;cursor:pointer;font-size:.9em;font-family:inherit}
-            #tab-stats .seg-btn.active{background:var(--accent);color:#10231a;font-weight:600}
-            #tab-stats .stx-filter{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 20px}
-            #tab-stats .stx-chip{background:var(--bg-light);border:1px solid var(--border);color:var(--text-secondary);border-radius:999px;padding:6px 12px;font-size:.85em;cursor:pointer;font-family:inherit}
-            #tab-stats .stx-chip.active{background:rgba(155,204,95,.15);color:var(--text-primary);border-color:var(--accent)}
+            /* .seg/.seg-btn/.stx-* -> jetzt zentral im Head definiert */
             #tab-stats .stats-container{margin:0 0 22px}
             #tab-stats .tc-cols{display:flex;gap:6px;align-items:flex-end;height:240px;overflow-x:auto;padding:14px 2px 0}
             #tab-stats .tc-col{flex:1 1 0;min-width:26px;display:flex;flex-direction:column;align-items:center;height:100%}
@@ -3077,9 +3092,9 @@
                     <label>Qualität</label>
                     <select id="stQuality" class="filter-select" onchange="setStatsQuality(this.value)">
                         <option value="all">Alle Beobachtungen</option>
-                        <option value="research">Forschungsqualität (FQ)</option>
-                        <option value="casual">Hobbyqualität</option>
-                        <option value="needs_id">Need ID</option>
+                        <option value="research">Research Grade</option>
+                        <option value="casual">Casual</option>
+                        <option value="needs_id">Needs ID</option>
                     </select>
                 </div>
             </div>
@@ -3096,7 +3111,7 @@
         </div>
     </div><!-- /tab-stats -->
 
-    <div id="tab-nearby" class="tab-panel">
+    <div id="tab-nearby" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnNearby">
         <style>
             #tab-nearby .nb-intro{color:var(--text-secondary);margin-bottom:16px;max-width:820px}
             #tab-nearby #nearbyMap{height:380px;border-radius:14px;overflow:hidden;border:1px solid var(--border);margin-bottom:16px}
@@ -3105,16 +3120,10 @@
             #tab-nearby .nb-radius input[type=range]{width:100%;accent-color:var(--accent)}
             #tab-nearby .nb-owned{display:flex;flex-direction:column;gap:6px}
             #tab-nearby .nb-owned > label, #tab-nearby .nb-radius > label{font-size:.8em;color:var(--text-secondary)}
-            #tab-nearby .seg{display:inline-flex;background:var(--bg-light);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-            #tab-nearby .seg-btn{background:transparent;border:none;color:var(--text-secondary);padding:8px 14px;cursor:pointer;font-size:.9em;font-family:inherit}
-            #tab-nearby .seg-btn.active{background:var(--accent);color:#10231a;font-weight:600}
+            /* .seg/.seg-btn -> jetzt zentral im Head definiert */
             #tab-nearby .nb-btn{background:var(--bg-light);border:1px solid var(--border);color:var(--text-primary);padding:10px 16px;border-radius:10px;cursor:pointer;font-size:.9em;font-family:inherit}
-            #tab-nearby .nb-btn-primary{background:var(--accent);color:#10231a;font-weight:600;border-color:var(--accent)}
-            #tab-nearby .stx-filter{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 16px}
-            #tab-nearby .stx-chip{background:var(--bg-light);border:1px solid var(--border);color:var(--text-secondary);border-radius:999px;padding:6px 12px;font-size:.85em;cursor:pointer;font-family:inherit}
-            #tab-nearby .stx-chip.active{background:rgba(155,204,95,.15);color:var(--text-primary);border-color:var(--accent)}
-            #tab-nearby .stx-chip.stx-disabled{opacity:.38;cursor:not-allowed}
-            #tab-nearby .stx-n{opacity:.6;font-size:.9em}
+            #tab-nearby .nb-btn-primary{background:var(--accent);color:var(--on-accent);font-weight:600;border-color:var(--accent)}
+            /* .stx-* -> jetzt zentral im Head definiert */
             #tab-nearby .nb-meta{color:var(--text-muted);font-size:.85em;margin-bottom:12px}
             #tab-nearby .nb-status{color:var(--text-muted);padding:24px;text-align:center}
             #tab-nearby .nb-results{display:block}
@@ -3138,7 +3147,7 @@
             #tab-nearby .rarity-rare-card{position:relative}
             #tab-nearby .rarity-rare-card.nb-selected{outline:2px solid var(--accent);outline-offset:1px}
             #tab-nearby .nb-inat-link{position:absolute;bottom:8px;right:8px;z-index:12;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:.78em}
-            #tab-nearby .nb-inat-link:hover{background:var(--accent);color:#10231a}
+            #tab-nearby .nb-inat-link:hover{background:var(--accent);color:var(--on-accent)}
         </style>
         <div class="section">
             <h2 class="section-title">📍 In meiner Nähe</h2>
@@ -3255,10 +3264,10 @@
     <!-- Lightbox -->
     <div class="lightbox" id="lightbox">
         <div class="lightbox-content">
-            <button class="lightbox-close" onclick="closeLightbox()">×</button>
-            <button class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)">❮</button>
-            <img class="lightbox-image" id="lightboxImage" src="" alt="">
-            <button class="lightbox-nav lightbox-next" onclick="navigateLightbox(1)">❯</button>
+            <button class="lightbox-close" onclick="closeLightbox()" aria-label="Schließen">×</button>
+            <button class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)" aria-label="Vorheriges Bild">❮</button>
+            <img class="lightbox-image" id="lightboxImage" src="" alt="Beobachtungsfoto in voller Größe">
+            <button class="lightbox-nav lightbox-next" onclick="navigateLightbox(1)" aria-label="Nächstes Bild">❯</button>
             <div class="lightbox-info">
                 <div class="lightbox-title" id="lightboxTitle"></div>
                 <div class="lightbox-meta" id="lightboxMeta"></div>
@@ -3270,7 +3279,7 @@
 
     <div class="person-modal" id="personModal" onclick="if(event.target===this) closePersonModal()">
         <div class="person-modal-inner">
-            <button class="person-modal-close" onclick="closePersonModal()">×</button>
+            <button class="person-modal-close" onclick="closePersonModal()" aria-label="Schließen">×</button>
             <div id="personModalContent"></div>
         </div>
     </div>
@@ -3323,7 +3332,7 @@
     .rw-stack{position:absolute;inset:0;z-index:0;pointer-events:none;}
     .rw-stack i{position:absolute;inset:0;border-radius:20px;transform-origin:50% 50%;
         background:radial-gradient(circle at 50% 32%,#3a58a6,#1a2747 72%);
-        border:5px solid #e9c65a;box-shadow:0 20px 40px rgba(0,0,0,.5);}
+        border:5px solid var(--gold);box-shadow:0 20px 40px rgba(0,0,0,.5);}
 
     .reward-card{position:relative;z-index:1;width:100%;transform-style:preserve-3d;
         transform:rotateY(180deg);transition:transform .75s cubic-bezier(.2,.75,.3,1.15);}
@@ -3335,7 +3344,7 @@
     .rw-face{-webkit-backface-visibility:hidden;backface-visibility:hidden;border-radius:20px;}
 
     .rw-back{position:absolute;inset:0;transform:rotateY(180deg);overflow:hidden;background:#e4eecd;
-        border:6px solid var(--frame,#e9c65a);
+        border:6px solid var(--frame,var(--gold));
         box-shadow:inset 0 0 0 3px rgba(255,255,255,.5),0 26px 55px rgba(0,0,0,.6);}
     .rw-back .rw-fg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;}
     .rw-back .rw-vig{position:absolute;inset:0;z-index:2;pointer-events:none;
@@ -3345,8 +3354,8 @@
         background:linear-gradient(160deg,#fffdf5,#e7ecf6 60%,#d8e1f0);
         border:3px solid var(--frame);
         box-shadow:0 26px 55px rgba(0,0,0,.6),0 0 0 4px rgba(255,255,255,.07);}
-    .reward-float.rw-t3 .rw-front{--frame:#b48ad6}
-    .reward-float.rw-t4 .rw-front{--frame:#e9c65a;
+    .reward-float.rw-t3 .rw-front{--frame:var(--tier-legendary)}
+    .reward-float.rw-t4 .rw-front{--frame:var(--gold);
         box-shadow:0 26px 55px rgba(0,0,0,.6),0 0 26px rgba(240,207,99,.55),0 0 0 4px rgba(240,207,99,.25)}
 
     .rw-front::after{content:'';position:absolute;inset:0;border-radius:18px;pointer-events:none;opacity:.55;
@@ -3374,7 +3383,7 @@
         opacity:.92;margin-top:1px;}
     .rw-rarity.t2{background:linear-gradient(160deg,#2f7fb0,#4aa3df);}
     .rw-rarity.t3{background:linear-gradient(160deg,#6d3fae,#9b6fc0);}
-    .rw-rarity.t4{background:linear-gradient(160deg,#b9902b,#f0cf63);color:#3a2c00;
+    .rw-rarity.t4{background:linear-gradient(160deg,#b9902b,var(--gold-strong));color:#3a2c00;
         box-shadow:0 2px 12px rgba(240,207,99,.6),0 2px 8px rgba(0,0,0,.45);}
 
     .rw-imgwrap{position:relative;border-radius:13px;overflow:hidden;border:4px solid var(--type);
@@ -3405,7 +3414,7 @@
         animation:riPop .45s cubic-bezier(.2,.8,.3,1.4) both;}
     .reward-icon .ri-cardwrap{position:relative;animation:riFloat 3s ease-in-out infinite;}
     @keyframes riFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-    .reward-icon .ri-card{width:48px;height:64px;border-radius:8px;overflow:hidden;border:2px solid #e9c65a;
+    .reward-icon .ri-card{width:48px;height:64px;border-radius:8px;overflow:hidden;border:2px solid var(--gold);
         box-shadow:0 5px 16px rgba(0,0,0,.45);transform:rotate(-7deg);transition:transform .2s ease;}
     .reward-icon:hover .ri-card{transform:rotate(0) scale(1.06);}
     .reward-icon .ri-card img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -3439,7 +3448,7 @@
             <div class="ri-card"><img src="card-back.png" alt=""></div>
             <span class="ri-badge" id="rewardIconCount">0</span>
         </div>
-        <span class="ri-label">New species</span>
+        <span class="ri-label">Neue Art</span>
     </div>
 
     <!-- ===== Belohnung: "Neuer Rang" (Badge-Aufstieg, Variante A) ===== -->
@@ -3501,7 +3510,7 @@
         clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
         background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.6) 48%,transparent 58%);
         background-size:250% 250%;animation:hexSweep 3.6s linear infinite;}
-    .rankup-kicker{font-size:.82em;font-weight:800;letter-spacing:.35em;text-transform:uppercase;color:#e9c65a;
+    .rankup-kicker{font-size:.82em;font-weight:800;letter-spacing:.35em;text-transform:uppercase;color:var(--gold);
         text-shadow:0 2px 8px rgba(0,0,0,.6);margin-bottom:4px;animation:ruRise .5s .2s ease both;}
     .rankup-cat{font-size:.95em;color:#c9d6c2;margin-bottom:2px;animation:ruRise .5s .25s ease both;}
     .rankup-name{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:2.7em;line-height:1.05;margin-top:2px;
@@ -3513,7 +3522,7 @@
     .rankup-pips{display:flex;gap:9px;margin-top:16px;animation:ruRise .6s .5s ease both;}
     .rankup-pips i{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.14);}
     .rankup-pips i.on{background:var(--accent);box-shadow:0 0 10px var(--accent-glow);}
-    .rankup-pips i.justnow{background:#e9c65a;box-shadow:0 0 16px #e9c65a,0 0 30px rgba(233,198,90,.6);transform:scale(1.35);}
+    .rankup-pips i.justnow{background:var(--gold);box-shadow:0 0 16px var(--gold),0 0 30px rgba(233,198,90,.6);transform:scale(1.35);}
     @keyframes ruRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
     .rankup-hint{position:fixed;left:0;right:0;bottom:26px;z-index:4;text-align:center;pointer-events:none;
         color:rgba(255,255,255,.78);font-size:13px;letter-spacing:.05em;animation:rwHint 1.8s ease-in-out infinite;}
@@ -3563,7 +3572,7 @@
     .rarity-rare-card .rrc-noimg{width:100%;height:120px;display:flex;align-items:center;justify-content:center;
         font-size:46px;background:var(--bg-card);}
     .rarity-rare-card.rrc-rare{box-shadow:0 8px 22px var(--shadow),0 0 14px rgba(155,111,192,.5);}
-    .rarity-rare-card.rrc-legendary{border-color:#e9c65a;box-shadow:0 8px 22px var(--shadow),0 0 18px rgba(240,207,99,.6);}
+    .rarity-rare-card.rrc-legendary{border-color:var(--gold);box-shadow:0 8px 22px var(--shadow),0 0 18px rgba(240,207,99,.6);}
     .rarity-rare-card.rrc-legendary::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:11;
         mix-blend-mode:overlay;opacity:.5;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.7) 50%,transparent 60%);
         background-size:250% 250%;animation:rrcSheen 3.5s ease-in-out infinite;}
@@ -3581,8 +3590,8 @@
         transform:rotateY(180deg);transition:transform .75s cubic-bezier(.2,.75,.3,1.15);}
     .sc-card.revealed{transform:rotateY(0deg);}
     .species-card-modal .rw-front{border-radius:20px;}
-    .species-card-modal .rw-front.rwt3{--frame:#b48ad6}
-    .species-card-modal .rw-front.rwt4{--frame:#e9c65a;box-shadow:0 26px 55px rgba(0,0,0,.6),0 0 26px rgba(240,207,99,.55)}
+    .species-card-modal .rw-front.rwt3{--frame:var(--tier-legendary)}
+    .species-card-modal .rw-front.rwt4{--frame:var(--gold);box-shadow:0 26px 55px rgba(0,0,0,.6),0 0 26px rgba(240,207,99,.55)}
     .species-card-modal .rw-wiki{max-height:clamp(90px,26vh,220px);overflow-y:auto;padding-right:6px;
         -webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;}
     .species-card-modal .rw-wiki::-webkit-scrollbar{width:6px;}
@@ -4148,10 +4157,22 @@
             return mx;
         }
 
-        // Alle Seiten einer Beobachtungs-Abfrage laden (extraQuery z.B. "&updated_since=...")
+        // Kleinste Beobachtungs-id in einer Ergebnisliste (Cursor für die nächste Seite)
+        function minObsId(arr) {
+            let mn = Infinity;
+            for (const o of arr) { if (o && o.id != null && o.id < mn) mn = o.id; }
+            return mn;
+        }
+
+        // Alle Beobachtungen einer Abfrage laden (extraQuery z.B. "&updated_since=...").
+        // Phase 1: klassische Seiten-Paginierung (schnell, parallel) – deckt die ersten 10.000 ab.
+        // Phase 2: darüber hinaus Cursor-Paginierung per id_below, da die Seiten-API der
+        //          iNaturalist bei page*per_page > 10.000 nichts mehr liefert. So werden auch
+        //          Accounts mit mehr als 10.000 Beobachtungen vollständig geladen.
         async function fetchObservationsRaw(extraQuery, onProgress, userId) {
             const uid = userId || USER_ID;
-            const pageUrl = (p) => `${API_BASE}/observations?user_id=${uid}&per_page=${PER_PAGE}&page=${p}&order=desc&order_by=created_at&locale=de${extraQuery || ''}`;
+            const base = `${API_BASE}/observations?user_id=${uid}&per_page=${PER_PAGE}&locale=de${extraQuery || ''}`;
+            const pageUrl = (p) => `${base}&order=desc&order_by=created_at&page=${p}`;
             const firstData = await (await inatFetch(pageUrl(1))).json();
             const totalResults = firstData.total_results || 0;
             let allResults = firstData.results || [];
@@ -4159,9 +4180,6 @@
 
             const maxPage = Math.floor(10000 / PER_PAGE);
             const totalPages = Math.min(Math.ceil(totalResults / PER_PAGE), maxPage);
-            if (Math.ceil(totalResults / PER_PAGE) > maxPage) {
-                console.warn(`Über ${maxPage * PER_PAGE} Beobachtungen: API-Paginierung deckt nicht alle ab.`);
-            }
 
             const pending = [];
             for (let p = 2; p <= totalPages; p++) pending.push(p);
@@ -4179,7 +4197,29 @@
                 }
             };
             await Promise.all(Array.from({ length: Math.min(CONCURRENCY, pending.length) }, worker));
-            return { results: allResults, totalResults };
+
+            // Phase 2: Cursor jenseits der 10.000er-Grenze (order_by=id&id_below=<kleinste id>).
+            if (totalResults > maxPage * PER_PAGE && allResults.length) {
+                let cursor = minObsId(allResults);
+                while (Number.isFinite(cursor)) {
+                    let batch;
+                    try {
+                        const d = await (await inatFetch(`${base}&order=desc&order_by=id&id_below=${cursor}`)).json();
+                        batch = d.results || [];
+                    } catch (e) { console.warn('Cursor-Seite fehlgeschlagen:', e); break; }
+                    if (!batch.length) break;
+                    allResults = allResults.concat(batch);
+                    if (onProgress) onProgress(allResults.length, totalResults);
+                    cursor = minObsId(batch);
+                    if (batch.length < PER_PAGE) break;   // letzte Seite erreicht
+                }
+            }
+
+            // Nach dem Cursor-Übergang können sich Randfälle überschneiden -> nach id deduplizieren.
+            const seen = new Set();
+            const deduped = [];
+            for (const o of allResults) { if (o && o.id != null && !seen.has(o.id)) { seen.add(o.id); deduped.push(o); } }
+            return { results: deduped, totalResults };
         }
 
         // Gemeinsame Nachverarbeitung nach jeder Datenaktualisierung
@@ -4280,7 +4320,7 @@
                 for (let i = 0; i < unknown.length; i += BATCH) {
                     const ids = unknown.slice(i, i + BATCH);
                     try {
-                        const d = await (await fetch(`${API_BASE}/places/${ids.join(',')}`)).json();
+                        const d = await (await inatFetch(`${API_BASE}/places/${ids.join(',')}`)).json();
                         (d.results || []).forEach(p => {
                             const german = p.admin_level === 0 ? (extractCountry(p.name) || p.name) : null;
                             cache[p.id] = { lvl: p.admin_level ?? null, country: german };
@@ -4311,57 +4351,78 @@
         }
 
         // Populate country filter
-        function populateCountryFilter() {
-            const countries = {};
-            let noCountryCount = 0;
-
-            allObservations.forEach(obs => {
-                if (obs.country) {
-                    countries[obs.country] = (countries[obs.country] || 0) + 1;
-                } else {
-                    noCountryCount++;
+        // Generische Mehrfach-Länderauswahl. Früher zweimal fast identisch ausprogrammiert
+        // (Übersicht & Seltenheit); Unterschiede stecken jetzt nur noch in den Optionen:
+        //   obsFilter          – welche Beobachtungen zählen (null = alle)
+        //   getState           – das aktive Auswahl-Array (live)
+        //   onChange           – was nach einer Auswahl passiert
+        //   singleNoCountryLbl – Label-Text bei genau „kein Land"
+        function createCountryFilter(opts) {
+            const $drop = () => document.getElementById(opts.dropdownId);
+            function populate() {
+                const dropdown = $drop();
+                if (!dropdown) return;
+                const countries = {}; let noCountryCount = 0;
+                allObservations.forEach(obs => {
+                    if (opts.obsFilter && !opts.obsFilter(obs)) return;
+                    if (obs.country) countries[obs.country] = (countries[obs.country] || 0) + 1;
+                    else noCountryCount++;
+                });
+                const sorted = Object.entries(countries).sort((a, b) => a[0].localeCompare(b[0], 'de'));
+                dropdown.innerHTML = '';
+                const addOption = (value, inner) => {
+                    const o = document.createElement('div');
+                    o.className = 'multi-select-option' + (value === '__NO_COUNTRY__' ? ' no-country-option' : '');
+                    o.dataset.value = value;
+                    o.innerHTML = inner;
+                    o.onclick = (e) => { e.stopPropagation(); toggle(value); };
+                    dropdown.appendChild(o);
+                };
+                if (noCountryCount > 0) {
+                    addOption('__NO_COUNTRY__', `<span class="multi-select-checkbox"></span><span>❓ Kein Land erkannt</span><span class="multi-select-count">${noCountryCount}</span>`);
                 }
-            });
-
-            const sorted = Object.entries(countries).sort((a, b) => a[0].localeCompare(b[0], 'de'));
-            const dropdown = document.getElementById('countryDropdown');
-            dropdown.innerHTML = '';
-
-            // Add "Kein Land" option at the top if there are unassigned observations
-            if (noCountryCount > 0) {
-                const noCountryOption = document.createElement('div');
-                noCountryOption.className = 'multi-select-option no-country-option';
-                noCountryOption.dataset.value = '__NO_COUNTRY__';
-                noCountryOption.innerHTML = `
-                    <span class="multi-select-checkbox"></span>
-                    <span>❓ Kein Land erkannt</span>
-                    <span class="multi-select-count">${noCountryCount}</span>
-                `;
-                noCountryOption.onclick = (e) => {
-                    e.stopPropagation();
-                    toggleCountrySelection('__NO_COUNTRY__');
-                };
-                dropdown.appendChild(noCountryOption);
+                sorted.forEach(([country, count]) => {
+                    addOption(country, `<span class="multi-select-checkbox"></span><span>${getFlag(country)} ${country}</span><span class="multi-select-count">${count}</span>`);
+                });
+                updateSelection(); updateLabel();
             }
-
-            sorted.forEach(([country, count]) => {
-                const option = document.createElement('div');
-                option.className = 'multi-select-option';
-                option.dataset.value = country;
-                option.innerHTML = `
-                    <span class="multi-select-checkbox"></span>
-                    <span>${getFlag(country)} ${country}</span>
-                    <span class="multi-select-count">${count}</span>
-                `;
-                option.onclick = (e) => {
-                    e.stopPropagation();
-                    toggleCountrySelection(country);
-                };
-                dropdown.appendChild(option);
-            });
-
-            updateCountryFilterLabel();
+            function toggle(country) {
+                const st = opts.getState();
+                const i = st.indexOf(country);
+                if (i === -1) st.push(country); else st.splice(i, 1);
+                updateSelection(); updateLabel(); opts.onChange();
+            }
+            function updateSelection() {
+                const st = opts.getState();
+                document.querySelectorAll('#' + opts.dropdownId + ' .multi-select-option').forEach(opt => {
+                    opt.classList.toggle('selected', st.includes(opt.dataset.value));
+                });
+            }
+            function updateLabel() {
+                const label = document.getElementById(opts.labelId);
+                if (!label) return;
+                const st = opts.getState();
+                if (st.length === 0) label.textContent = 'Alle Länder';
+                else if (st.length === 1) label.textContent = st[0] === '__NO_COUNTRY__' ? opts.singleNoCountryLbl : `${getFlag(st[0])} ${st[0]}`;
+                else label.textContent = `${st.length} Länder ausgewählt`;
+            }
+            return { populate, toggle, updateSelection, updateLabel };
         }
+
+        // Übersicht: alle Beobachtungen, wirkt auf die Galerie-Filter
+        const overviewCountryUI = createCountryFilter({
+            dropdownId: 'countryDropdown', labelId: 'countryFilterLabel',
+            getState: () => selectedCountries, obsFilter: null,
+            onChange: () => applyFilters(), singleNoCountryLbl: '❓ Kein Land erkannt'
+        });
+        // Seltenheit: nur Forschungsqualität, wirkt aufs Rarity-Dashboard
+        const rarityCountryUI = createCountryFilter({
+            dropdownId: 'rarityCountryDropdown', labelId: 'rarityCountryFilterLabel',
+            getState: () => rarityCountryFilter, obsFilter: (o) => o.quality === 'research' && o.taxonId,
+            onChange: () => renderRarityDashboard(), singleNoCountryLbl: '❓ Kein Land'
+        });
+
+        function populateCountryFilter() { overviewCountryUI.populate(); }
 
         // Toggle multi-select dropdown
         function toggleMultiSelect(type) {
@@ -4379,45 +4440,9 @@
             }
         }
 
-        // Toggle country selection
-        function toggleCountrySelection(country) {
-            const index = selectedCountries.indexOf(country);
-            if (index === -1) {
-                selectedCountries.push(country);
-            } else {
-                selectedCountries.splice(index, 1);
-            }
-            updateCountryFilterLabel();
-            updateCountryDropdownSelection();
-            applyFilters();
-        }
-
-        // Update country filter button label
-        function updateCountryFilterLabel() {
-            const label = document.getElementById('countryFilterLabel');
-            if (selectedCountries.length === 0) {
-                label.textContent = 'Alle Länder';
-            } else if (selectedCountries.length === 1) {
-                if (selectedCountries[0] === '__NO_COUNTRY__') {
-                    label.textContent = '❓ Kein Land erkannt';
-                } else {
-                    label.textContent = `${getFlag(selectedCountries[0])} ${selectedCountries[0]}`;
-                }
-            } else {
-                label.textContent = `${selectedCountries.length} Länder ausgewählt`;
-            }
-        }
-
-        // Update dropdown selection visuals
-        function updateCountryDropdownSelection() {
-            document.querySelectorAll('#countryDropdown .multi-select-option').forEach(opt => {
-                if (selectedCountries.includes(opt.dataset.value)) {
-                    opt.classList.add('selected');
-                } else {
-                    opt.classList.remove('selected');
-                }
-            });
-        }
+        function toggleCountrySelection(country) { overviewCountryUI.toggle(country); }
+        function updateCountryFilterLabel() { overviewCountryUI.updateLabel(); }
+        function updateCountryDropdownSelection() { overviewCountryUI.updateSelection(); }
 
         // Close dropdowns when clicking outside
         document.addEventListener('click', (e) => {
@@ -5011,7 +5036,7 @@
             for (let i = 0; i < stillMissing.length; i += 30) {
                 const chunk = stillMissing.slice(i, i + 30);
                 try {
-                    const res = await fetch(`${API_BASE}/taxa/${chunk.join(',')}`);
+                    const res = await inatFetch(`${API_BASE}/taxa/${chunk.join(',')}`);
                     const data = await res.json();
                     (data.results || []).forEach(t => { rarityCounts[t.id] = t.observations_count || 0; });
                 } catch (e) { continue; }
@@ -5167,65 +5192,10 @@
         }
 
         // Länder-Dropdown im Seltenheit-Reiter befüllen (nur Research-Grade-Beobachtungen)
-        function populateRarityCountryFilter() {
-            const dropdown = document.getElementById('rarityCountryDropdown');
-            if (!dropdown) return;
-            const countries = {};
-            let noCountryCount = 0;
-            allObservations.forEach(obs => {
-                if (obs.quality !== 'research' || !obs.taxonId) return;
-                if (obs.country) countries[obs.country] = (countries[obs.country] || 0) + 1;
-                else noCountryCount++;
-            });
-            const sorted = Object.entries(countries).sort((a, b) => a[0].localeCompare(b[0], 'de'));
-            dropdown.innerHTML = '';
-            if (noCountryCount > 0) {
-                const opt = document.createElement('div');
-                opt.className = 'multi-select-option no-country-option';
-                opt.dataset.value = '__NO_COUNTRY__';
-                opt.innerHTML = `<span class="multi-select-checkbox"></span><span>❓ Kein Land erkannt</span><span class="multi-select-count">${noCountryCount}</span>`;
-                opt.onclick = (e) => { e.stopPropagation(); toggleRarityCountrySelection('__NO_COUNTRY__'); };
-                dropdown.appendChild(opt);
-            }
-            sorted.forEach(([country, count]) => {
-                const opt = document.createElement('div');
-                opt.className = 'multi-select-option';
-                opt.dataset.value = country;
-                opt.innerHTML = `<span class="multi-select-checkbox"></span><span>${getFlag(country)} ${country}</span><span class="multi-select-count">${count}</span>`;
-                opt.onclick = (e) => { e.stopPropagation(); toggleRarityCountrySelection(country); };
-                dropdown.appendChild(opt);
-            });
-            updateRarityCountrySelection();
-            updateRarityCountryLabel();
-        }
-
-        function toggleRarityCountrySelection(country) {
-            const i = rarityCountryFilter.indexOf(country);
-            if (i === -1) rarityCountryFilter.push(country);
-            else rarityCountryFilter.splice(i, 1);
-            updateRarityCountrySelection();
-            updateRarityCountryLabel();
-            renderRarityDashboard();
-        }
-
-        function updateRarityCountrySelection() {
-            document.querySelectorAll('#rarityCountryDropdown .multi-select-option').forEach(opt => {
-                opt.classList.toggle('selected', rarityCountryFilter.includes(opt.dataset.value));
-            });
-        }
-
-        function updateRarityCountryLabel() {
-            const label = document.getElementById('rarityCountryFilterLabel');
-            if (!label) return;
-            if (rarityCountryFilter.length === 0) {
-                label.textContent = 'Alle Länder';
-            } else if (rarityCountryFilter.length === 1) {
-                label.textContent = rarityCountryFilter[0] === '__NO_COUNTRY__'
-                    ? '❓ Kein Land' : `${getFlag(rarityCountryFilter[0])} ${rarityCountryFilter[0]}`;
-            } else {
-                label.textContent = `${rarityCountryFilter.length} Länder ausgewählt`;
-            }
-        }
+        function populateRarityCountryFilter() { rarityCountryUI.populate(); }
+        function toggleRarityCountrySelection(country) { rarityCountryUI.toggle(country); }
+        function updateRarityCountrySelection() { rarityCountryUI.updateSelection(); }
+        function updateRarityCountryLabel() { rarityCountryUI.updateLabel(); }
 
         function resetRarityFilters() {
             rarityCountryFilter = [];
@@ -6608,7 +6578,8 @@
             } catch (e) {}
         }
 
-        function rwEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        // Alias auf das zentrale escapeHtml (früher eigene, identische Implementierung)
+        function rwEsc(s){ return escapeHtml(s==null?'':String(s)); }
         function rwStripHtml(html){ const d=document.createElement('div'); d.innerHTML=html||''; return (d.textContent||'').trim(); }
         function rwFmtDate(d){ if(!d) return ''; const dt=new Date(d+'T00:00:00'); if(isNaN(dt)) return d;
             return dt.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'}); }
@@ -6634,8 +6605,13 @@
             };
             return M[t]||{de:'Lebewesen',emoji:'🔬',c:'#7a7f8a'};
         }
-        // Seltenheits-Level 1–10 aus weltweiter RG-Nachweiszahl (gleiche Konstanten wie der Seltenheits-Score)
-        function rwRarityLevel(n){ if(!n||n<=0) return null; const L=Math.log10(n);
+        // Seltenheits-Level 1–10. Bevorzugt den bereits gruppen-korrigierten Wert aus der
+        // rarityLevels-Tabelle (identisch zum Seltenheit-Dashboard), damit dieselbe Art überall
+        // denselben Level zeigt. Rohformel (ohne Gruppen-Korrektur) nur als Fallback, solange
+        // das Dashboard den Wert noch nicht berechnet hat.
+        function rwRarityLevel(n, taxonId){
+            if(taxonId!=null && rarityLevels[taxonId]) return rarityLevels[taxonId];
+            if(!n||n<=0) return null; const L=Math.log10(n);
             return Math.max(1,Math.min(10,Math.round(RARITY_K*(RARITY_T-L)))); }
         function rwRarityTier(lvl){ return lvl>=9?4:lvl>=7?3:lvl>=4?2:1; }
         // IUCN-Schutzstatus-Code -> lesbare deutsche Bezeichnung
@@ -6872,7 +6848,7 @@
                 function render(){
                     const o=cards[idx]; const ty=rwIconicType(o.taxon);
                     const f=rwFactCache[o.taxonId]||null;
-                    const lvl=rwRarityLevel(rarityCounts[o.taxonId] || (f?f.obsCount:0));
+                    const lvl=rwRarityLevel(rarityCounts[o.taxonId] || (f?f.obsCount:0), o.taxonId);
                     const tier=lvl?rwRarityTier(lvl):2;
                     curTier=tier; curLevel=lvl||1; revealed=false;
 
@@ -6946,7 +6922,7 @@
         // ===== Belohnung: "Neuer Rang" (Badge-Aufstieg, Variante A) =============
         // ========================================================================
         const BADGE_LEVELS_SEEN_PREFIX = 'inat_badge_levels_v1_';
-        const RANKUP_COLORS = ['#e9c65a','#9bcc5f','#bfe08f','#f6d365','#fda085','#ffffff','#8bb867'];
+        const RANKUP_COLORS = ['var(--gold)','#9bcc5f','#bfe08f','#f6d365','#fda085','#ffffff','#8bb867'];
         let rankActive = false;
         let rankPendingEvents = null, rankPendingSnapshot = null;
 
@@ -7577,16 +7553,14 @@
 
         // Reiter (Übersicht / Badges / Seltenheit / Freunde) umschalten
         function switchMainTab(name) {
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
-            document.getElementById('tabBtnOverview').classList.toggle('active', name === 'overview');
-            document.getElementById('tabBtnBadges').classList.toggle('active', name === 'badges');
-            document.getElementById('tabBtnRarity').classList.toggle('active', name === 'rarity');
-            const sbtn = document.getElementById('tabBtnStats');
-            if (sbtn) sbtn.classList.toggle('active', name === 'stats');
-            const nbtn = document.getElementById('tabBtnNearby');
-            if (nbtn) nbtn.classList.toggle('active', name === 'nearby');
-            const fbtn = document.getElementById('tabBtnFriends');
-            if (fbtn) fbtn.classList.toggle('active', name === 'friends');
+            const targetId = 'tab-' + name;
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === targetId));
+            // Datengetrieben: jeder .main-tab-Button trägt aria-controls="tab-<name>"
+            document.querySelectorAll('.main-tab').forEach(btn => {
+                const active = btn.getAttribute('aria-controls') === targetId;
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
             if (name === 'badges' && countryMap) setTimeout(() => countryMap.invalidateSize(), 60);
             if (name === 'rarity') renderRarityDashboard();
             if (name === 'stats') renderStats();
@@ -8000,7 +7974,7 @@
             }
 
             try {
-                const response = await fetch(`${API_BASE}/taxa/${taxonId}?locale=de`);
+                const response = await inatFetch(`${API_BASE}/taxa/${taxonId}?locale=de`);
                 const data = await response.json();
                 const taxon = data.results?.[0];
 
@@ -8255,7 +8229,7 @@
         // Profil eines Nutzers laden (dient zugleich der Validierung)
         async function loadUserProfile(name) {
             try {
-                const d = await (await fetch(`${API_BASE}/users/${encodeURIComponent(name)}`)).json();
+                const d = await (await inatFetch(`${API_BASE}/users/${encodeURIComponent(name)}`)).json();
                 return (d.results && d.results[0]) || null;
             } catch (e) {
                 console.warn('Profil laden fehlgeschlagen:', e);
@@ -8741,11 +8715,16 @@
             icon.textContent = isLight ? '☀️' : '🌙';
             text.textContent = isLight ? 'Light' : 'Dark';
 
-            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            localStorage.setItem('inat_theme', isLight ? 'light' : 'dark');
         }
 
         function loadTheme() {
-            const savedTheme = localStorage.getItem('theme');
+            // Migration: alter Key 'theme' -> 'inat_theme' (einheitliches inat_-Präfix)
+            let savedTheme = localStorage.getItem('inat_theme');
+            if (savedTheme === null) {
+                const legacy = localStorage.getItem('theme');
+                if (legacy !== null) { savedTheme = legacy; localStorage.setItem('inat_theme', legacy); localStorage.removeItem('theme'); }
+            }
             if (savedTheme === 'light') {
                 document.body.classList.add('light-theme');
                 document.getElementById('themeIcon').textContent = '☀️';
@@ -9233,7 +9212,7 @@
         let nearbyMoreObserver = null;
 
         // Seltenheits-Level einer Art (globale RG-Zahl, sonst globale Beobachtungszahl als Fallback)
-        function nearbyLevelOf(x) { return rwRarityLevel(rarityCounts[x.id] || x.obsCount); }
+        function nearbyLevelOf(x) { return rwRarityLevel(rarityCounts[x.id] || x.obsCount, x.id); }
 
         // Startzentrum: jüngste eigene Beobachtung mit Koordinaten, sonst Köln
         function nearbyDefaultCenter() {
