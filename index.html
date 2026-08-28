@@ -440,6 +440,12 @@
         .stx-chip.stx-disabled{opacity:.38;cursor:not-allowed}
         .stx-n{opacity:.6;font-size:.9em}
 
+        /* Einheitlicher, sichtbarer Tastatur-Fokus für alle Overlay-Schließen-Knöpfe */
+        .lightbox-close:focus-visible, .person-modal-close:focus-visible, .reward-close:focus-visible,
+        .rankup-close:focus-visible, .species-card-close:focus-visible {
+            outline: 2px solid var(--accent); outline-offset: 2px;
+        }
+
         /* Sort Controls */
         .sort-controls {
             display: flex;
@@ -3262,7 +3268,7 @@
     </button>
 
     <!-- Lightbox -->
-    <div class="lightbox" id="lightbox">
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Bildansicht">
         <div class="lightbox-content">
             <button class="lightbox-close" onclick="closeLightbox()" aria-label="Schließen">×</button>
             <button class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)" aria-label="Vorheriges Bild">❮</button>
@@ -3277,7 +3283,7 @@
         </div>
     </div>
 
-    <div class="person-modal" id="personModal" onclick="if(event.target===this) closePersonModal()">
+    <div class="person-modal" id="personModal" role="dialog" aria-modal="true" aria-label="Personen-Profil" onclick="if(event.target===this) closePersonModal()">
         <div class="person-modal-inner">
             <button class="person-modal-close" onclick="closePersonModal()" aria-label="Schließen">×</button>
             <div id="personModalContent"></div>
@@ -3599,7 +3605,7 @@
     .rw-inat{display:block;text-align:center;margin:12px 4px 2px;font-size:12px;font-weight:700;color:#2a6df4;text-decoration:none;}
     </style>
 
-    <div class="species-card-modal" id="speciesCardModal" onclick="if(event.target===this) closeSpeciesCard()">
+    <div class="species-card-modal" id="speciesCardModal" role="dialog" aria-modal="true" aria-label="Artenkarte" onclick="if(event.target===this) closeSpeciesCard()">
         <button class="species-card-close" id="speciesCardClose" onclick="closeSpeciesCard()" aria-label="Schließen">×</button>
         <div id="speciesCardHolder"></div>
     </div>
@@ -3973,7 +3979,7 @@
                 speciesCount: '~67.000'
             },
             'Echinodermata': {
-                icon: '⭐',
+                icon: '<svg viewBox="0 0 24 24" style="width:1em;height:1em;vertical-align:-.15em" aria-hidden="true"><path d="M12 1.2 14.6 8.4 22.3 8.6 16.2 13.3 18.4 20.8 12 16.4 5.6 20.8 7.8 13.3 1.7 8.6 9.4 8.4Z" fill="#e8794a" stroke="#c85f34" stroke-width="1.1" stroke-linejoin="round"/><circle cx="12" cy="10" r=".95" fill="#ffe0cf"/><circle cx="10.1" cy="12.8" r=".8" fill="#ffe0cf"/><circle cx="13.9" cy="12.8" r=".8" fill="#ffe0cf"/></svg>',
                 name: 'Stachelhäuter',
                 color: '#cf7391',
                 desc: 'Meeresbewohner mit fünfstrahligem Körperbau und Kalkskelett. Seesterne, Seeigel, Seegurken und Schlangensterne.',
@@ -7130,7 +7136,7 @@
             const el = document.getElementById('rankIcon'); if(!el) return;
             const hex = document.getElementById('rankIconHex');
             const ico = document.getElementById('rankIconIco');
-            if(ico) ico.textContent = top ? top.icon : '🏅';
+            if(ico) ico.innerHTML = top ? top.icon : '🏅';   // icon kann Emoji ODER Inline-SVG (z.B. Seestern) sein
             if(hex) hex.className = 'rk-hex htier' + Math.max(1, Math.min(7, top ? (top.hexTier || top.level) : 1));
             const up = el.querySelector('.rk-up'); if(up) up.textContent = n>1 ? n : '▲';
             const sp = document.getElementById('rewardIcon');   // ggf. über dem New-species-Icon parken
