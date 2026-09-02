@@ -1492,6 +1492,42 @@
         .rarity-swatch.lvl-9  { background: #e67e22; }
         .rarity-swatch.lvl-10 { background: linear-gradient(135deg, #f9d423, #f39c12); }
 
+        /* Sammel-Nummer (laufende Katalognummer, nach Beobachtungsdatum der ersten FQ-Sichtung) */
+        .coll-badge {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            padding: 4px 9px;
+            border-radius: 12px;
+            font-size: 0.78em;
+            font-weight: 700;
+            color: #eee;
+            background: rgba(0, 0, 0, 0.62);
+            backdrop-filter: blur(4px);
+            z-index: 12;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+            pointer-events: none;
+            letter-spacing: 0.3px;
+            font-variant-numeric: tabular-nums;
+        }
+        /* #-Nummer auf der Seltenheits-Kachel (unter dem ★-Badge oben links) */
+        .rarity-rare-card .rr-no {
+            position: absolute; top: 38px; left: 8px;
+            padding: 3px 8px; border-radius: 10px;
+            font-size: 0.76em; font-weight: 800;
+            background: rgba(0, 0, 0, 0.66); color: #fff;
+            backdrop-filter: blur(4px); z-index: 12;
+            font-variant-numeric: tabular-nums; pointer-events: none;
+        }
+        /* Sortier-Umschalter im Seltenheit-Reiter */
+        .rarity-sort-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 24px 0 6px; }
+        .rarity-sort-head h3 { margin: 0; }
+        .rarity-sort-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .rs-label { color: var(--text-muted); font-size: 0.85em; }
+        .rs-dir { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary); border-radius: 9px; padding: 7px 11px; font: inherit; font-size: 0.9em; cursor: pointer; line-height: 1; }
+        .rs-dir:hover { border-color: var(--accent); }
+        .rs-info { color: var(--text-muted); font-size: 0.8em; }
+
         /* Seltenheit-Reiter: Dashboard */
         .rarity-total-hero { text-align: center; padding: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 15px; margin-bottom: 22px; }
         .rarity-total-hero .rt-num { font-size: 3em; font-weight: 800; background: linear-gradient(135deg, var(--accent), #f1c40f); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
@@ -3019,7 +3055,18 @@
             <div class="rarity-group-chips" id="rarityGroupChips"></div>
             <h3 style="color: var(--accent); margin: 18px 0 6px;">Verteilung nach Level</h3>
             <div id="rarityDistribution"></div>
-            <h3 style="color: var(--accent); margin: 24px 0 6px;">Arten <span style="font-weight:400; color:var(--text-muted); font-size:0.7em;">(nach Seltenheit sortiert)</span></h3>
+            <div class="rarity-sort-head">
+                <h3 style="color: var(--accent);">Arten</h3>
+                <div class="rarity-sort-controls">
+                    <span class="rs-label">Sortierung:</span>
+                    <div class="seg">
+                        <button type="button" class="seg-btn active" id="rsModeRarity" onclick="setRaritySortMode('rarity')">★ Seltenheit</button>
+                        <button type="button" class="seg-btn" id="rsModeColl" onclick="setRaritySortMode('coll')"># Sammel-Nr.</button>
+                    </div>
+                    <button type="button" class="rs-dir" id="rsDirBtn" onclick="toggleRaritySortDir()" title="Reihenfolge umdrehen">↑</button>
+                    <span class="rs-info" id="raritySortInfo">seltenste zuerst</span>
+                </div>
+            </div>
             <div class="rarity-rare-grid" id="rarityRareGrid"></div>
             <div id="rarityGridSentinel" style="height: 1px;"></div>
             <div id="rarityGridInfo" style="text-align:center; color:var(--text-muted); margin-top:14px; font-size:0.85em;"></div>
@@ -4956,6 +5003,7 @@
             document.getElementById('authorSpecies').textContent = new Set(allObservations.filter(o => o.taxonId).map(o => o.taxonId)).size.toLocaleString('de-DE');
             document.getElementById('authorCountries').textContent = allCountries.size.toLocaleString('de-DE');
 
+            computeCollectionNumbers();
             updateRarityScore();
         }
 
@@ -5104,6 +5152,45 @@
 
         function applyAllRarityBadges() {
             document.querySelectorAll('.rarity-badge[data-taxon]').forEach(fillRarityBadge);
+            applyAllCollectionBadges();
+        }
+
+        // ===================== Sammel-Nummern =====================
+        // Jede Art in Forschungsqualität erhält eine laufende Nummer. #1 = die Art,
+        // deren älteste FQ-Beobachtung das früheste Beobachtungsdatum trägt (Gleichstand:
+        // kleinere Beobachtungs-ID). Absolut über die ganze Sammlung – unabhängig von
+        // aktiven Land-/Datumsfiltern, damit die Nummer stabil bleibt.
+        let collectionNo = {};      // taxonId -> laufende Nummer (1..N)
+        let collectionTotal = 0;
+
+        function computeCollectionNumbers() {
+            const best = {};   // tid -> { key, id }
+            for (const o of allObservations) {
+                if (o.quality !== 'research' || !o.taxonId) continue;
+                if (o.rankLevel != null && o.rankLevel > 10) continue;   // nur Art-Ebene
+                const key = (o.date || '9999-99-99') + '|' + String(o.id).padStart(12, '0');
+                const cur = best[o.taxonId];
+                if (!cur || key < cur.key) best[o.taxonId] = { key };
+            }
+            const ids = Object.keys(best).sort((a, b) => best[a].key < best[b].key ? -1 : best[a].key > best[b].key ? 1 : 0);
+            collectionNo = {};
+            ids.forEach((id, i) => { collectionNo[+id] = i + 1; });
+            collectionTotal = ids.length;
+        }
+
+        function fillCollectionBadge(el) {
+            const no = collectionNo[Number(el.dataset.taxon)];
+            if (!no) { el.style.display = 'none'; return; }
+            el.textContent = '#' + no;
+            el.title = 'Sammel-Nr. ' + no + ' von ' + collectionTotal.toLocaleString('de-DE') +
+                       ' · Reihenfolge der ersten FQ-Sichtung';
+            el.style.display = '';
+        }
+
+        function applyAllCollectionBadges() {
+            if (!collectionTotal) computeCollectionNumbers();
+            if (!collectionTotal) return;
+            document.querySelectorAll('.coll-badge[data-taxon]').forEach(fillCollectionBadge);
         }
 
         // Gesamt-Seltenheits-Score der Sammlung (Summe der Level, jede RG-Art einmal)
@@ -5161,7 +5248,7 @@
             }
             rarityAllSpecies = Object.keys(rep).map(id => {
                 const o = rep[id];
-                return { id: +id, name: o.name, sci: o.scientific, image: o.image, url: o.url, level: rarityLevels[id], n: rarityCounts[id] || 0, group: o.taxon || 'Unbekannt', firstSeen: firstSeen[id] || '' };
+                return { id: +id, name: o.name, sci: o.scientific, image: o.image, url: o.url, level: rarityLevels[id], n: rarityCounts[id] || 0, group: o.taxon || 'Unbekannt', firstSeen: firstSeen[id] || '', no: collectionNo[+id] || null };
             }).sort((a, b) => b.level - a.level || a.n - b.n);
 
             if (!rarityAllSpecies.length) {
@@ -5193,6 +5280,7 @@
             renderRarityGroupChips();
             renderRarityLevelChips();
             renderRarityDistribution();
+            updateRaritySortUI();
             renderRarityGrid(true);
             setupRarityInfiniteScroll();
         }
@@ -5214,11 +5302,46 @@
             renderRarityDashboard();
         }
 
+        // Sortierung des Arten-Rasters: 'rarity' (Seltenheit) | 'coll' (Sammel-Nr.)
+        let raritySortMode = 'rarity';
+        let raritySortDir = 1;   // rarity: +1 = seltenste zuerst · coll: +1 = #1 zuerst
+
         function getRarityFilteredSpecies() {
             let list = rarityAllSpecies;
             if (rarityGroupFilter.size) list = list.filter(s => rarityGroupFilter.has(s.group));
             if (rarityLevelFilter.size) list = list.filter(s => rarityLevelFilter.has(s.level));
+            list = list.slice();
+            if (raritySortMode === 'coll') {
+                // Arten ohne Nummer ans Ende
+                list.sort((a, b) => raritySortDir * ((a.no || Infinity) - (b.no || Infinity)));
+            } else {
+                list.sort((a, b) => raritySortDir * ((b.level - a.level) || (a.n - b.n)));
+            }
             return list;
+        }
+
+        function setRaritySortMode(mode) {
+            if (raritySortMode === mode) return;
+            raritySortMode = mode;
+            raritySortDir = 1;
+            updateRaritySortUI();
+            renderRarityGrid(true);
+        }
+        function toggleRaritySortDir() {
+            raritySortDir = -raritySortDir;
+            updateRaritySortUI();
+            renderRarityGrid(true);
+        }
+        function updateRaritySortUI() {
+            const br = document.getElementById('rsModeRarity'), bc = document.getElementById('rsModeColl');
+            if (br) br.classList.toggle('active', raritySortMode === 'rarity');
+            if (bc) bc.classList.toggle('active', raritySortMode === 'coll');
+            const dir = document.getElementById('rsDirBtn');
+            if (dir) dir.textContent = raritySortDir > 0 ? '↑' : '↓';
+            const info = document.getElementById('raritySortInfo');
+            if (info) info.textContent = raritySortMode === 'coll'
+                ? (raritySortDir > 0 ? '#1 zuerst (Erstfund)' : 'neueste zuerst')
+                : (raritySortDir > 0 ? 'seltenste zuerst' : 'häufigste zuerst');
         }
 
         function renderRarityGroupChips() {
@@ -5298,6 +5421,7 @@
                 return `
                 <div class="rarity-rare-card${rareCls}" data-tid="${s.id}" style="--type:${ty.c}" title="Karte ansehen">
                     <span class="rarity-badge lvl-${s.level}" style="position:absolute; top:8px; left:8px;">★ ${s.level}</span>
+                    ${s.no ? `<span class="rr-no">#${s.no}</span>` : ''}
                     <span class="rrc-type" style="background:${ty.c}">${ty.emoji}</span>
                     ${s.image ? `<img src="${s.image}" alt="${s.name}" loading="lazy" onerror="this.style.display='none'">` : `<div class="rrc-noimg">${ty.emoji}</div>`}
                     <div class="rarity-rare-info">
@@ -8180,11 +8304,16 @@
                 const rarityBadge = obs.taxonId
                     ? `<span class="rarity-badge" data-taxon="${obs.taxonId}" data-scored="${rarityScored ? '1' : '0'}" style="display:none"></span>`
                     : '';
+                // Laufende Sammel-Nummer (nur für FQ-bewertbare Arten)
+                const collBadge = (obs.taxonId && rarityScored)
+                    ? `<span class="coll-badge" data-taxon="${obs.taxonId}" style="display:none"></span>`
+                    : '';
 
                 card.innerHTML = `
                     <div class="gallery-img-container">
                         ${isNew ? '<span class="new-badge">NEU</span>' : ''}
                         ${rarityBadge}
+                        ${collBadge}
                         ${countBadge}
                         ${carouselControls}
                         <img src="${obs.image}" class="gallery-img"
