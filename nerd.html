@@ -1,0 +1,632 @@
+<title>Nerd · Taxonomie-Baum (Prototyp)</title>
+<style>
+  :root{
+    --bg:#10160d; --panel:#171f12; --panel-2:#1d2617; --raise:#22301a;
+    --ink:#eef3e6; --ink-soft:#b8c4ac; --ink-mute:#7f8c73;
+    --accent:#9bcc5f; --accent-deep:#6f9a3a;
+    --guide:rgba(155,204,95,.20); --line:rgba(155,204,95,.14);
+    --chip:rgba(155,204,95,.10);
+    /* Rang-Skala (entsättigt, kodiert taxonomische Tiefe) */
+    --r-kingdom:#b98bd9; --r-phylum:#8090e0; --r-class:#57a6d6;
+    --r-order:#3fb6a4; --r-family:#7cc24f; --r-genus:#cdb14a; --r-species:#dd8a54;
+    --font-display:Georgia,'Iowan Old Style','Palatino Linotype',Palatino,serif;
+    --font-body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --font-mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f5f1e6; --panel:#fbf8ef; --panel-2:#f1ecdd; --raise:#eae3d0;
+      --ink:#26301c; --ink-soft:#4d5942; --ink-mute:#8a917c;
+      --accent:#5c8a2a; --accent-deep:#4a7220;
+      --guide:rgba(92,138,42,.28); --line:rgba(92,138,42,.16); --chip:rgba(92,138,42,.10);
+      --r-kingdom:#8a5fb0; --r-phylum:#5566c0; --r-class:#2f7fae;
+      --r-order:#1f8f7e; --r-family:#5c8a2a; --r-genus:#9a8018; --r-species:#c06a2c;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#10160d; --panel:#171f12; --panel-2:#1d2617; --raise:#22301a;
+    --ink:#eef3e6; --ink-soft:#b8c4ac; --ink-mute:#7f8c73;
+    --accent:#9bcc5f; --accent-deep:#6f9a3a;
+    --guide:rgba(155,204,95,.20); --line:rgba(155,204,95,.14); --chip:rgba(155,204,95,.10);
+    --r-kingdom:#b98bd9; --r-phylum:#8090e0; --r-class:#57a6d6;
+    --r-order:#3fb6a4; --r-family:#7cc24f; --r-genus:#cdb14a; --r-species:#dd8a54;
+  }
+  :root[data-theme="light"]{
+    --bg:#f5f1e6; --panel:#fbf8ef; --panel-2:#f1ecdd; --raise:#eae3d0;
+    --ink:#26301c; --ink-soft:#4d5942; --ink-mute:#8a917c;
+    --accent:#5c8a2a; --accent-deep:#4a7220;
+    --guide:rgba(92,138,42,.28); --line:rgba(92,138,42,.16); --chip:rgba(92,138,42,.10);
+    --r-kingdom:#8a5fb0; --r-phylum:#5566c0; --r-class:#2f7fae;
+    --r-order:#1f8f7e; --r-family:#5c8a2a; --r-genus:#9a8018; --r-species:#c06a2c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:940px;margin:0 auto;padding:26px 18px 80px}
+
+  /* ---- Kopf ---- */
+  header{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 18px;
+    padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .title{display:flex;align-items:center;gap:12px}
+  .title h1{font-family:var(--font-display);font-weight:700;font-size:1.72rem;
+    letter-spacing:-.01em;margin:0;text-wrap:balance}
+  .title .glyph{font-size:1.5rem;filter:saturate(1.1)}
+  .sub{color:var(--ink-soft);font-size:.92rem;max-width:52ch}
+  .badge{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--accent);border:1px solid var(--guide);
+    padding:3px 8px;border-radius:999px;background:var(--chip);white-space:nowrap}
+  .spacer{flex:1}
+  .theme-btn{font-family:var(--font-mono);font-size:.72rem;color:var(--ink-soft);
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:7px 11px;cursor:pointer}
+  .theme-btn:hover{color:var(--ink);border-color:var(--guide)}
+
+  /* ---- Statusleiste ---- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0 4px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .stat .n{font-family:var(--font-mono);font-size:1.4rem;font-weight:600;
+    font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.1}
+  .stat .l{font-size:.72rem;color:var(--ink-mute);text-transform:uppercase;
+    letter-spacing:.06em;margin-top:3px}
+  @media (max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+  /* ---- Werkzeugleiste ---- */
+  .toolbar{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px;
+    align-items:center;margin:18px 0 12px;padding:10px;
+    background:color-mix(in srgb,var(--bg) 88%,transparent);
+    backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px}
+  .seg{display:inline-flex;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:9px;overflow:hidden}
+  .seg button{font-family:var(--font-body);font-size:.8rem;color:var(--ink-soft);
+    background:transparent;border:0;padding:7px 12px;cursor:pointer;white-space:nowrap}
+  .seg button[aria-pressed="true"]{background:var(--accent);color:#0e1408;font-weight:600}
+  .seg button:not([aria-pressed="true"]):hover{color:var(--ink)}
+  .ghost{font-family:var(--font-body);font-size:.8rem;color:var(--ink-soft);
+    background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
+    padding:7px 12px;cursor:pointer}
+  .ghost:hover{color:var(--ink);border-color:var(--guide)}
+  .search{flex:1;min-width:150px;display:flex;align-items:center;gap:7px;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:0 10px}
+  .search input{flex:1;background:transparent;border:0;outline:0;color:var(--ink);
+    font-family:var(--font-body);font-size:.85rem;padding:8px 0}
+  .search input::placeholder{color:var(--ink-mute)}
+  .search .mag{color:var(--ink-mute);font-size:.85rem}
+
+  /* ---- Baum ---- */
+  #tree{margin-top:4px}
+  .node{position:relative}
+  .kids{margin-left:15px;padding-left:14px;border-left:1px solid var(--guide)}
+  .row{position:relative;display:flex;align-items:center;gap:9px;
+    padding:6px 8px;border-radius:9px;cursor:default;min-height:34px}
+  .row.branch{cursor:pointer}
+  .row.branch:hover{background:var(--panel)}
+  .row.hit{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+  /* horizontaler Verbinder in die Rail */
+  .kids > .node > .row::before{content:"";position:absolute;left:-14px;top:17px;
+    width:11px;height:1px;background:var(--guide)}
+
+  .caret{flex:0 0 16px;width:16px;height:16px;display:inline-flex;align-items:center;
+    justify-content:center;color:var(--ink-mute);font-size:.7rem;
+    transition:transform .16s ease}
+  .caret.open{transform:rotate(90deg)}
+  .caret.leaf{visibility:hidden}
+
+  .dot{flex:0 0 auto;width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 3px var(--chip)}
+  .rank{flex:0 0 auto;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ink-mute);width:70px;text-align:left}
+  @media (max-width:560px){.rank{display:none}}
+
+  .names{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
+  .de{font-family:var(--font-display);font-size:.98rem;color:var(--ink);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row[data-rank="species"] .de{font-size:.94rem}
+  .sci{font-family:var(--font-mono);font-size:.72rem;font-style:italic;color:var(--ink-mute);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .de mark,.sci mark{background:color-mix(in srgb,var(--accent) 40%,transparent);
+    color:inherit;border-radius:3px;padding:0 1px}
+
+  .metric{flex:0 0 auto;display:flex;align-items:center;gap:9px;width:158px}
+  @media (max-width:560px){.metric{width:96px}}
+  .bar{flex:1;height:6px;border-radius:3px;background:var(--panel-2);overflow:hidden}
+  .bar > span{display:block;height:100%;border-radius:3px;
+    background:linear-gradient(90deg,var(--accent-deep),var(--accent))}
+  .count{font-family:var(--font-mono);font-size:.8rem;font-variant-numeric:tabular-nums;
+    color:var(--ink-soft);width:34px;text-align:right}
+  @media (max-width:560px){.bar{display:none}}
+
+  /* ---- Legende ---- */
+  .legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:22px;padding-top:16px;
+    border-top:1px solid var(--line)}
+  .legend .li{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--ink-mute)}
+  .legend .li i{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .note{margin-top:16px;font-size:.78rem;color:var(--ink-mute);
+    background:var(--panel);border:1px dashed var(--guide);border-radius:10px;
+    padding:11px 13px;line-height:1.55}
+  .note b{color:var(--ink-soft);font-weight:600}
+
+  /* ---- Artenzeile: Sammelkarte anklickbar ---- */
+  .row.species{cursor:pointer}
+  .row.species:hover{background:var(--panel)}
+  .row.species:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .card-cue{flex:0 0 auto;width:20px;text-align:center;font-size:.85rem;
+    opacity:.28;transition:opacity .15s ease;user-select:none}
+  .row.species:hover .card-cue,.row.species:focus-visible .card-cue{opacity:1}
+  .row:not(.species) .card-cue{visibility:hidden}
+
+  /* ---- Sammelkarten-Modal ---- */
+  .card-modal{position:fixed;inset:0;z-index:50;display:none;place-items:center;
+    padding:22px;background:rgba(6,10,4,.72);backdrop-filter:blur(4px)}
+  .card-modal.active{display:grid}
+  .card-close{position:absolute;top:16px;right:18px;width:40px;height:40px;
+    border-radius:50%;border:1px solid var(--line);background:var(--panel);
+    color:var(--ink);font-size:1.3rem;cursor:pointer;line-height:1}
+  .card-close:hover{border-color:var(--guide)}
+  .sc-scene{perspective:1400px;width:min(340px,86vw)}
+  .sc-card{position:relative;width:100%;aspect-ratio:63/88;
+    transform-style:preserve-3d;transform:rotateY(180deg);
+    transition:transform .7s cubic-bezier(.2,.8,.2,1)}
+  .sc-card.revealed{transform:rotateY(0)}
+  .sc-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:18px;
+    overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+  .sc-back{transform:rotateY(180deg);
+    background:
+      repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0 8px,transparent 8px 16px),
+      radial-gradient(120% 90% at 50% 0%,#25361b,#0f1a0b 78%);
+    border:1px solid var(--guide);display:grid;place-items:center}
+  .sc-back .crest{font-size:3.4rem;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+  .sc-front{display:flex;flex-direction:column;
+    background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    border:1px solid color-mix(in srgb,var(--type,#7cb342) 45%,var(--line))}
+  .sc-ribbon{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.14em;
+    text-transform:uppercase;text-align:center;padding:6px;color:#0e1408;
+    background:linear-gradient(90deg,var(--type,#7cb342),color-mix(in srgb,var(--type,#7cb342) 60%,#fff))}
+  .sc-hero{position:relative;flex:0 0 auto;aspect-ratio:1.55/1;display:grid;place-items:center;
+    background:radial-gradient(120% 120% at 30% 20%,
+      color-mix(in srgb,var(--type,#7cb342) 40%,#0c120a),#0c120a);
+    overflow:hidden}
+  .sc-hero .emoji{font-size:4.6rem;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45));z-index:1}
+  .sc-holo{position:absolute;inset:0;mix-blend-mode:screen;opacity:.5;
+    background:conic-gradient(from 0deg,#ff5f6d,#ffc371,#5efce8,#736efe,#ff5f6d);
+    animation:holo 6s linear infinite}
+  @keyframes holo{to{transform:rotate(1turn)}}
+  .sc-typebadge{position:absolute;left:10px;bottom:10px;z-index:2;font-size:.68rem;
+    font-weight:600;color:#0e1408;padding:3px 9px;border-radius:999px;
+    background:var(--type,#7cb342)}
+  .sc-body{padding:12px 15px 15px;display:flex;flex-direction:column;gap:8px;flex:1;min-height:0}
+  .sc-name{font-family:var(--font-display);font-size:1.28rem;line-height:1.15;
+    color:var(--ink);text-wrap:balance}
+  .sc-sci{font-family:var(--font-mono);font-style:italic;font-size:.78rem;color:var(--ink-mute);margin-top:-4px}
+  .sc-facts{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--ink-soft)}
+  .sc-facts .f{display:flex;gap:7px;align-items:baseline}
+  .sc-facts .f span{flex:0 0 auto}
+  .sc-facts .f b{font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+    color:var(--ink);font-weight:600}
+  .sc-link{margin-top:auto;font-family:var(--font-mono);font-size:.74rem;
+    color:var(--type,#7cb342);text-decoration:none;padding-top:6px}
+  .sc-link:hover{text-decoration:underline}
+
+  /* ---- Owner-Gate (nur eigene Geräte) ---- */
+  .gate{position:fixed;inset:0;display:none;place-items:center;padding:28px;
+    background:var(--bg);z-index:100}
+  .gate.active{display:grid}
+  .gate .box{max-width:38ch;display:flex;flex-direction:column;gap:14px;
+    align-items:center;text-align:center}
+  .gate .lock{font-size:2.8rem}
+  .gate h2{font-family:var(--font-display);font-size:1.35rem;margin:0;color:var(--ink)}
+  .gate p{color:var(--ink-soft);font-size:.9rem;line-height:1.55;margin:0}
+  .gate code{font-family:var(--font-mono);font-size:.82em;color:var(--accent)}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}
+    .sc-card{transform:rotateY(0)!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="title">
+      <span class="glyph">🔬</span>
+      <div>
+        <h1>Nerd · Taxonomie</h1>
+      </div>
+    </div>
+    <span class="badge">Prototyp</span>
+    <span class="badge" title="Sichtbarkeit">nur mein Gerät</span>
+    <div class="spacer"></div>
+    <button class="theme-btn" id="themeBtn" type="button">◐ Theme</button>
+  </header>
+
+  <p class="sub" style="margin-top:12px">Deine Beobachtungen bis auf Gattung &amp; Art aufgeschlüsselt — nicht mehr nur „Pflanzen“, sondern <em>Reich → Abteilung → Klasse → Ordnung → Familie → Gattung → Art</em>. Anschauungsbeispiel mit Beispieldaten.</p>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar">
+    <div class="seg" role="group" aria-label="Kennzahl">
+      <button type="button" data-metric="species" aria-pressed="true">Arten</button>
+      <button type="button" data-metric="obs" aria-pressed="false">Beob.</button>
+    </div>
+    <div class="seg" role="group" aria-label="Ränge">
+      <button type="button" data-mode="major" aria-pressed="true">Nur Hauptränge</button>
+      <button type="button" data-mode="all" aria-pressed="false">Mit Zwischenrängen</button>
+    </div>
+    <div class="seg" role="group" aria-label="Sortierung">
+      <button type="button" data-sort="count" aria-pressed="true">↓ Menge</button>
+      <button type="button" data-sort="alpha" aria-pressed="false">A–Z</button>
+    </div>
+    <button class="ghost" id="expandAll" type="button">Alles ▸</button>
+    <button class="ghost" id="collapseAll" type="button">Zuklappen ▾</button>
+    <label class="search">
+      <span class="mag">⌕</span>
+      <input id="search" type="search" placeholder="Art, Gattung, Familie …" autocomplete="off" aria-label="Baum durchsuchen">
+    </label>
+  </div>
+
+  <div id="tree"></div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="note">
+    <b>So würde das echt funktionieren:</b> Für jede deiner Arten wird die Abstammungslinie
+    einmalig aufgelöst (nach Arten dedupliziert, in 30er-Batches über deinen bestehenden
+    iNat-Cache-Proxy) und dann zu diesem Baum aggregiert — <b>Zahlen &amp; Verzweigungen
+    kämen also aus deinen realen Beobachtungen.</b> Der Reiter erscheint nur auf deinem
+    freigeschalteten Gerät (<span style="font-family:var(--font-mono)">isOwnerDevice()</span>).
+  </div>
+</div>
+
+<div class="gate" id="gate">
+  <div class="box">
+    <div class="lock">🔒</div>
+    <h2>Nur für den Eigentümer</h2>
+    <p>Der Nerd-Bereich ist nur auf deinen freigeschalteten Geräten sichtbar. Öffne die App und schalte dieses Gerät als Eigentümer frei — dann erscheint der Baum hier automatisch.</p>
+  </div>
+</div>
+
+<div class="card-modal" id="cardModal" role="dialog" aria-modal="true" aria-label="Sammelkarte">
+  <button class="card-close" id="cardClose" type="button" aria-label="Schließen">×</button>
+  <div class="sc-scene"><div id="cardHolder"></div></div>
+</div>
+
+<script>
+/* ---------- Beispieldaten: echte Linien, plausible Zahlen ---------- */
+const sp = (sci,de,obs)=>({rank:'species',sci,de,obs});
+const g  = (sci,de,...ch)=>({rank:'genus',sci,de,children:ch});
+const fam= (sci,de,...ch)=>({rank:'family',sci,de,children:ch});
+const sub= (sci,de,...ch)=>({rank:'subfamily',sci,de,children:ch});
+const ord= (sci,de,...ch)=>({rank:'order',sci,de,children:ch});
+const cls= (sci,de,...ch)=>({rank:'class',sci,de,children:ch});
+const phy= (sci,de,label,...ch)=>({rank:'phylum',sci,de,rankLabel:label,children:ch});
+const kng= (sci,de,...ch)=>({rank:'kingdom',sci,de,children:ch});
+
+const DATA = kng('Vita','Leben',
+  kng('Plantae','Pflanzen',
+    phy('Tracheophyta','Gefäßpflanzen','Abteilung',
+      cls('Magnoliopsida','Bedecktsamer',
+        ord('Rosales','Rosenartige',
+          fam('Rosaceae','Rosengewächse',
+            g('Rubus','Brombeeren', sp('Rubus fruticosus','Brombeere',14), sp('Rubus idaeus','Himbeere',5)),
+            g('Prunus','Prunus', sp('Prunus spinosa','Schlehe',8), sp('Prunus avium','Vogel-Kirsche',6)),
+            g('Rosa','Rosen', sp('Rosa canina','Hundsrose',11))),
+          fam('Urticaceae','Brennnesselgewächse',
+            g('Urtica','Brennnesseln', sp('Urtica dioica','Große Brennnessel',9)))),
+        ord('Asterales','Asternartige',
+          fam('Asteraceae','Korbblütler',
+            sub('Asteroideae','Asternähnliche',
+              g('Bellis','Gänseblümchen', sp('Bellis perennis','Gänseblümchen',22)),
+              g('Tanacetum','Rainfarne', sp('Tanacetum vulgare','Rainfarn',4))),
+            sub('Cichorioideae','Zichorienähnliche',
+              g('Taraxacum','Löwenzähne', sp('Taraxacum officinale','Löwenzahn',31))))),
+        ord('Fagales','Buchenartige',
+          fam('Fagaceae','Buchengewächse',
+            g('Quercus','Eichen', sp('Quercus robur','Stiel-Eiche',12), sp('Quercus rubra','Rot-Eiche',3))),
+          fam('Betulaceae','Birkengewächse',
+            g('Betula','Birken', sp('Betula pendula','Hänge-Birke',7))))))),
+  kng('Animalia','Tiere',
+    phy('Chordata','Chordatiere','Stamm',
+      cls('Aves','Vögel',
+        ord('Passeriformes','Sperlingsvögel',
+          fam('Paridae','Meisen',
+            g('Parus','Parus', sp('Parus major','Kohlmeise',27)),
+            g('Cyanistes','Blaumeisen', sp('Cyanistes caeruleus','Blaumeise',19))),
+          fam('Corvidae','Rabenvögel',
+            g('Corvus','Raben & Krähen', sp('Corvus corone','Aaskrähe',15)),
+            g('Garrulus','Häher', sp('Garrulus glandarius','Eichelhäher',6))),
+          fam('Turdidae','Drosseln',
+            g('Turdus','Echte Drosseln', sp('Turdus merula','Amsel',33), sp('Turdus philomelos','Singdrossel',8)))),
+        ord('Anseriformes','Gänsevögel',
+          fam('Anatidae','Entenvögel',
+            g('Anas','Eigentliche Enten', sp('Anas platyrhynchos','Stockente',24)),
+            g('Cygnus','Schwäne', sp('Cygnus olor','Höckerschwan',9))))),
+      cls('Insecta','Insekten',
+        ord('Lepidoptera','Schmetterlinge',
+          fam('Nymphalidae','Edelfalter',
+            g('Aglais','Aglais', sp('Aglais io','Tagpfauenauge',18), sp('Aglais urticae','Kleiner Fuchs',12)),
+            g('Vanessa','Vanessa', sp('Vanessa atalanta','Admiral',7))),
+          fam('Pieridae','Weißlinge',
+            g('Pieris','Kohlweißlinge', sp('Pieris rapae','Kleiner Kohlweißling',14)))),
+        ord('Odonata','Libellen',
+          fam('Libellulidae','Segellibellen',
+            g('Sympetrum','Heidelibellen', sp('Sympetrum striolatum','Große Heidelibelle',5))))),
+      cls('Mammalia','Säugetiere',
+        ord('Rodentia','Nagetiere',
+          fam('Sciuridae','Hörnchen',
+            g('Sciurus','Eichhörnchen', sp('Sciurus vulgaris','Eichhörnchen',16)))),
+        ord('Carnivora','Raubtiere',
+          fam('Canidae','Hunde',
+            g('Vulpes','Füchse', sp('Vulpes vulpes','Rotfuchs',4))))))),
+  kng('Fungi','Pilze',
+    phy('Basidiomycota','Ständerpilze','Abteilung',
+      cls('Agaricomycetes','Agaricomycetes',
+        ord('Agaricales','Blätterpilze',
+          fam('Amanitaceae','Wulstlingsverwandte',
+            g('Amanita','Wulstlinge', sp('Amanita muscaria','Fliegenpilz',6))),
+          fam('Psathyrellaceae','Mürblingsverwandte',
+            g('Coprinellus','Tintlinge', sp('Coprinellus micaceus','Glimmer-Tintling',3)))),
+        ord('Boletales','Röhrlingsartige',
+          fam('Boletaceae','Dickröhrlingsverwandte',
+            g('Boletus','Dickröhrlinge', sp('Boletus edulis','Steinpilz',5))))))));
+
+/* ---------- Rang-Metadaten ---------- */
+const RANK_DE = {kingdom:'Reich',phylum:'Stamm',class:'Klasse',order:'Ordnung',
+  family:'Familie',subfamily:'Unterfamilie',tribe:'Tribus',genus:'Gattung',species:'Art'};
+const RANK_COLOR = {kingdom:'--r-kingdom',phylum:'--r-phylum',class:'--r-class',
+  order:'--r-order',family:'--r-family',subfamily:'--r-family',tribe:'--r-genus',
+  genus:'--r-genus',species:'--r-species'};
+const MAJOR = new Set(['kingdom','phylum','class','order','family','genus','species']);
+
+/* ---------- Aggregation ---------- */
+function aggregate(n,depth){
+  n._depth=depth;
+  if(n.rank==='species'){ n._obs=n.obs; n._species=1; n._maxDepth=depth; return n; }
+  let obs=0,species=0,md=depth;
+  for(const c of n.children){ aggregate(c,depth+1); obs+=c._obs; species+=c._species; md=Math.max(md,c._maxDepth); }
+  n._obs=obs; n._species=species; n._maxDepth=md;
+  return n;
+}
+aggregate(DATA,0);
+DATA.rank='life'; DATA.rankLabel=' '; // Baumwurzel „Leben“ (kein echter Rang)
+
+/* ---------- Zustand ---------- */
+const state={metric:'species',mode:'major',sort:'count',query:''};
+const expanded=new Set(); // Standard: nur die Wurzel „Leben“ offen, Reiche zugeklappt
+expanded.add(DATA.sci);
+
+/* Typ (Optik der Sammelkarte) je Art – Klasse bei Tieren, sonst Reich */
+const TYPE={
+  Aves:{c:'#e0a13a',e:'🐦',de:'Vögel'},
+  Insecta:{c:'#b57edc',e:'🦋',de:'Insekten'},
+  Mammalia:{c:'#c96f4a',e:'🦊',de:'Säugetiere'},
+  Plantae:{c:'#7cb342',e:'🌿',de:'Pflanzen'},
+  Fungi:{c:'#d98a54',e:'🍄',de:'Pilze'}
+};
+const GENUS_EMOJI={Aglais:'🦋',Vanessa:'🦋',Pieris:'🦋',Sympetrum:'🪰',
+  Parus:'🐦',Cyanistes:'🐦',Corvus:'🐦‍⬛',Garrulus:'🐦',Turdus:'🐦',
+  Anas:'🦆',Cygnus:'🦢',Sciurus:'🐿️',Vulpes:'🦊',
+  Amanita:'🍄',Coprinellus:'🍄',Boletus:'🟤',
+  Rubus:'🫐',Prunus:'🌸',Rosa:'🌹',Urtica:'🌿',Bellis:'🌼',
+  Tanacetum:'🌼',Taraxacum:'🌼',Quercus:'🌳',Betula:'🌳'};
+/* Kontext (Reich/Klasse/Ordnung/Familie) je Art annotieren – für Typ & Fakten */
+(function annotate(n,ctx){
+  const c={...ctx};
+  if(n.rank==='kingdom'){ c.kingdomSci=n.sci; c.kingdomDe=n.de; }
+  if(n.rank==='class'){ c.classSci=n.sci; c.classDe=n.de; }
+  if(n.rank==='order') c.ordnung=n.de;
+  if(n.rank==='family') c.familie=n.de;
+  if(n.rank==='species'){
+    const typeKey = TYPE[c.classSci] ? c.classSci : c.kingdomSci; // Tierklasse, sonst Reich
+    n._type  = TYPE[typeKey] || TYPE.Plantae;
+    n._emoji = GENUS_EMOJI[n.sci.split(' ')[0]] || n._type.e;
+    n._ctx   = c;
+  }
+  if(n.children) n.children.forEach(ch=>annotate(ch,c));
+})(DATA,{});
+
+const val=n=> state.metric==='species'? n._species : n._obs;
+
+/* Kinder unter Berücksichtigung von "Hauptränge" (Minor-Ränge hochziehen) */
+function kidsOf(n){
+  if(!n.children) return [];
+  let out=[];
+  for(const c of n.children){
+    if(state.mode==='major' && !MAJOR.has(c.rank)) out=out.concat(kidsOf(c));
+    else out.push(c);
+  }
+  if(state.sort==='alpha') out=out.slice().sort((a,b)=> a.de.localeCompare(b.de,'de'));
+  else out=out.slice().sort((a,b)=> val(b)-val(a) || a.de.localeCompare(b.de,'de'));
+  return out;
+}
+
+/* Suche: trifft Knoten oder Nachfahre? */
+function matches(n,q){
+  if(!q) return true;
+  const self=(n.de+' '+n.sci).toLowerCase().includes(q);
+  if(self) return true;
+  return kidsOf(n).some(c=>matches(c,q));
+}
+function selfHit(n,q){ return q && (n.de+' '+n.sci).toLowerCase().includes(q); }
+function hi(text,q){
+  if(!q) return escapeHtml(text);
+  const i=text.toLowerCase().indexOf(q);
+  if(i<0) return escapeHtml(text);
+  return escapeHtml(text.slice(0,i))+'<mark>'+escapeHtml(text.slice(i,i+q.length))+'</mark>'+escapeHtml(text.slice(i+q.length));
+}
+function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ---------- Render ---------- */
+const treeEl=document.getElementById('tree');
+function render(){
+  const q=state.query.trim().toLowerCase();
+  treeEl.innerHTML='';
+  treeEl.appendChild(renderNode(DATA,null,q));
+  renderStats();
+}
+function renderNode(n,parentVal,q){
+  const wrap=document.createElement('div'); wrap.className='node';
+  const kids=kidsOf(n).filter(c=>matches(c,q));
+  const isBranch=kids.length>0;
+  const open = isBranch && (expanded.has(n.sci) || !!q);
+
+  const row=document.createElement('div');
+  row.className='row'+(isBranch?' branch':'')+(selfHit(n,q)?' hit':'');
+  row.dataset.rank=n.rank;
+
+  const caret=document.createElement('span');
+  caret.className='caret'+(isBranch?(open?' open':''):' leaf');
+  caret.textContent='▶';
+  row.appendChild(caret);
+
+  const dot=document.createElement('span');
+  dot.className='dot';
+  dot.style.background='var('+(RANK_COLOR[n.rank]||'--accent')+')';
+  row.appendChild(dot);
+
+  const rank=document.createElement('span');
+  rank.className='rank';
+  rank.textContent=n.rankLabel||RANK_DE[n.rank]||n.rank;
+  row.appendChild(rank);
+
+  const names=document.createElement('span'); names.className='names';
+  const de=document.createElement('span'); de.className='de'; de.innerHTML=hi(n.de,q);
+  names.appendChild(de);
+  if(n.sci && n.rank!=='kingdom' && n.rank!=='life'){
+    const sci=document.createElement('span'); sci.className='sci'; sci.innerHTML=hi(n.sci,q);
+    names.appendChild(sci);
+  }
+  row.appendChild(names);
+
+  const metric=document.createElement('span'); metric.className='metric';
+  const bar=document.createElement('span'); bar.className='bar';
+  const fill=document.createElement('span');
+  const pct = parentVal? Math.max(4,Math.round(val(n)/parentVal*100)) : 100;
+  fill.style.width=pct+'%';
+  bar.appendChild(fill); metric.appendChild(bar);
+  const cnt=document.createElement('span'); cnt.className='count'; cnt.textContent=val(n);
+  metric.appendChild(cnt);
+  row.appendChild(metric);
+
+  const cue=document.createElement('span'); cue.className='card-cue';
+  cue.textContent='🃏'; row.appendChild(cue);
+
+  if(n.rank==='species'){
+    row.classList.add('species');
+    row.tabIndex=0;
+    row.setAttribute('role','button');
+    row.setAttribute('aria-label','Sammelkarte: '+n.de);
+    const open=()=>openCard(n);
+    row.addEventListener('click',open);
+    row.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();open();} });
+  } else if(isBranch){
+    row.addEventListener('click',()=>{
+      if(expanded.has(n.sci)) expanded.delete(n.sci); else expanded.add(n.sci);
+      render();
+    });
+  }
+  wrap.appendChild(row);
+
+  if(open){
+    const box=document.createElement('div'); box.className='kids';
+    const pv=val(n);
+    for(const c of kids) box.appendChild(renderNode(c,pv,q));
+    wrap.appendChild(box);
+  }
+  return wrap;
+}
+
+/* ---------- Statusleiste ---------- */
+function renderStats(){
+  const el=document.getElementById('stats');
+  const reiche=DATA.children.length;
+  el.innerHTML=[
+    ['Arten',DATA._species],
+    ['Beobachtungen',DATA._obs],
+    ['Reiche',reiche],
+    ['Tiefste Linie',DATA._maxDepth+' Ränge']
+  ].map(([l,n])=>`<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+}
+
+/* ---------- Legende ---------- */
+document.getElementById('legend').innerHTML =
+  ['kingdom','phylum','class','order','family','genus','species']
+  .map(r=>`<span class="li"><i style="background:var(${RANK_COLOR[r]})"></i>${RANK_DE[r]}</span>`).join('');
+
+/* ---------- Bedienung ---------- */
+function segGroup(attr,key){
+  document.querySelectorAll(`[data-${attr}]`).forEach(b=>{
+    b.addEventListener('click',()=>{
+      state[key]=b.dataset[attr];
+      b.parentElement.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+      render();
+    });
+  });
+}
+segGroup('metric','metric'); segGroup('mode','mode'); segGroup('sort','sort');
+
+document.getElementById('expandAll').addEventListener('click',()=>{
+  (function all(n){ if(kidsOf(n).length){expanded.add(n.sci); n.children.forEach(all);} })(DATA);
+  render();
+});
+document.getElementById('collapseAll').addEventListener('click',()=>{
+  expanded.clear(); expanded.add(DATA.sci); render(); // zurück auf „nur Leben offen“
+});
+let t;
+document.getElementById('search').addEventListener('input',e=>{
+  clearTimeout(t); const v=e.target.value;
+  t=setTimeout(()=>{ state.query=v; render(); },120);
+});
+
+/* ---------- Sammelkarte ---------- */
+const cardModal=document.getElementById('cardModal');
+function openCard(n){
+  const t=n._type||TYPE.Plantae, ctx=n._ctx||{};
+  const url='https://www.inaturalist.org/observations?user_id=marvin12748&taxon_name='+encodeURIComponent(n.sci);
+  const lineage=[ctx.ordnung,ctx.familie].filter(Boolean).map(escapeHtml);
+  document.getElementById('cardHolder').innerHTML=`
+    <div class="sc-card" id="scCard">
+      <div class="sc-face sc-back"><div class="crest">${n._emoji||'🔬'}</div></div>
+      <div class="sc-face sc-front" style="--type:${t.c}">
+        <div class="sc-ribbon">Sammelkarte</div>
+        <div class="sc-hero">
+          <div class="sc-holo"></div>
+          <div class="emoji">${n._emoji||t.e}</div>
+          <div class="sc-typebadge">${t.e} ${escapeHtml(t.de)}</div>
+        </div>
+        <div class="sc-body">
+          <div>
+            <div class="sc-name">${escapeHtml(n.de)}</div>
+            <div class="sc-sci">${escapeHtml(n.sci)}</div>
+          </div>
+          <div class="sc-facts">
+            <div class="f"><span>🔢</span><div>Beobachtungen: <b>${n.obs}</b></div></div>
+            ${lineage.length?`<div class="f"><span>🧬</span><div>${lineage.join(' › ')}</div></div>`:''}
+            <div class="f"><span>🗺️</span><div>${escapeHtml(ctx.kingdomDe||'')}${ctx.classDe?' · '+escapeHtml(ctx.classDe):''}</div></div>
+          </div>
+          <a class="sc-link" href="${url}" target="_blank" rel="noopener">Auf iNaturalist ansehen →</a>
+        </div>
+      </div>
+    </div>`;
+  cardModal.classList.add('active');
+  const card=document.getElementById('scCard');
+  requestAnimationFrame(()=>setTimeout(()=>{
+    if(cardModal.classList.contains('active')) card.classList.add('revealed');
+  },420));
+}
+function closeCard(){ cardModal.classList.remove('active'); }
+document.getElementById('cardClose').addEventListener('click',closeCard);
+cardModal.addEventListener('click',e=>{ if(e.target===cardModal) closeCard(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeCard(); });
+
+/* ---------- Theme-Umschalter ---------- */
+document.getElementById('themeBtn').addEventListener('click',()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  const isDark = cur? cur==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', isDark?'light':'dark');
+});
+
+/* ---------- Owner-Gate: Baum nur auf freigeschalteten Geräten ---------- */
+/* Gleiche Domain wie die App => geteilter localStorage => derselbe inat_owner-Schalter. */
+if(localStorage.getItem('inat_owner')==='1'){
+  render();
+}else{
+  document.querySelector('.wrap').style.display='none';
+  document.getElementById('gate').classList.add('active');
+}
+</script>
