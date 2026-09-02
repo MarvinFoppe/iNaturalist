@@ -479,8 +479,6 @@
         #tab-nerd .nn-bar > span{display:block;height:100%;border-radius:3px;background:var(--accent)}
         @media (max-width:560px){#tab-nerd .nn-bar{display:none}}
         #tab-nerd .nn-count{font-size:.82em;font-variant-numeric:tabular-nums;color:var(--text-secondary);width:34px;text-align:right}
-        #tab-nerd .nn-of{flex:0 0 auto;font-size:.72em;color:var(--text-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-        @media (max-width:560px){#tab-nerd .nn-of{display:none}}
         #tab-nerd .nn-cue{flex:0 0 auto;width:20px;text-align:center;font-size:.85em;opacity:0;transition:opacity .15s ease}
         #tab-nerd .nn-row.leaf:hover .nn-cue{opacity:.9}
         #tab-nerd .nerd-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
@@ -7815,42 +7813,11 @@
                 if(d.total_results > 0){ nerdKingdomsTotal = d.total_results; localStorage.setItem('inat_nerd_kingtotal', String(d.total_results)); }
             } catch(e){}
         }
-        const NERD_COMPLETE_KEY = 'inat_nerd_complete_v1';
-        let nerdComplete = (() => { try { return JSON.parse(localStorage.getItem(NERD_COMPLETE_KEY)) || {}; } catch(e){ return {}; } })();
-        function nerdSaveComplete(){ try { localStorage.setItem(NERD_COMPLETE_KEY, JSON.stringify(nerdComplete)); } catch(e){} }
-        // Nur höhere Ränge abfragen – dort pflegt iNat überhaupt Gesamtzahlen (Klasse/Ordnung); hält die Call-Zahl klein.
-        const NERD_COMPLETE_RANKS = new Set(['kingdom','phylum','class','order']);
-        function nerdCollectHigherIds(node, out){
-            out = out || [];
-            for(const c of node.children.values()){
-                if(typeof c.id === 'number' && NERD_COMPLETE_RANKS.has(c.rank)) out.push(c.id);
-                nerdCollectHigherIds(c, out);
-            }
-            return out;
-        }
-        async function nerdResolveCompleteCounts(ids){
-            for(let i=0; i<ids.length; i+=30){
-                const chunk = ids.slice(i, i+30);
-                try {
-                    const res = await inatFetch(`${API_BASE}/taxa/${chunk.join(',')}`);
-                    const data = await res.json();
-                    const got = {};
-                    (data.results || []).forEach(t => { got[t.id] = (typeof t.complete_species_count === 'number') ? t.complete_species_count : null; });
-                    chunk.forEach(id => { nerdComplete[id] = (id in got) ? got[id] : null; });
-                } catch(e){ chunk.forEach(id => { if(!(id in nerdComplete)) nerdComplete[id] = null; }); }
-                nerdSaveComplete();
-            }
-        }
-        // Gesamtzahlen im Hintergrund nachladen (blockiert das erste Zeichnen des Baums nicht)
+        // Reich-Gesamtzahl im Hintergrund holen (für „X / 8“ in der Statusleiste)
         async function nerdEnrichTotals(){
             if(nerdEnriching || !nerdRoot) return;
             nerdEnriching = true;
-            try {
-                await nerdEnsureKingdomTotal();
-                const ids = [...new Set(nerdCollectHigherIds(nerdRoot))].filter(id => !(id in nerdComplete));
-                if(ids.length) await nerdResolveCompleteCounts(ids);
-                nerdPaint();
-            } catch(e){}
+            try { await nerdEnsureKingdomTotal(); nerdPaint(); } catch(e){}
             nerdEnriching = false;
         }
 
@@ -8008,18 +7975,6 @@
             bar.appendChild(fill); metric.appendChild(bar);
             const cnt = document.createElement('span'); cnt.className = 'nn-count'; cnt.textContent = nerdVal(node); metric.appendChild(cnt);
             row.appendChild(metric);
-
-            // „X / N Arten weltweit“ – nur bei Kennzahl „Arten“ und wo iNat eine kuratierte Gesamtzahl hat
-            if(nerdState.metric === 'species'){
-                const C = nerdComplete[node.id];
-                if(typeof C === 'number' && C > 0){
-                    const of = document.createElement('span'); of.className = 'nn-of';
-                    of.textContent = '/ ' + C.toLocaleString('de-DE');
-                    const pct = node._species / C * 100;
-                    row.title = `${node._species.toLocaleString('de-DE')} von ${C.toLocaleString('de-DE')} Arten weltweit (${pct < 0.1 ? '< 0,1' : pct.toFixed(pct < 10 ? 1 : 0)} %)`;
-                    row.appendChild(of);
-                }
-            }
 
             const cue = document.createElement('span'); cue.className = 'nn-cue'; cue.textContent = isLeaf ? '🃏' : ''; row.appendChild(cue);
 
