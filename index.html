@@ -2721,8 +2721,91 @@
                 scroll-snap-align: start;
             }
             .season-cards > .scard:hover { transform: none; }
-            .stamp-grid { grid-template-columns: repeat(2, 1fr); }
+            .stamp-grid { grid-template-columns: repeat(3, 1fr); }
         }
+
+        /* Handy: dichtere Kachel-Raster (3 statt 2) bei den vielen Funktionen */
+        @media (max-width: 560px) {
+            .badges-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        }
+
+        /* ===== Ausklappbare Badge-Kategorien ===== */
+        .badge-cat {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: rgba(15, 26, 13, 0.28);
+            margin: 14px 0;
+        }
+        .badge-cat + .badge-cat { margin-top: 12px; }
+        .badge-cat > summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 20px;
+            user-select: none;
+        }
+        .badge-cat > summary::-webkit-details-marker { display: none; }
+        .badge-cat > summary:hover { background: rgba(139,195,74,0.06); border-radius: 14px; }
+        .bcs-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2em;
+            color: var(--text-secondary);
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+        .badge-cat.season-cat .bcs-title { color: var(--accent-warm-strong); }
+        .bcs-chev { margin-left: auto; color: var(--text-muted); font-size: 0.9em; transition: transform 0.2s; }
+        .badge-cat[open] > summary .bcs-chev { transform: rotate(180deg); }
+        .badge-cat .season-yearsum { font-family:'Open Sans',sans-serif; font-size:0.62em; color: var(--text-muted); font-weight:400; }
+        .badge-cat-body { padding: 2px 20px 20px; }
+        .badge-cat-navrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; }
+        @media (max-width: 560px) {
+            .badge-cat > summary { padding: 13px 15px; gap: 8px; }
+            .bcs-title { font-size: 1.08em; }
+            .badge-cat-body { padding: 2px 13px 16px; }
+        }
+
+        /* ===== Sticky Monats-Challenge-Button (oben rechts) ===== */
+        .month-chip {
+            position: fixed;
+            top: 14px; right: 14px;
+            z-index: 1400;
+            display: inline-flex; align-items: center; gap: 11px;
+            padding: 8px 15px 8px 9px;
+            border: 1px solid var(--accent-warm-strong);
+            border-radius: 999px;
+            background: linear-gradient(150deg, rgba(30,44,22,0.96), rgba(15,26,13,0.96));
+            color: var(--text-primary);
+            font-family: 'Open Sans', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 6px 22px rgba(0,0,0,0.45);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+        }
+        .month-chip:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,0.55); border-color: var(--accent-warm); }
+        .month-chip:active { transform: translateY(0); }
+        .mchip-ring { position: relative; width: 40px; height: 40px; flex: 0 0 40px; }
+        .mchip-ring svg { width: 40px; height: 40px; transform: rotate(-90deg); }
+        .mchip-ring .mr-track { fill: none; stroke: rgba(255,255,255,0.14); stroke-width: 3.4; }
+        .mchip-ring .mr-prog { fill: none; stroke: var(--accent-warm); stroke-width: 3.4; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+        .mchip-medal { position: absolute; inset: 0; display: grid; place-items: center; font-size: 1.02em; line-height: 1; }
+        .mchip-txt { display: flex; flex-direction: column; line-height: 1.25; text-align: left; }
+        .mchip-l1 { font-size: 0.68em; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-muted); font-weight: 700; }
+        .mchip-l2 { font-size: 0.92em; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+        .mchip-l2 b { color: var(--accent-warm); }
+        @media (max-width: 560px) {
+            .month-chip { top: 10px; right: 10px; padding: 6px 12px 6px 7px; gap: 8px; }
+            .mchip-ring, .mchip-ring svg { width: 34px; height: 34px; flex-basis: 34px; }
+            .mchip-l2 { font-size: 0.86em; }
+        }
+        /* Kurz aufblitzende Hervorhebung der Zielkarte nach Klick */
+        @keyframes cardFlash {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(230,150,60,0); }
+            25% { box-shadow: 0 0 0 3px var(--accent-warm), 0 10px 30px var(--shadow); }
+        }
+        .scard.flash-target { animation: cardFlash 1.5s ease; border-color: var(--accent-warm-strong); }
     </style>
 </head>
 <body>
@@ -2762,6 +2845,22 @@
     </div>
 
     <!-- Beispiel-Ansicht: Hinweisleiste -->
+    <!-- Sticky Monats-Challenge-Fortschritt (springt zur Monats-Challenge-Karte) -->
+    <button id="monthChip" class="month-chip" type="button" style="display:none"
+            onclick="jumpToMonthChallenge()" title="Zur Monats-Challenge springen" aria-label="Monats-Challenge – Fortschritt anzeigen">
+        <span class="mchip-ring">
+            <svg viewBox="0 0 40 40" aria-hidden="true">
+                <circle class="mr-track" cx="20" cy="20" r="17"></circle>
+                <circle class="mr-prog"  cx="20" cy="20" r="17" id="mchipProg"></circle>
+            </svg>
+            <span class="mchip-medal" id="mchipMedal">📅</span>
+        </span>
+        <span class="mchip-txt">
+            <span class="mchip-l1">Monats-Challenge</span>
+            <span class="mchip-l2" id="mchipL2">–</span>
+        </span>
+    </button>
+
     <div class="demo-banner" id="demoBanner" style="display:none">
         <span class="demo-banner-txt">🔍 <b>Beispiel-Ansicht</b> – so sieht die App mit Daten aus. Alle Funktionen zum Ausprobieren (Belohnungen, Ränge, Seltenheit …).</span>
         <button class="demo-banner-btn" onclick="demoEnterName()">Eigenen Namen eingeben</button>
@@ -3019,24 +3118,32 @@
             <div class="badges-intro" id="badgesHint"></div>
             <div class="badge-progress-wrap" id="badgesProgress"></div>
 
-            <div class="badges-subtitle">🌟 Sammel-Ränge</div>
-            <div class="badges-grid" id="badgesOverview"></div>
+            <details class="badge-cat" id="catRanks" open>
+                <summary><span class="bcs-title">🌟 Gesamtbadges <span style="font-size:0.6em;color:var(--text-muted);font-weight:400;">(Sammel-Ränge)</span></span><span class="bcs-chev">▼</span></summary>
+                <div class="badge-cat-body">
+                    <div class="badges-grid" id="badgesOverview"></div>
 
-            <div id="countryMap"></div>
-            <div class="countrymap-legend" id="countryMapLegend">
-                <span><span class="cml-swatch" style="background:#8bc34a;"></span> besucht (Research Grade)</span>
-                <span><span class="cml-swatch" style="background:#2a3a26;"></span> noch nicht</span>
-                <span id="countryMapNote" style="color:var(--text-muted);"></span>
-            </div>
+                    <div id="countryMap"></div>
+                    <div class="countrymap-legend" id="countryMapLegend">
+                        <span><span class="cml-swatch" style="background:#8bc34a;"></span> besucht (Research Grade)</span>
+                        <span><span class="cml-swatch" style="background:#2a3a26;"></span> noch nicht</span>
+                        <span id="countryMapNote" style="color:var(--text-muted);"></span>
+                    </div>
 
-            <div id="calYear"></div>
+                    <div id="calYear"></div>
+                </div>
+            </details>
 
-            <div class="badges-subtitle">🧬 Arten je Gruppe <span style="font-size:0.6em;color:var(--text-muted);font-weight:400;">(Staffelung nach weltweiter Artenzahl)</span></div>
-            <div class="badges-grid" id="badgesGroups"></div>
+            <details class="badge-cat" id="catGroups">
+                <summary><span class="bcs-title">🧬 Taxonomische Badges <span style="font-size:0.6em;color:var(--text-muted);font-weight:400;">(Arten je Gruppe · Staffelung nach weltweiter Artenzahl)</span></span><span class="bcs-chev">▼</span></summary>
+                <div class="badge-cat-body">
+                    <div class="badges-grid" id="badgesGroups"></div>
+                </div>
+            </details>
 
             <div class="season-wrap">
-                <div class="badges-subtitle" style="color:var(--accent-warm);">🗓️ Saison &amp; Challenges
-                    <span style="font-size:0.6em;color:var(--text-muted);font-weight:400;">(dauerhafte Nebenziele – setzen regelmäßig zurück)</span>
+                <div class="badges-subtitle" style="color:var(--accent-warm);font-size:0.95em;">🗓️ Saison &amp; Challenges
+                    <span style="font-size:0.62em;color:var(--text-muted);font-weight:400;">(dauerhafte Nebenziele – setzen regelmäßig zurück)</span>
                 </div>
                 <div id="seasonBlock"></div>
             </div>
@@ -6138,6 +6245,16 @@
 
         let sbAlbumYear = null;   // gewähltes Jahr im Sammelalbum
         let sbSeasonYear = null;  // Fensterposition der Jahreszeiten-Zeitleiste (Index)
+        // Auf-/Zu-Zustand der ausklappbaren Saison-Kategorien (über Re-Renders hinweg merken)
+        const sbCatOpen = { month: true, album: false, season: false };
+        // Baut eine ausklappbare Saison-Kategorie (details/summary)
+        function sbCat(key, titleHTML, bodyHTML){
+            const open = sbCatOpen[key] ? ' open' : '';
+            return `<details class="badge-cat season-cat" data-cat="${key}"${open}>
+                <summary><span class="bcs-title">${titleHTML}</span><span class="bcs-chev">▼</span></summary>
+                <div class="badge-cat-body">${bodyHTML}</div>
+            </details>`;
+        }
         function sbSetAlbumYear(y){ if (y == null) return; sbAlbumYear = y; renderSeasonalBadges(); }
         function sbSetSeasonYear(y){ if (y == null) return; sbSeasonYear = y; renderSeasonalBadges(); }
 
@@ -6253,7 +6370,7 @@
                 (bestMK ? sbRow('Bester Monat bisher', bestMN+' neue · '+sbFmtMonth(bestMK)) : '') +
                 `<div class="sd-note">Zählt <b>neue Arten</b> (erstmals überhaupt beobachtet = Lebensliste) in diesem Kalendermonat. Setzt am Monatsersten zurück.</div>`;
             const monthCard = beforeStart ? `
-                <div class="scard" onclick="this.classList.toggle('expanded')">
+                <div class="scard" id="monthChallengeCard" onclick="this.classList.toggle('expanded')">
                     <div class="scard-hero">📅</div>
                     <div class="scard-title">Monats-Challenge</div>
                     <div class="scard-sub">startet am 01.09.2026 · neue Arten</div>
@@ -6261,7 +6378,7 @@
                     <div class="scard-tiers">${SB_MONTH_TIERS.map((t,i)=>`<span class="stx">${SB_TIER[i+1].medal} ${t}</span>`).join('')}</div>
                     <div class="scard-next">Ab September zählt jede neue Art, die du in dem Monat findest.</div>
                 </div>` : `
-                <div class="scard ${curTier>0?'scard-on':''}" onclick="this.classList.toggle('expanded')">
+                <div class="scard ${curTier>0?'scard-on':''}" id="monthChallengeCard" onclick="this.classList.toggle('expanded')">
                     <div class="scard-hero stier-${curTier}">${SB_TIER[curTier].medal || '📅'}</div>
                     <div class="scard-title">Monats-Challenge</div>
                     <div class="scard-sub">${SB_MONTH_NAMES[cm]} ${cy} · neue Arten</div>
@@ -6369,14 +6486,15 @@
                             ${detail}
                         </div>`;
             }).join('');
-            const album = `
-                <div class="season-sub">📖 Monats-Sammelalbum
+            const albumTitle = `📖 Monats-Challenges <span class="season-yearsum">🥇 ${goldN} · 🥈 ${silverN} · 🥉 ${bronzeN}</span>`;
+            const albumBody = `
+                <div class="badge-cat-navrow">
                     <span class="season-yearnav">
                         <button class="syr-btn" ${prevY===null?'disabled':''} onclick="sbSetAlbumYear(${prevY})">‹</button>
                         <span class="syr-cur">${sbAlbumYear}</span>
                         <button class="syr-btn" ${nextY===null?'disabled':''} onclick="sbSetAlbumYear(${nextY})">›</button>
                     </span>
-                    <span class="season-yearsum">🥇 ${goldN} · 🥈 ${silverN} · 🥉 ${bronzeN}</span>
+                    <span class="season-note">📖 Monats-Sammelalbum – je Monat Bronze/Silber/Gold</span>
                 </div>
                 <div class="stamp-grid">${stamps}</div>`;
 
@@ -6445,18 +6563,71 @@
                 ? `<div class="season-note" style="margin:-4px 0 10px;">🗓️ Die Challenges starten am <b style="color:var(--accent-warm);">01.09.2026</b> – ab dann füllt sich hier alles automatisch.</div>`
                 : '';
 
-            host.innerHTML =
-                `<div class="season-sub">🎯 Dieser Monat &amp; dieses Jahr</div>${startNote}
-                 <div class="season-cards">${monthCard}${streakCard}${yearCard}</div>` +
-                album +
-                `<div class="season-sub">🌦️ Jahreszeiten
+            const seasonTitle = '🌦️ Jahreszeiten-Challenges';
+            const seasonBody = `
+                <div class="badge-cat-navrow">
                     <span class="season-yearnav">
                         <button class="syr-btn" ${seasonWinStart<=0?'disabled':''} onclick="sbSetSeasonYear(${seasonWinStart-1})">‹</button>
                         <button class="syr-btn" ${seasonWinStart>=seasonMaxPos?'disabled':''} onclick="sbSetSeasonYear(${seasonWinStart+1})">›</button>
                     </span>
                     <span class="season-note">chronologisch – mit ‹ › verschieben</span>
-                 </div>
-                 <div class="season-cards">${seasonCards}</div>`;
+                </div>
+                <div class="season-cards">${seasonCards}</div>`;
+
+            host.innerHTML =
+                sbCat('month', '🎯 Dieser Monat &amp; dieses Jahr',
+                    `${startNote}<div class="season-cards">${monthCard}${streakCard}${yearCard}</div>`) +
+                sbCat('album', albumTitle, albumBody) +
+                sbCat('season', seasonTitle, seasonBody);
+
+            // Auf-/Zu-Zustand merken (bleibt über Jahres-Navigation & Re-Renders erhalten)
+            host.querySelectorAll('details.badge-cat[data-cat]').forEach(d => {
+                d.addEventListener('toggle', () => { sbCatOpen[d.dataset.cat] = d.open; });
+            });
+
+            try { updateMonthChip(curCount, curTier, mProg, nextGoal); } catch(e){}
+        }
+
+        // ===== Sticky Monats-Challenge-Button =====
+        const MCHIP_CIRC = 2 * Math.PI * 17;   // Umfang des Fortschrittsrings (r=17)
+        function updateMonthChip(curCount, curTier, prog, nextGoal){
+            const btn = document.getElementById('monthChip');
+            if (!btn) return;
+            const now = new Date();
+            const curYM = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+            // Vor dem Challenge-Start oder ohne Daten: Button verstecken
+            if (curYM < SEASON_START_YM || !Array.isArray(allObservations) || !allObservations.length){
+                btn.style.display = 'none'; return;
+            }
+            const medal = SB_TIER[curTier] && SB_TIER[curTier].medal ? SB_TIER[curTier].medal : '📅';
+            const nextName = curTier < 3 ? SB_TIER[curTier+1].name : null;
+            const remain = nextGoal === null ? 0 : nextGoal - curCount;
+            const l2 = nextName
+                ? `<b>${curCount}</b> neu · noch ${remain} bis ${nextName}`
+                : `<b>${curCount}</b> neu · Gold 🎉`;
+            document.getElementById('mchipMedal').textContent = medal;
+            document.getElementById('mchipL2').innerHTML = l2;
+            const ring = document.getElementById('mchipProg');
+            if (ring){
+                ring.style.strokeDasharray = MCHIP_CIRC.toFixed(1);
+                ring.style.strokeDashoffset = (MCHIP_CIRC * (1 - Math.max(0, Math.min(1, prog)))).toFixed(1);
+            }
+            btn.style.display = 'inline-flex';
+        }
+
+        // Klick auf den Sticky-Button: Badges-Tab öffnen, Monats-Kategorie aufklappen,
+        // zur Monats-Challenge-Karte scrollen und kurz hervorheben.
+        function jumpToMonthChallenge(){
+            try { switchMainTab('badges'); } catch(e){}
+            const cat = document.querySelector('details.badge-cat[data-cat="month"]');
+            if (cat && !cat.open){ cat.open = true; sbCatOpen.month = true; }
+            setTimeout(() => {
+                const card = document.getElementById('monthChallengeCard');
+                if (!card) return;
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.add('expanded', 'flash-target');
+                setTimeout(() => card.classList.remove('flash-target'), 1600);
+            }, 120);
         }
 
         // ---- Länder-Weltkarte (lazy) ----
@@ -9389,6 +9560,13 @@
 
             loadFiltersFromURL();
             try { initMap(); } catch (e) { console.warn('initMap fehlgeschlagen:', e); }
+
+            // Länderkarte in der ausklappbaren "Gesamtbadges"-Kategorie neu vermessen,
+            // sobald sie geöffnet wird (Leaflet rendert in geschlossenem <details> falsch).
+            const _catRanks = document.getElementById('catRanks');
+            if (_catRanks) _catRanks.addEventListener('toggle', () => {
+                if (_catRanks.open && countryMap) setTimeout(() => countryMap.invalidateSize(), 60);
+            });
 
             // Sofort provisorisch anpassen (verhindert Aufblitzen des Eigentümer-Profils),
             // wird nach dem Laden des Profils mit dem echten Namen verfeinert.
