@@ -2941,6 +2941,7 @@
         <button class="main-tab" id="tabBtnStats" role="tab" aria-controls="tab-stats" aria-selected="false" onclick="switchMainTab('stats')">📊 Statistiken</button>
         <button class="main-tab" id="tabBtnNearby" role="tab" aria-controls="tab-nearby" aria-selected="false" onclick="switchMainTab('nearby')">📍 In meiner Nähe</button>
         <button class="main-tab" id="tabBtnFriends" role="tab" aria-controls="tab-friends" aria-selected="false" onclick="switchMainTab('friends')">👥 Freunde</button>
+        <button class="main-tab" id="tabBtnReisen" role="tab" aria-controls="tab-reisen" aria-selected="false" onclick="switchMainTab('reisen')" style="display:none">🧳 Reisen</button>
         <button class="main-tab" id="tabBtnNerd" role="tab" aria-controls="tab-nerd" aria-selected="false" onclick="switchMainTab('nerd')" style="display:none">🔬 Nerd</button>
     </div>
 
@@ -3405,6 +3406,63 @@
             <div id="nbResults" class="nb-results"><div class="nb-status">Wähle Standort &amp; Umkreis und tippe auf „🔎 Umgebung prüfen".</div></div>
         </div>
     </div><!-- /tab-nearby -->
+
+    <div id="tab-reisen" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnReisen">
+        <style>
+            #tab-reisen .tr-intro{color:var(--text-secondary);margin-bottom:16px;max-width:820px}
+            #tab-reisen .tr-form{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:20px}
+            #tab-reisen .tr-field{display:flex;flex-direction:column;gap:6px}
+            #tab-reisen .tr-field label{font-size:.8em;color:var(--text-secondary)}
+            #tab-reisen .tr-field input{background:var(--bg-light);border:1px solid var(--border);color:var(--text-primary);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:.9em}
+            #tab-reisen .tr-field input[type=text]{min-width:200px}
+            #tab-reisen .tr-btn{background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);font-weight:600;padding:10px 18px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:.9em}
+            #tab-reisen .tr-form-msg{color:var(--accent-warm);font-size:.85em;flex-basis:100%;min-height:1em}
+            #tab-reisen .tr-card{display:flex;gap:12px;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;cursor:pointer;transition:border-color .2s}
+            #tab-reisen .tr-card:hover{border-color:var(--accent)}
+            #tab-reisen .tr-card-main{flex:1;min-width:0}
+            #tab-reisen .tr-card-name{font-weight:600;color:var(--text-primary);font-size:1.05em}
+            #tab-reisen .tr-card-dates{color:var(--text-secondary);font-size:.85em;margin-top:2px}
+            #tab-reisen .tr-card-stats{color:var(--text-muted);font-size:.82em;margin-top:4px}
+            #tab-reisen .tr-del{background:transparent;border:none;color:var(--text-muted);font-size:1.1em;cursor:pointer;padding:6px;border-radius:8px}
+            #tab-reisen .tr-del:hover{background:var(--bg-light);color:var(--accent-warm)}
+            #tab-reisen .tr-empty{text-align:center;padding:50px 20px}
+            #tab-reisen .tr-empty-emoji{font-size:3em;margin-bottom:12px}
+            #tab-reisen .tr-empty-title{font-family:'Playfair Display',serif;color:var(--accent);font-size:1.3em;margin-bottom:6px}
+            #tab-reisen .tr-empty-sub{color:var(--text-secondary);max-width:520px;margin:0 auto}
+            #tab-reisen .tr-back{background:var(--bg-light);border:1px solid var(--border);color:var(--text-secondary);border-radius:10px;padding:8px 14px;cursor:pointer;font-family:inherit;margin-bottom:14px}
+            #tab-reisen #tripMap{height:400px;border-radius:14px;overflow:hidden;border:1px solid var(--border);margin-bottom:16px}
+            #tab-reisen .tr-detail-meta{color:var(--text-muted);font-size:.9em;margin-bottom:14px}
+            #tab-reisen .tr-row{display:flex;gap:14px;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-decoration:none;color:inherit;margin-bottom:10px;transition:border-color .2s}
+            #tab-reisen .tr-row:hover{border-color:var(--accent)}
+            #tab-reisen .tr-thumb{width:52px;height:52px;border-radius:10px;background-size:cover;background-position:center;background-color:var(--bg-light);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:1.4em}
+            #tab-reisen .tr-info{flex:1;min-width:0}
+            #tab-reisen .tr-name{font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            #tab-reisen .tr-sci{font-size:.82em;color:var(--text-muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            #tab-reisen .tr-last{color:var(--text-muted);font-size:.78em;margin-top:2px}
+            #tab-reisen .tr-note{color:var(--text-muted);padding:20px;text-align:center}
+        </style>
+        <div class="section">
+            <h2 class="section-title">🧳 Reisen</h2>
+            <div id="tripListView">
+                <p class="tr-intro">Lege eine Reise mit Zeitraum an. Alle Beobachtungen aus dieser Zeit werden automatisch der Reise zugeordnet und ihre Route auf der Karte nachgezeichnet.</p>
+                <div class="tr-form">
+                    <div class="tr-field"><label for="tripName">Name der Reise</label><input type="text" id="tripName" placeholder="z. B. Toskana 2025"></div>
+                    <div class="tr-field"><label for="tripFrom">Von</label><input type="date" id="tripFrom"></div>
+                    <div class="tr-field"><label for="tripTo">Bis</label><input type="date" id="tripTo"></div>
+                    <button class="tr-btn" onclick="createTripFromForm()">+ Reise anlegen</button>
+                    <div class="tr-form-msg" id="tripFormMsg"></div>
+                </div>
+                <div id="tripList"></div>
+            </div>
+            <div id="tripDetail" style="display:none">
+                <button class="tr-back" onclick="showTripList()">← Alle Reisen</button>
+                <h3 id="tripDetailTitle" style="margin:0 0 4px"></h3>
+                <div class="tr-detail-meta" id="tripDetailMeta"></div>
+                <div id="tripMap"></div>
+                <div id="tripObsList"></div>
+            </div>
+        </div>
+    </div><!-- /tab-reisen -->
 
     <div id="tab-nerd" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnNerd">
         <p class="nerd-intro">Deine Beobachtungen bis auf Gattung &amp; Art aufgeschlüsselt — nicht nur „Pflanzen“, sondern <em>Reich → Abteilung → Klasse → Ordnung → Familie → Gattung → Art</em>. Tipp auf eine Art öffnet ihre Sammelkarte.</p>
@@ -7942,6 +8000,7 @@
             if (name === 'rarity') renderRarityDashboard();
             if (name === 'stats') renderStats();
             if (name === 'nearby') renderNearby();
+            if (name === 'reisen') renderReisen();
             if (name === 'friends') renderFriendsTab();
             if (name === 'nerd') renderNerdTab();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -8221,6 +8280,8 @@
         function applyNerdOwnerUI(){
             const btn = document.getElementById('tabBtnNerd');
             if(btn) btn.style.display = isOwnerDevice() ? '' : 'none';
+            const trip = document.getElementById('tabBtnReisen');   // Reisen-Reiter ebenfalls nur auf freigeschalteten Geräten
+            if(trip) trip.style.display = isOwnerDevice() ? '' : 'none';
         }
 
         // ========================================================================
@@ -10173,6 +10234,160 @@
             const rv = document.getElementById('nbRadiusVal'); if (rv) rv.textContent = nearbyRadius + ' km';
             updateNearbyLevelUI();
             updateNearbyMeta();
+        }
+
+        // ============================================================
+        // ===== REISEN: Zeitraum -> Beobachtungen + Route ============
+        // ============================================================
+        const TRIPS_KEY = 'inat_trips_v1';
+        let tripMap = null, tripRouteLayer = null, tripCurrentId = null;
+
+        function loadTrips() {
+            try { return JSON.parse(localStorage.getItem(TRIPS_KEY)) || []; } catch (e) { return []; }
+        }
+        function saveTrips(list) {
+            try { localStorage.setItem(TRIPS_KEY, JSON.stringify(list)); } catch (e) {}
+        }
+        function newTripId() { return 't' + Date.now(); }
+        function trEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+        function fmtTripDate(d) {
+            if (!d) return '';
+            const p = d.split('-');
+            return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : d;
+        }
+        function tripDaySpan(from, to) {
+            const a = new Date(from + 'T00:00:00'), b = new Date(to + 'T00:00:00');
+            return Math.max(1, Math.round((b - a) / 86400000) + 1);
+        }
+        // Alle Beobachtungen im Zeitraum, chronologisch sortiert
+        function tripObservations(trip) {
+            if (!trip) return [];
+            return allObservations
+                .filter(o => o.date && o.date >= trip.from && o.date <= trip.to)
+                .sort((a, b) => a.date === b.date
+                    ? String(a.created || '').localeCompare(String(b.created || ''))
+                    : (a.date < b.date ? -1 : 1));
+        }
+        function tripStats(trip) {
+            const obs = tripObservations(trip);
+            const species = new Set(obs.map(o => o.scientific || o.name).filter(Boolean));
+            return { count: obs.length, species: species.size, obs };
+        }
+
+        function renderReisen() {
+            if (!document.getElementById('tab-reisen')) return;
+            if (tripCurrentId && loadTrips().some(t => t.id === tripCurrentId)) openTrip(tripCurrentId, true);
+            else showTripList();
+        }
+        function showTripList() {
+            tripCurrentId = null;
+            document.getElementById('tripDetail').style.display = 'none';
+            document.getElementById('tripListView').style.display = 'block';
+            renderTripList();
+        }
+        function renderTripList() {
+            const wrap = document.getElementById('tripList');
+            if (!wrap) return;
+            const trips = loadTrips().slice().sort((a, b) => (a.from < b.from ? 1 : -1));
+            if (!trips.length) {
+                wrap.innerHTML = '<div class="tr-empty"><div class="tr-empty-emoji">🧳</div><div class="tr-empty-title">Noch keine Reisen</div><div class="tr-empty-sub">Lege oben eine Reise mit Zeitraum an — alle Beobachtungen aus dieser Zeit landen automatisch darin.</div></div>';
+                return;
+            }
+            wrap.innerHTML = trips.map(t => {
+                const s = tripStats(t);
+                return `<div class="tr-card" onclick="openTrip('${t.id}')">
+                    <div class="tr-card-main">
+                        <div class="tr-card-name">${trEsc(t.name)}</div>
+                        <div class="tr-card-dates">${fmtTripDate(t.from)} – ${fmtTripDate(t.to)} · ${tripDaySpan(t.from, t.to)} Tage</div>
+                        <div class="tr-card-stats">📷 ${s.count} Beobachtungen · 🐾 ${s.species} Arten</div>
+                    </div>
+                    <button class="tr-del" onclick="event.stopPropagation(); deleteTrip('${t.id}')" aria-label="Reise löschen">🗑</button>
+                </div>`;
+            }).join('');
+        }
+        function createTripFromForm() {
+            const name = document.getElementById('tripName').value.trim();
+            const from = document.getElementById('tripFrom').value;
+            const to = document.getElementById('tripTo').value;
+            const msg = document.getElementById('tripFormMsg');
+            if (!name) { msg.textContent = 'Bitte einen Namen eingeben.'; return; }
+            if (!from || !to) { msg.textContent = 'Bitte Start- und Enddatum wählen.'; return; }
+            if (from > to) { msg.textContent = 'Das Startdatum liegt nach dem Enddatum.'; return; }
+            const trips = loadTrips();
+            trips.push({ id: newTripId(), name, from, to });
+            saveTrips(trips);
+            document.getElementById('tripName').value = '';
+            document.getElementById('tripFrom').value = '';
+            document.getElementById('tripTo').value = '';
+            msg.textContent = '';
+            renderTripList();
+        }
+        function deleteTrip(id) {
+            const t = loadTrips().find(x => x.id === id);
+            if (!confirm('Reise „' + (t ? t.name : '') + '" wirklich löschen? (Beobachtungen bleiben erhalten.)')) return;
+            saveTrips(loadTrips().filter(x => x.id !== id));
+            if (tripCurrentId === id) showTripList(); else renderTripList();
+        }
+
+        function initTripMap() {
+            if (tripMap) return;
+            tripMap = L.map('tripMap', { minZoom: 2, worldCopyJump: true }).setView([30, 10], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', noWrap: true }).addTo(tripMap);
+            tripRouteLayer = L.layerGroup().addTo(tripMap);
+        }
+        function openTrip(id, keep) {
+            const trip = loadTrips().find(x => x.id === id);
+            if (!trip) { showTripList(); return; }
+            tripCurrentId = id;
+            document.getElementById('tripListView').style.display = 'none';
+            document.getElementById('tripDetail').style.display = 'block';
+            const s = tripStats(trip);
+            document.getElementById('tripDetailTitle').textContent = trip.name;
+            document.getElementById('tripDetailMeta').textContent =
+                `${fmtTripDate(trip.from)} – ${fmtTripDate(trip.to)} · ${tripDaySpan(trip.from, trip.to)} Tage · ${s.count} Beobachtungen · ${s.species} Arten`;
+            initTripMap();
+            drawTripRoute(s.obs);
+            renderTripObsList(s.obs);
+            setTimeout(() => { if (tripMap) { tripMap.invalidateSize(); fitTripMap(s.obs); } }, keep ? 60 : 180);
+        }
+        function drawTripRoute(obs) {
+            if (!tripRouteLayer) return;
+            tripRouteLayer.clearLayers();
+            const geo = obs.filter(o => typeof o.lat === 'number' && typeof o.lon === 'number');
+            if (geo.length > 1) {
+                L.polyline(geo.map(o => [o.lat, o.lon]), { color: '#9bcc5f', weight: 3, opacity: 0.85 }).addTo(tripRouteLayer);
+            }
+            geo.forEach((o, i) => {
+                const isStart = i === 0, isEnd = i === geo.length - 1;
+                const color = isStart ? '#4caf50' : (isEnd ? '#e0654f' : '#9bcc5f');
+                const r = (isStart || isEnd) ? 8 : 5;
+                const m = L.circleMarker([o.lat, o.lon], { radius: r, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 }).addTo(tripRouteLayer);
+                const label = isStart ? '🚩 Start · ' : (isEnd ? '🏁 Ziel · ' : '');
+                m.bindPopup(`<strong>${trEsc(o.name)}</strong><br>${label}${fmtTripDate(o.date)}${o.place ? '<br>' + trEsc(o.place) : ''}${o.url ? `<br><a href="${o.url}" target="_blank" rel="noopener">iNat ↗</a>` : ''}`);
+            });
+        }
+        function fitTripMap(obs) {
+            const geo = obs.filter(o => typeof o.lat === 'number' && typeof o.lon === 'number');
+            if (!tripMap || !geo.length) return;
+            tripMap.fitBounds(L.latLngBounds(geo.map(o => [o.lat, o.lon])), { padding: [30, 30], maxZoom: 13 });
+        }
+        function renderTripObsList(obs) {
+            const el = document.getElementById('tripObsList');
+            if (!el) return;
+            if (!obs.length) {
+                el.innerHTML = '<div class="tr-note">Keine Beobachtungen in diesem Zeitraum. Sobald Beobachtungen aus dieser Zeit geladen sind, erscheinen sie hier.</div>';
+                return;
+            }
+            el.innerHTML = obs.map(o => `
+                <a class="tr-row"${o.url ? ` href="${o.url}" target="_blank" rel="noopener"` : ''}>
+                    <div class="tr-thumb" style="${o.image ? `background-image:url('${o.image}')` : ''}">${o.image ? '' : '🔍'}</div>
+                    <div class="tr-info">
+                        <div class="tr-name">${trEsc(o.name)}</div>
+                        <div class="tr-sci">${trEsc(o.scientific || '')}</div>
+                        <div class="tr-last">${fmtTripDate(o.date)}${o.place ? ' · ' + trEsc(o.place) : ''}</div>
+                    </div>
+                </a>`).join('');
         }
     </script>
 </body>
