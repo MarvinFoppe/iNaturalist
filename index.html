@@ -3415,31 +3415,44 @@
             #tab-reisen .tr-field label{font-size:.8em;color:var(--text-secondary)}
             #tab-reisen .tr-field input{background:var(--bg-light);border:1px solid var(--border);color:var(--text-primary);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:.9em}
             #tab-reisen .tr-field input[type=text]{min-width:200px}
+            #tab-reisen .tr-hint{font-size:.72em;color:var(--text-muted);font-weight:400}
             #tab-reisen .tr-btn{background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);font-weight:600;padding:10px 18px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:.9em}
             #tab-reisen .tr-form-msg{color:var(--accent-warm);font-size:.85em;flex-basis:100%;min-height:1em}
-            #tab-reisen .tr-card{display:flex;gap:12px;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;cursor:pointer;transition:border-color .2s}
-            #tab-reisen .tr-card:hover{border-color:var(--accent)}
-            #tab-reisen .tr-card-main{flex:1;min-width:0}
-            #tab-reisen .tr-card-name{font-weight:600;color:var(--text-primary);font-size:1.05em}
-            #tab-reisen .tr-card-dates{color:var(--text-secondary);font-size:.85em;margin-top:2px}
-            #tab-reisen .tr-card-stats{color:var(--text-muted);font-size:.82em;margin-top:4px}
-            #tab-reisen .tr-del{background:transparent;border:none;color:var(--text-muted);font-size:1.1em;cursor:pointer;padding:6px;border-radius:8px}
-            #tab-reisen .tr-del:hover{background:var(--bg-light);color:var(--accent-warm)}
+            /* Reise-Karten im Karten-Look (wie Seltenheitskarten) */
+            #tab-reisen .tr-cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:4px}
+            #tab-reisen .tr-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;display:flex;flex-direction:column}
+            #tab-reisen .tr-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 8px 22px var(--shadow)}
+            #tab-reisen .tr-cover{height:120px;background-size:cover;background-position:center;background-color:var(--bg-light);display:flex;align-items:center;justify-content:center;font-size:2.4em;position:relative}
+            #tab-reisen .tr-live-badge{position:absolute;top:8px;left:8px;background:rgba(20,30,20,.72);color:#8ee06a;font-size:.7em;font-weight:700;padding:3px 9px;border-radius:999px;backdrop-filter:blur(4px)}
+            #tab-reisen .tr-card-body{padding:12px 14px}
+            #tab-reisen .tr-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+            #tab-reisen .tr-card-name{font-weight:700;color:var(--accent);font-size:1.02em;line-height:1.2}
+            #tab-reisen .tr-card-actions{display:flex;gap:2px;flex:0 0 auto}
+            #tab-reisen .tr-icon{background:transparent;border:none;color:var(--text-muted);font-size:1em;cursor:pointer;padding:4px 6px;border-radius:8px;line-height:1}
+            #tab-reisen .tr-icon:hover{background:var(--bg-light);color:var(--accent)}
+            #tab-reisen .tr-card-dates{color:var(--text-secondary);font-size:.84em;margin-top:3px}
+            #tab-reisen .tr-live{color:#8ee06a;font-weight:700;font-size:.82em}
+            #tab-reisen .tr-statrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+            #tab-reisen .tr-stat{background:var(--bg-light);border:1px solid var(--border);border-radius:999px;padding:3px 10px;font-size:.76em;color:var(--text-secondary)}
+            #tab-reisen .tr-stat b{color:var(--text-primary);font-variant-numeric:tabular-nums}
             #tab-reisen .tr-empty{text-align:center;padding:50px 20px}
             #tab-reisen .tr-empty-emoji{font-size:3em;margin-bottom:12px}
             #tab-reisen .tr-empty-title{font-family:'Playfair Display',serif;color:var(--accent);font-size:1.3em;margin-bottom:6px}
             #tab-reisen .tr-empty-sub{color:var(--text-secondary);max-width:520px;margin:0 auto}
+            #tab-reisen .tr-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
             #tab-reisen .tr-back{background:var(--bg-light);border:1px solid var(--border);color:var(--text-secondary);border-radius:10px;padding:8px 14px;cursor:pointer;font-family:inherit;margin-bottom:14px}
+            #tab-reisen .tr-share{background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);border-radius:10px;padding:8px 14px;cursor:pointer;font-family:inherit;font-weight:600;margin-bottom:14px}
+            #tab-reisen #tripDetailTitle{margin:0 0 4px}
             #tab-reisen #tripMap{height:400px;border-radius:14px;overflow:hidden;border:1px solid var(--border);margin-bottom:16px}
             #tab-reisen .tr-detail-meta{color:var(--text-muted);font-size:.9em;margin-bottom:14px}
-            #tab-reisen .tr-row{display:flex;gap:14px;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-decoration:none;color:inherit;margin-bottom:10px;transition:border-color .2s}
-            #tab-reisen .tr-row:hover{border-color:var(--accent)}
-            #tab-reisen .tr-thumb{width:52px;height:52px;border-radius:10px;background-size:cover;background-position:center;background-color:var(--bg-light);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:1.4em}
-            #tab-reisen .tr-info{flex:1;min-width:0}
-            #tab-reisen .tr-name{font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-            #tab-reisen .tr-sci{font-size:.82em;color:var(--text-muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-            #tab-reisen .tr-last{color:var(--text-muted);font-size:.78em;margin-top:2px}
+            #tab-reisen .tr-detail-meta .tr-statrow{margin-top:8px}
             #tab-reisen .tr-note{color:var(--text-muted);padding:20px;text-align:center}
+            /* Beobachtungs-Galerie: Seltenheitskarten-Look + Auswahl/Link */
+            #tab-reisen .rarity-rare-card.tr-selected{outline:2px solid var(--accent);outline-offset:1px}
+            #tab-reisen .rarity-rare-card .rr-link{position:absolute;bottom:8px;right:8px;z-index:12;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:.78em}
+            #tab-reisen .rarity-rare-card .rr-link:hover{background:var(--accent);color:var(--on-accent)}
+            .tr-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:rgba(20,30,20,.96);color:#eafbe0;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.5);font-size:14px;z-index:13000;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+            .tr-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
         </style>
         <div class="section">
             <h2 class="section-title">🧳 Reisen</h2>
@@ -3448,15 +3461,18 @@
                 <div class="tr-form">
                     <div class="tr-field"><label for="tripName">Name der Reise</label><input type="text" id="tripName" placeholder="z. B. Toskana 2025"></div>
                     <div class="tr-field"><label for="tripFrom">Von</label><input type="date" id="tripFrom"></div>
-                    <div class="tr-field"><label for="tripTo">Bis</label><input type="date" id="tripTo"></div>
+                    <div class="tr-field"><label for="tripTo">Bis <span class="tr-hint">(leer = läuft noch)</span></label><input type="date" id="tripTo"></div>
                     <button class="tr-btn" onclick="createTripFromForm()">+ Reise anlegen</button>
                     <div class="tr-form-msg" id="tripFormMsg"></div>
                 </div>
                 <div id="tripList"></div>
             </div>
             <div id="tripDetail" style="display:none">
-                <button class="tr-back" onclick="showTripList()">← Alle Reisen</button>
-                <h3 id="tripDetailTitle" style="margin:0 0 4px"></h3>
+                <div class="tr-detail-head">
+                    <button class="tr-back" onclick="showTripList()">← Alle Reisen</button>
+                    <button class="tr-share" id="tripDetailShare" onclick="">🔗 Reise teilen</button>
+                </div>
+                <h3 id="tripDetailTitle"></h3>
                 <div class="tr-detail-meta" id="tripDetailMeta"></div>
                 <div id="tripMap"></div>
                 <div id="tripObsList"></div>
@@ -9615,8 +9631,9 @@
             try { updateMyNameUI(); } catch (e) {}   // Feld "Mein iNaturalist-Name" mit gespeichertem Wert vorbelegen
             try { applyNerdOwnerUI(); } catch (e) {} // Nerd-Reiter nur auf freigeschalteten Geräten zeigen
             const _wantDemo = new URLSearchParams(location.search).get('demo') === '1';   // teilbarer Demo-Link
+            const _wantTrip = new URLSearchParams(location.search).get('trip') || '';     // geteilte Reise ?trip=<id>
             let _showWelcome = false;
-            try { _showWelcome = !_wantDemo && shouldShowWelcome(); } catch (e) { _showWelcome = false; }
+            try { _showWelcome = !_wantDemo && !_wantTrip && shouldShowWelcome(); } catch (e) { _showWelcome = false; }
             if (_showWelcome) { try { showWelcome(); } catch (e) {} }   // erstes Öffnen: nach eigenem Namen fragen
 
             loadFiltersFromURL();
@@ -9638,6 +9655,7 @@
             // (dort entscheidet der Nutzer: eigener Name -> switchUser, oder "Beispielseite" -> startDemo)
             if (_wantDemo) { startDemo(); }              // ?demo=1 -> direkt Beispiel-Ansicht
             else if (!_showWelcome) loadUser();
+            if (_wantTrip) { try { openSharedTripWhenReady(_wantTrip); } catch (e) {} }   // geteilte Reise öffnen
         });
 
         // Service Worker registrieren (ermöglicht App-Installation; funktioniert nur über HTTPS/GitHub Pages)
@@ -10241,6 +10259,9 @@
         // ============================================================
         const TRIPS_KEY = 'inat_trips_v1';
         let tripMap = null, tripRouteLayer = null, tripCurrentId = null;
+        let tripCurrentObs = [];              // Beobachtungen der geöffneten Reise (für Klick->Karte)
+        let tripMarkerById = {};              // Beobachtungs-ID -> Leaflet-Marker
+        const sharedTrips = {};               // id -> Reise-Definition vom Server (geteilte Links)
 
         function loadTrips() {
             try { return JSON.parse(localStorage.getItem(TRIPS_KEY)) || []; } catch (e) { return []; }
@@ -10248,8 +10269,10 @@
         function saveTrips(list) {
             try { localStorage.setItem(TRIPS_KEY, JSON.stringify(list)); } catch (e) {}
         }
+        function resolveTrip(id) { return loadTrips().find(x => x.id === id) || sharedTrips[id] || null; }
         function newTripId() { return 't' + Date.now(); }
         function trEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+        function tripTodayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 
         function fmtTripDate(d) {
             if (!d) return '';
@@ -10257,27 +10280,57 @@
             return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : d;
         }
         function tripDaySpan(from, to) {
-            const a = new Date(from + 'T00:00:00'), b = new Date(to + 'T00:00:00');
+            const a = new Date(from + 'T00:00:00'), b = new Date((to || tripTodayStr()) + 'T00:00:00');
             return Math.max(1, Math.round((b - a) / 86400000) + 1);
         }
-        // Alle Beobachtungen im Zeitraum, chronologisch sortiert
+        // Alle Beobachtungen im Zeitraum, chronologisch sortiert (leeres "bis" = laufende Reise, bis heute)
         function tripObservations(trip) {
             if (!trip) return [];
+            const to = trip.to || '9999-12-31';
             return allObservations
-                .filter(o => o.date && o.date >= trip.from && o.date <= trip.to)
+                .filter(o => o.date && o.date >= trip.from && o.date <= to)
                 .sort((a, b) => a.date === b.date
                     ? String(a.created || '').localeCompare(String(b.created || ''))
                     : (a.date < b.date ? -1 : 1));
         }
+        // speciesKey -> allererste Beobachtung (Datum) über ALLE Daten -> für "neue Arten"
+        function tripFirstSeenMap() {
+            const first = {};
+            for (const o of allObservations) {
+                const k = o.scientific || o.name;
+                if (!k || !o.date) continue;
+                if (!first[k] || o.date < first[k]) first[k] = o.date;
+            }
+            return first;
+        }
         function tripStats(trip) {
             const obs = tripObservations(trip);
-            const species = new Set(obs.map(o => o.scientific || o.name).filter(Boolean));
-            return { count: obs.length, species: species.size, obs };
+            const to = trip.to || '9999-12-31';
+            const species = new Set(), fq = new Set();
+            for (const o of obs) {
+                const k = o.scientific || o.name; if (!k) continue;
+                species.add(k);
+                if (o.quality === 'research') fq.add(k);
+            }
+            const first = tripFirstSeenMap();
+            let newSpecies = 0;
+            for (const k of species) { const f = first[k]; if (f && f >= trip.from && f <= to) newSpecies++; }
+            let cover = '';
+            for (const o of obs) { if (o.image) { cover = o.image; break; } }
+            return { count: obs.length, species: species.size, fq: fq.size, newSpecies, cover, obs };
+        }
+        function tripStatRow(s) {
+            return `<div class="tr-statrow">
+                <span class="tr-stat" title="Beobachtungen"><b>${s.count}</b> Beob.</span>
+                <span class="tr-stat" title="Arten insgesamt"><b>${s.species}</b> Arten</span>
+                <span class="tr-stat" title="Arten in Forschungsqualität"><b>${s.fq}</b> FQ</span>
+                <span class="tr-stat" title="Erstmals überhaupt gesehen"><b>${s.newSpecies}</b> neu</span>
+            </div>`;
         }
 
         function renderReisen() {
             if (!document.getElementById('tab-reisen')) return;
-            if (tripCurrentId && loadTrips().some(t => t.id === tripCurrentId)) openTrip(tripCurrentId, true);
+            if (tripCurrentId && resolveTrip(tripCurrentId)) openTrip(tripCurrentId, true);
             else showTripList();
         }
         function showTripList() {
@@ -10294,29 +10347,37 @@
                 wrap.innerHTML = '<div class="tr-empty"><div class="tr-empty-emoji">🧳</div><div class="tr-empty-title">Noch keine Reisen</div><div class="tr-empty-sub">Lege oben eine Reise mit Zeitraum an — alle Beobachtungen aus dieser Zeit landen automatisch darin.</div></div>';
                 return;
             }
-            wrap.innerHTML = trips.map(t => {
+            wrap.innerHTML = '<div class="tr-cardgrid">' + trips.map(t => {
                 const s = tripStats(t);
+                const running = !t.to;
+                const dates = `${fmtTripDate(t.from)} – ${running ? '<span class="tr-live">läuft noch</span>' : fmtTripDate(t.to)}`;
                 return `<div class="tr-card" onclick="openTrip('${t.id}')">
-                    <div class="tr-card-main">
-                        <div class="tr-card-name">${trEsc(t.name)}</div>
-                        <div class="tr-card-dates">${fmtTripDate(t.from)} – ${fmtTripDate(t.to)} · ${tripDaySpan(t.from, t.to)} Tage</div>
-                        <div class="tr-card-stats">📷 ${s.count} Beobachtungen · 🐾 ${s.species} Arten</div>
+                    <div class="tr-cover" style="${s.cover ? `background-image:url('${s.cover}')` : ''}">${s.cover ? '' : '🧭'}${running ? '<span class="tr-live-badge">● live</span>' : ''}</div>
+                    <div class="tr-card-body">
+                        <div class="tr-card-head">
+                            <div class="tr-card-name">${trEsc(t.name)}</div>
+                            <div class="tr-card-actions">
+                                <button class="tr-icon" onclick="event.stopPropagation(); shareTrip('${t.id}')" title="Reise teilen" aria-label="Reise teilen">🔗</button>
+                                <button class="tr-icon" onclick="event.stopPropagation(); deleteTrip('${t.id}')" title="Reise löschen" aria-label="Reise löschen">🗑</button>
+                            </div>
+                        </div>
+                        <div class="tr-card-dates">${dates} · ${tripDaySpan(t.from, t.to)} Tage</div>
+                        ${tripStatRow(s)}
                     </div>
-                    <button class="tr-del" onclick="event.stopPropagation(); deleteTrip('${t.id}')" aria-label="Reise löschen">🗑</button>
                 </div>`;
-            }).join('');
+            }).join('') + '</div>';
         }
         function createTripFromForm() {
             const name = document.getElementById('tripName').value.trim();
             const from = document.getElementById('tripFrom').value;
-            const to = document.getElementById('tripTo').value;
+            const to = document.getElementById('tripTo').value;   // darf leer sein = läuft noch
             const msg = document.getElementById('tripFormMsg');
             if (!name) { msg.textContent = 'Bitte einen Namen eingeben.'; return; }
-            if (!from || !to) { msg.textContent = 'Bitte Start- und Enddatum wählen.'; return; }
-            if (from > to) { msg.textContent = 'Das Startdatum liegt nach dem Enddatum.'; return; }
-            const trips = loadTrips();
-            trips.push({ id: newTripId(), name, from, to });
-            saveTrips(trips);
+            if (!from) { msg.textContent = 'Bitte ein Startdatum wählen.'; return; }
+            if (to && from > to) { msg.textContent = 'Das Startdatum liegt nach dem Enddatum.'; return; }
+            const trip = { id: newTripId(), name, from, to };
+            const trips = loadTrips(); trips.push(trip); saveTrips(trips);
+            publishTrip(trip);   // server-seitig ablegen -> teilbar + geräteübergreifend
             document.getElementById('tripName').value = '';
             document.getElementById('tripFrom').value = '';
             document.getElementById('tripTo').value = '';
@@ -10327,7 +10388,48 @@
             const t = loadTrips().find(x => x.id === id);
             if (!confirm('Reise „' + (t ? t.name : '') + '" wirklich löschen? (Beobachtungen bleiben erhalten.)')) return;
             saveTrips(loadTrips().filter(x => x.id !== id));
+            unpublishTrip(id);
             if (tripCurrentId === id) showTripList(); else renderTripList();
+        }
+
+        // --- Teilen (server-seitig; Owner-Token) -----------------------------
+        function tripUserLogin() { return String((typeof USER_ID !== 'undefined' && USER_ID) || DEFAULT_USER).toLowerCase(); }
+        async function publishTrip(trip) {
+            try {
+                if (!BACKEND_READY) return;
+                const token = localStorage.getItem('inat_owner_token'); if (!token) return;
+                await fetch('api/trips?user=' + encodeURIComponent(tripUserLogin()), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ trip: { id: trip.id, name: trip.name, from: trip.from, to: trip.to || '' } })
+                });
+            } catch (e) {}
+        }
+        async function unpublishTrip(id) {
+            try {
+                if (!BACKEND_READY) return;
+                const token = localStorage.getItem('inat_owner_token'); if (!token) return;
+                await fetch('api/trips?id=' + encodeURIComponent(id) + '&user=' + encodeURIComponent(tripUserLogin()),
+                    { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+            } catch (e) {}
+        }
+        function tripShareUrl(trip) {
+            return `${location.origin}${location.pathname}?user=${encodeURIComponent(tripUserLogin())}&trip=${encodeURIComponent(trip.id)}`;
+        }
+        async function shareTrip(id) {
+            const trip = resolveTrip(id); if (!trip) return;
+            await backendProbe.catch(() => {});
+            await publishTrip(trip);   // sicherstellen, dass die aktuelle Fassung server-seitig liegt
+            const url = tripShareUrl(trip);
+            try { if (navigator.share) { await navigator.share({ title: trip.name, text: 'Meine Reise „' + trip.name + '"', url }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+            try { await navigator.clipboard.writeText(url); tripToast('🔗 Link kopiert'); }
+            catch (e) { prompt('Reise-Link zum Teilen:', url); }
+        }
+        function tripToast(text) {
+            let el = document.getElementById('tripToast');
+            if (!el) { el = document.createElement('div'); el.id = 'tripToast'; el.className = 'tr-toast'; document.body.appendChild(el); }
+            el.textContent = text; el.classList.add('show');
+            clearTimeout(tripToast._t); tripToast._t = setTimeout(() => el.classList.remove('show'), 2600);
         }
 
         function initTripMap() {
@@ -10337,15 +10439,18 @@
             tripRouteLayer = L.layerGroup().addTo(tripMap);
         }
         function openTrip(id, keep) {
-            const trip = loadTrips().find(x => x.id === id);
+            const trip = resolveTrip(id);
             if (!trip) { showTripList(); return; }
             tripCurrentId = id;
             document.getElementById('tripListView').style.display = 'none';
             document.getElementById('tripDetail').style.display = 'block';
             const s = tripStats(trip);
-            document.getElementById('tripDetailTitle').textContent = trip.name;
-            document.getElementById('tripDetailMeta').textContent =
-                `${fmtTripDate(trip.from)} – ${fmtTripDate(trip.to)} · ${tripDaySpan(trip.from, trip.to)} Tage · ${s.count} Beobachtungen · ${s.species} Arten`;
+            tripCurrentObs = s.obs;
+            const running = !trip.to;
+            document.getElementById('tripDetailTitle').innerHTML = trEsc(trip.name) + (running ? ' <span class="tr-live">● läuft noch</span>' : '');
+            document.getElementById('tripDetailMeta').innerHTML =
+                `${fmtTripDate(trip.from)} – ${running ? 'heute' : fmtTripDate(trip.to)} · ${tripDaySpan(trip.from, trip.to)} Tage` + tripStatRow(s);
+            const share = document.getElementById('tripDetailShare'); if (share) share.setAttribute('onclick', `shareTrip('${id}')`);
             initTripMap();
             drawTripRoute(s.obs);
             renderTripObsList(s.obs);
@@ -10354,6 +10459,7 @@
         function drawTripRoute(obs) {
             if (!tripRouteLayer) return;
             tripRouteLayer.clearLayers();
+            tripMarkerById = {};
             const geo = obs.filter(o => typeof o.lat === 'number' && typeof o.lon === 'number');
             if (geo.length > 1) {
                 L.polyline(geo.map(o => [o.lat, o.lon]), { color: '#9bcc5f', weight: 3, opacity: 0.85 }).addTo(tripRouteLayer);
@@ -10364,13 +10470,29 @@
                 const r = (isStart || isEnd) ? 8 : 5;
                 const m = L.circleMarker([o.lat, o.lon], { radius: r, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 }).addTo(tripRouteLayer);
                 const label = isStart ? '🚩 Start · ' : (isEnd ? '🏁 Ziel · ' : '');
-                m.bindPopup(`<strong>${trEsc(o.name)}</strong><br>${label}${fmtTripDate(o.date)}${o.place ? '<br>' + trEsc(o.place) : ''}${o.url ? `<br><a href="${o.url}" target="_blank" rel="noopener">iNat ↗</a>` : ''}`);
+                m.bindPopup(`<div style="text-align:center;min-width:150px">${o.image ? `<img src="${o.image}" style="width:100%;max-width:180px;border-radius:8px;margin-bottom:6px">` : ''}<div style="font-weight:600">${trEsc(o.name)}</div><div style="font-size:.85em;color:#888">${label}${fmtTripDate(o.date)}${o.place ? '<br>' + trEsc(o.place) : ''}</div>${o.url ? `<a href="${o.url}" target="_blank" rel="noopener">Beobachtung ansehen →</a>` : ''}</div>`);
+                tripMarkerById[o.id] = m;
             });
         }
         function fitTripMap(obs) {
             const geo = obs.filter(o => typeof o.lat === 'number' && typeof o.lon === 'number');
             if (!tripMap || !geo.length) return;
             tripMap.fitBounds(L.latLngBounds(geo.map(o => [o.lat, o.lon])), { padding: [30, 30], maxZoom: 13 });
+        }
+        // Beobachtungs-Karte im Seltenheitskarten-Stil
+        function travelCardHtml(o) {
+            const t = (typeof rwIconicType === 'function') ? rwIconicType(o.taxon) : { c: 'var(--accent)', emoji: '🔍' };
+            const noGeo = !(typeof o.lat === 'number' && typeof o.lon === 'number');
+            return `<div class="rarity-rare-card" data-oid="${o.id}" onclick="travelSelectObs('${o.id}')" style="--type:${t.c}; cursor:pointer" title="${noGeo ? 'Ohne Koordinaten – nicht auf der Karte' : 'Auf der Karte anzeigen'}">
+                <span class="rrc-type" style="background:${t.c}">${t.emoji}</span>
+                ${o.url ? `<a class="rr-link" href="${o.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Auf iNaturalist ansehen">↗</a>` : ''}
+                ${o.image ? `<img src="${o.image}" alt="${trEsc(o.name)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="rrc-noimg">${t.emoji}</div>`}
+                <div class="rarity-rare-info">
+                    <div class="rr-name">${trEsc(o.name)}</div>
+                    ${o.scientific ? `<div class="rr-sci">${trEsc(o.scientific)}</div>` : ''}
+                    <div class="rr-meta">${fmtTripDate(o.date)}${o.place ? '<br>' + trEsc(o.place) : ''}</div>
+                </div>
+            </div>`;
         }
         function renderTripObsList(obs) {
             const el = document.getElementById('tripObsList');
@@ -10379,15 +10501,38 @@
                 el.innerHTML = '<div class="tr-note">Keine Beobachtungen in diesem Zeitraum. Sobald Beobachtungen aus dieser Zeit geladen sind, erscheinen sie hier.</div>';
                 return;
             }
-            el.innerHTML = obs.map(o => `
-                <a class="tr-row"${o.url ? ` href="${o.url}" target="_blank" rel="noopener"` : ''}>
-                    <div class="tr-thumb" style="${o.image ? `background-image:url('${o.image}')` : ''}">${o.image ? '' : '🔍'}</div>
-                    <div class="tr-info">
-                        <div class="tr-name">${trEsc(o.name)}</div>
-                        <div class="tr-sci">${trEsc(o.scientific || '')}</div>
-                        <div class="tr-last">${fmtTripDate(o.date)}${o.place ? ' · ' + trEsc(o.place) : ''}</div>
-                    </div>
-                </a>`).join('');
+            el.innerHTML = '<div class="rarity-rare-grid">' + obs.map(travelCardHtml).join('') + '</div>';
+        }
+        // Karte angeklickt -> Punkt auf der Leaflet-Karte hervorheben & Popup öffnen
+        function travelSelectObs(id) {
+            const o = tripCurrentObs.find(x => String(x.id) === String(id));
+            document.querySelectorAll('#tripObsList .rarity-rare-card').forEach(c => c.classList.toggle('tr-selected', c.dataset.oid === String(id)));
+            if (!o || typeof o.lat !== 'number' || typeof o.lon !== 'number') return;
+            const mapEl = document.getElementById('tripMap'); if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (tripMap) {
+                tripMap.setView([o.lat, o.lon], Math.max(tripMap.getZoom() || 0, 12), { animate: true });
+                const m = tripMarkerById[o.id];
+                if (m) setTimeout(() => m.openPopup(), 260);
+            }
+        }
+
+        // --- Geteilte Reise per Link öffnen (?trip=<id>) ---------------------
+        async function openSharedTripWhenReady(id) {
+            try {
+                const btn = document.getElementById('tabBtnReisen'); if (btn) btn.style.display = '';   // Reiter für Betrachter zeigen
+                let trip = resolveTrip(id);
+                if (!trip) {
+                    await backendProbe.catch(() => {});
+                    const u = (new URLSearchParams(location.search).get('user') || DEFAULT_USER).toLowerCase();
+                    const r = await fetch('api/trips?id=' + encodeURIComponent(id) + '&user=' + encodeURIComponent(u));
+                    const j = await r.json().catch(() => null);
+                    if (j && j.trip) { sharedTrips[id] = j.trip; trip = j.trip; }
+                }
+                if (!trip) return;
+                for (let i = 0; i < 80 && !allObservations.length; i++) await new Promise(r => setTimeout(r, 300));
+                switchMainTab('reisen');
+                openTrip(id);
+            } catch (e) { console.warn('Geteilte Reise konnte nicht geöffnet werden:', e); }
         }
     </script>
 </body>
