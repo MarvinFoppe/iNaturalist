@@ -3451,20 +3451,28 @@
             #tab-reisen .rarity-rare-card.tr-selected{outline:2px solid var(--accent);outline-offset:1px}
             #tab-reisen .rarity-rare-card .rr-link{position:absolute;bottom:8px;right:8px;z-index:12;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:.78em}
             #tab-reisen .rarity-rare-card .rr-link:hover{background:var(--accent);color:var(--on-accent)}
+            #tab-reisen .tr-profile-note{background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:16px;color:var(--text-secondary);font-size:.9em}
+            #tab-reisen .rarity-rare-card .tr-count-badge{position:absolute;top:8px;left:8px;z-index:12;background:var(--accent);color:var(--on-accent);font-size:.74em;font-weight:800;padding:3px 8px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+            #tab-reisen .tr-drill-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+            #tab-reisen .tr-drill-title{font-weight:600;color:var(--accent)}
+            #tab-reisen .tr-drill-head .tr-back{margin-bottom:0}
             .tr-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:rgba(20,30,20,.96);color:#eafbe0;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.5);font-size:14px;z-index:13000;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
             .tr-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
         </style>
         <div class="section">
             <h2 class="section-title">🧳 Reisen</h2>
             <div id="tripListView">
-                <p class="tr-intro">Lege eine Reise mit Zeitraum an. Alle Beobachtungen aus dieser Zeit werden automatisch der Reise zugeordnet und ihre Route auf der Karte nachgezeichnet.</p>
-                <div class="tr-form">
-                    <div class="tr-field"><label for="tripName">Name der Reise</label><input type="text" id="tripName" placeholder="z. B. Toskana 2025"></div>
-                    <div class="tr-field"><label for="tripFrom">Von</label><input type="date" id="tripFrom"></div>
-                    <div class="tr-field"><label for="tripTo">Bis <span class="tr-hint">(leer = läuft noch)</span></label><input type="date" id="tripTo"></div>
-                    <button class="tr-btn" onclick="createTripFromForm()">+ Reise anlegen</button>
-                    <div class="tr-form-msg" id="tripFormMsg"></div>
+                <div id="tripCreateBox">
+                    <p class="tr-intro">Lege eine Reise mit Zeitraum an. Alle Beobachtungen aus dieser Zeit werden automatisch der Reise zugeordnet und ihre Route auf der Karte nachgezeichnet.</p>
+                    <div class="tr-form">
+                        <div class="tr-field"><label for="tripName">Name der Reise</label><input type="text" id="tripName" placeholder="z. B. Toskana 2025"></div>
+                        <div class="tr-field"><label for="tripFrom">Von</label><input type="date" id="tripFrom"></div>
+                        <div class="tr-field"><label for="tripTo">Bis <span class="tr-hint">(leer = läuft noch)</span></label><input type="date" id="tripTo"></div>
+                        <button class="tr-btn" onclick="createTripFromForm()">+ Reise anlegen</button>
+                        <div class="tr-form-msg" id="tripFormMsg"></div>
+                    </div>
                 </div>
+                <div id="tripProfileNote" class="tr-profile-note" style="display:none"></div>
                 <div id="tripList"></div>
             </div>
             <div id="tripDetail" style="display:none">
@@ -10271,7 +10279,8 @@
         let tripMarkerById = {};              // Beobachtungs-ID -> Leaflet-Marker (nur angezeigte)
         let tripFilterTaxa = new Set();       // gewählte taxonomische Gruppen (leer = alle)
         let tripViewMode = 'observations';    // 'observations' | 'species'
-        const sharedTrips = {};               // id -> Reise-Definition vom Server (geteilte Links)
+        let tripSpeciesDrill = null;          // Art-Schlüssel: Durchklicken der Beobachtungen einer Art
+        const sharedTrips = {};               // id -> Reise-Definition vom Server (geteilte/fremde Reisen)
 
         function loadTrips() {
             try { return JSON.parse(localStorage.getItem(TRIPS_KEY)) || []; } catch (e) { return []; }
@@ -10343,18 +10352,45 @@
             if (tripCurrentId && resolveTrip(tripCurrentId)) openTrip(tripCurrentId, true);
             else showTripList();
         }
+        function tripIsOwnProfile() { return (typeof isOwnProfile === 'function') ? isOwnProfile() : true; }
         function showTripList() {
             tripCurrentId = null;
             document.getElementById('tripDetail').style.display = 'none';
             document.getElementById('tripListView').style.display = 'block';
-            renderTripList();
+            loadAndRenderTripList();
         }
-        function renderTripList() {
+        async function fetchServerTrips(user) {
+            try {
+                await backendProbe.catch(() => {});
+                const r = await fetch('api/trips?user=' + encodeURIComponent(String(user).toLowerCase()));
+                const j = await r.json().catch(() => null);
+                return (j && Array.isArray(j.trips)) ? j.trips : [];
+            } catch (e) { return []; }
+        }
+        // Reisen des GERADE ANGEZEIGTEN Profils laden: eigenes = localStorage, fremdes = Server (nur ansehen)
+        async function loadAndRenderTripList() {
+            const own = tripIsOwnProfile();
+            const box = document.getElementById('tripCreateBox'); if (box) box.style.display = own ? '' : 'none';
+            const note = document.getElementById('tripProfileNote');
+            let trips;
+            if (own) {
+                trips = loadTrips();
+                if (note) note.style.display = 'none';
+            } else {
+                if (note) { note.style.display = ''; note.innerHTML = `🧳 Reisen von <strong>${trEsc(USER_ID)}</strong> — nur ansehen. Eigene Reisen legst du auf deinem eigenen Profil an.`; }
+                trips = await fetchServerTrips(USER_ID);
+                trips.forEach(t => { sharedTrips[t.id] = t; });   // für openTrip auflösbar machen
+            }
+            renderTripListWith(trips, own);
+        }
+        function renderTripListWith(trips, canEdit) {
             const wrap = document.getElementById('tripList');
             if (!wrap) return;
-            const trips = loadTrips().slice().sort((a, b) => (a.from < b.from ? 1 : -1));
+            trips = (trips || []).slice().sort((a, b) => (a.from < b.from ? 1 : -1));
             if (!trips.length) {
-                wrap.innerHTML = '<div class="tr-empty"><div class="tr-empty-emoji">🧳</div><div class="tr-empty-title">Noch keine Reisen</div><div class="tr-empty-sub">Lege oben eine Reise mit Zeitraum an — alle Beobachtungen aus dieser Zeit landen automatisch darin.</div></div>';
+                wrap.innerHTML = canEdit
+                    ? '<div class="tr-empty"><div class="tr-empty-emoji">🧳</div><div class="tr-empty-title">Noch keine Reisen</div><div class="tr-empty-sub">Lege oben eine Reise mit Zeitraum an — alle Beobachtungen aus dieser Zeit landen automatisch darin.</div></div>'
+                    : '<div class="tr-empty"><div class="tr-empty-emoji">🧳</div><div class="tr-empty-title">Keine Reisen</div><div class="tr-empty-sub">Dieses Profil hat noch keine Reisen angelegt.</div></div>';
                 return;
             }
             wrap.innerHTML = '<div class="tr-cardgrid">' + trips.map(t => {
@@ -10368,7 +10404,7 @@
                             <div class="tr-card-name">${trEsc(t.name)}</div>
                             <div class="tr-card-actions">
                                 <button class="tr-icon" onclick="event.stopPropagation(); shareTrip('${t.id}')" title="Reise teilen" aria-label="Reise teilen">🔗</button>
-                                <button class="tr-icon" onclick="event.stopPropagation(); deleteTrip('${t.id}')" title="Reise löschen" aria-label="Reise löschen">🗑</button>
+                                ${canEdit ? `<button class="tr-icon" onclick="event.stopPropagation(); deleteTrip('${t.id}')" title="Reise löschen" aria-label="Reise löschen">🗑</button>` : ''}
                             </div>
                         </div>
                         <div class="tr-card-dates">${dates} · ${tripDaySpan(t.from, t.to)} Tage</div>
@@ -10378,10 +10414,11 @@
             }).join('') + '</div>';
         }
         function createTripFromForm() {
+            const msg = document.getElementById('tripFormMsg');
+            if (!tripIsOwnProfile()) { if (msg) msg.textContent = 'Reisen kannst du nur auf deinem eigenen Profil anlegen.'; return; }
             const name = document.getElementById('tripName').value.trim();
             const from = document.getElementById('tripFrom').value;
             const to = document.getElementById('tripTo').value;   // darf leer sein = läuft noch
-            const msg = document.getElementById('tripFormMsg');
             if (!name) { msg.textContent = 'Bitte einen Namen eingeben.'; return; }
             if (!from) { msg.textContent = 'Bitte ein Startdatum wählen.'; return; }
             if (to && from > to) { msg.textContent = 'Das Startdatum liegt nach dem Enddatum.'; return; }
@@ -10392,14 +10429,15 @@
             document.getElementById('tripFrom').value = '';
             document.getElementById('tripTo').value = '';
             msg.textContent = '';
-            renderTripList();
+            loadAndRenderTripList();
         }
         function deleteTrip(id) {
+            if (!tripIsOwnProfile()) return;
             const t = loadTrips().find(x => x.id === id);
             if (!confirm('Reise „' + (t ? t.name : '') + '" wirklich löschen? (Beobachtungen bleiben erhalten.)')) return;
             saveTrips(loadTrips().filter(x => x.id !== id));
             unpublishTrip(id);
-            if (tripCurrentId === id) showTripList(); else renderTripList();
+            if (tripCurrentId === id) showTripList(); else loadAndRenderTripList();
         }
 
         // --- Teilen (server-seitig; Owner-Token) -----------------------------
@@ -10459,6 +10497,7 @@
             tripCurrentObs = s.obs;
             tripFilterTaxa = new Set();          // Filter je Reise zurücksetzen
             tripViewMode = 'observations';
+            tripSpeciesDrill = null;
             const running = !trip.to;
             document.getElementById('tripDetailTitle').innerHTML = trEsc(trip.name) + (running ? ' <span class="tr-live">● läuft noch</span>' : '');
             document.getElementById('tripDetailMeta').innerHTML =
@@ -10504,18 +10543,21 @@
         function tripTaxaFiltered() {
             return tripFilterTaxa.size ? tripCurrentObs.filter(o => o.taxon && tripFilterTaxa.has(o.taxon)) : tripCurrentObs;
         }
+        function tripSpeciesKey(o) { return o.taxonId || o.scientific || o.name; }
+        function tripChrono(a, b) { return a.date === b.date ? String(a.created || '').localeCompare(String(b.created || '')) : (a.date < b.date ? -1 : 1); }
         function tripDisplayObs() {
             let obs = tripTaxaFiltered();
+            if (tripSpeciesDrill != null) {   // eine Art aufgeklappt -> alle ihre Beobachtungen (chronologisch)
+                return obs.filter(o => tripSpeciesKey(o) === tripSpeciesDrill).sort(tripChrono);
+            }
             if (tripViewMode === 'species') {
                 const byKey = new Map();
                 for (const o of obs) {
-                    const k = o.taxonId || o.scientific || o.name; if (!k) continue;
+                    const k = tripSpeciesKey(o); if (k == null) continue;
                     const ex = byKey.get(k);
                     if (!ex || (!ex.image && o.image)) byKey.set(k, o);   // pro Art eine Karte, bevorzugt mit Bild
                 }
-                obs = [...byKey.values()].sort((a, b) => a.date === b.date
-                    ? String(a.created || '').localeCompare(String(b.created || ''))
-                    : (a.date < b.date ? -1 : 1));
+                obs = [...byKey.values()].sort(tripChrono);
             }
             return obs;
         }
@@ -10548,30 +10590,43 @@
         }
         function tripToggleTaxa(key) {
             if (tripFilterTaxa.has(key)) tripFilterTaxa.delete(key); else tripFilterTaxa.add(key);
+            tripSpeciesDrill = null;
             tripRefreshView();
             setTimeout(() => fitTripMap(tripDisplayObs()), 40);
         }
         function tripClearTaxa() {
             tripFilterTaxa.clear();
+            tripSpeciesDrill = null;
             tripRefreshView();
             setTimeout(() => fitTripMap(tripDisplayObs()), 40);
         }
         function tripSetViewMode(mode) {
             tripViewMode = mode;
+            tripSpeciesDrill = null;
             tripRefreshView();
         }
-        // Beobachtungs-Karte im Seltenheitskarten-Stil
-        function travelCardHtml(o) {
+        // Beobachtungs-/Art-Karte im Seltenheitskarten-Stil
+        function travelCardHtml(o, opts) {
+            opts = opts || {};
             const t = (typeof rwIconicType === 'function') ? rwIconicType(o.taxon) : { c: 'var(--accent)', emoji: '🔍' };
+            const isSpecies = opts.mode === 'species';
             const noGeo = !(typeof o.lat === 'number' && typeof o.lon === 'number');
-            return `<div class="rarity-rare-card" data-oid="${o.id}" onclick="travelSelectObs('${o.id}')" style="--type:${t.c}; cursor:pointer" title="${noGeo ? 'Ohne Koordinaten – nicht auf der Karte' : 'Auf der Karte anzeigen'}">
+            const click = isSpecies ? `tripDrillSpecies('${o.id}')` : `travelSelectObs('${o.id}')`;
+            const title = isSpecies
+                ? (opts.count > 1 ? opts.count + ' Beobachtungen – zum Durchklicken' : 'Beobachtung ansehen')
+                : (noGeo ? 'Ohne Koordinaten – nicht auf der Karte' : 'Auf der Karte anzeigen');
+            const meta = isSpecies
+                ? (opts.count > 1 ? `📷 ${opts.count} Beobachtungen` : fmtTripDate(o.date))
+                : `${fmtTripDate(o.date)}${o.place ? '<br>' + trEsc(o.place) : ''}`;
+            return `<div class="rarity-rare-card" data-oid="${o.id}" onclick="${click}" style="--type:${t.c}; cursor:pointer" title="${title}">
+                ${isSpecies && opts.count > 1 ? `<span class="tr-count-badge">${opts.count}×</span>` : ''}
                 <span class="rrc-type" style="background:${t.c}">${t.emoji}</span>
                 ${o.url ? `<a class="rr-link" href="${o.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Auf iNaturalist ansehen">↗</a>` : ''}
                 ${o.image ? `<img src="${o.image}" alt="${trEsc(o.name)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="rrc-noimg">${t.emoji}</div>`}
                 <div class="rarity-rare-info">
                     <div class="rr-name">${trEsc(o.name)}</div>
                     ${o.scientific ? `<div class="rr-sci">${trEsc(o.scientific)}</div>` : ''}
-                    <div class="rr-meta">${fmtTripDate(o.date)}${o.place ? '<br>' + trEsc(o.place) : ''}</div>
+                    <div class="rr-meta">${meta}</div>
                 </div>
             </div>`;
         }
@@ -10582,7 +10637,32 @@
                 el.innerHTML = '<div class="tr-note">Keine Beobachtungen in diesem Zeitraum. Sobald Beobachtungen aus dieser Zeit geladen sind, erscheinen sie hier.</div>';
                 return;
             }
-            el.innerHTML = '<div class="rarity-rare-grid">' + obs.map(travelCardHtml).join('') + '</div>';
+            let head = '';
+            let cards;
+            if (tripSpeciesDrill != null) {
+                head = `<div class="tr-drill-head"><button class="tr-back" onclick="tripBackToSpecies()">← Zurück zu Arten</button><span class="tr-drill-title">${trEsc(obs[0].name)} · ${obs.length} Beobachtung${obs.length === 1 ? '' : 'en'}</span></div>`;
+                cards = obs.map(o => travelCardHtml(o, { mode: 'obs' }));
+            } else if (tripViewMode === 'species') {
+                const counts = {};
+                for (const o of tripTaxaFiltered()) { const k = tripSpeciesKey(o); if (k != null) counts[k] = (counts[k] || 0) + 1; }
+                cards = obs.map(o => travelCardHtml(o, { mode: 'species', count: counts[tripSpeciesKey(o)] || 1 }));
+            } else {
+                cards = obs.map(o => travelCardHtml(o, { mode: 'obs' }));
+            }
+            el.innerHTML = head + '<div class="rarity-rare-grid">' + cards.join('') + '</div>';
+        }
+        // Art aufklappen -> ihre Beobachtungen einzeln durchklickbar (wie auf der Übersicht)
+        function tripDrillSpecies(oid) {
+            const o = tripCurrentObs.find(x => String(x.id) === String(oid));
+            if (!o) return;
+            tripSpeciesDrill = tripSpeciesKey(o);
+            tripRefreshView();
+            setTimeout(() => fitTripMap(tripDisplayObs()), 40);
+        }
+        function tripBackToSpecies() {
+            tripSpeciesDrill = null;
+            tripRefreshView();
+            setTimeout(() => fitTripMap(tripDisplayObs()), 40);
         }
         // Karte angeklickt -> Punkt auf der Leaflet-Karte hervorheben & Popup öffnen
         function travelSelectObs(id) {
