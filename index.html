@@ -3456,6 +3456,10 @@
             #tab-reisen .tr-drill-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
             #tab-reisen .tr-drill-title{font-weight:600;color:var(--accent)}
             #tab-reisen .tr-drill-head .tr-back{margin-bottom:0}
+            #tab-reisen .rarity-rare-card .tr-remove{position:absolute;top:8px;left:8px;z-index:13;width:22px;height:22px;border-radius:50%;background:rgba(200,60,60,.85);color:#fff;border:none;cursor:pointer;font-size:.78em;display:flex;align-items:center;justify-content:center;line-height:1;padding:0}
+            #tab-reisen .rarity-rare-card .tr-remove:hover{background:#e0654f}
+            #tab-reisen .tr-hidden-bar{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:8px 14px;margin-bottom:12px;color:var(--text-secondary);font-size:.85em}
+            #tab-reisen .tr-linkbtn{background:none;border:none;color:var(--accent);cursor:pointer;font-family:inherit;font-size:1em;text-decoration:underline;padding:0}
             #tab-reisen .tr-mapnav{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;align-items:center;gap:10px;background:rgba(20,30,20,.92);border:1px solid var(--border);border-radius:999px;padding:5px 8px;box-shadow:0 4px 16px rgba(0,0,0,.45)}
             #tab-reisen .tr-nav-btn{background:var(--accent);color:var(--on-accent);border:none;width:34px;height:34px;border-radius:50%;font-size:1.25em;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-family:inherit}
             #tab-reisen .tr-nav-btn:hover{filter:brightness(1.1)}
@@ -3498,6 +3502,7 @@
                     <button class="view-mode-btn active" id="tripViewObs" onclick="tripSetViewMode('observations')">📷 Beobachtungen <span class="view-mode-count" id="tripObsCount">0</span></button>
                     <button class="view-mode-btn" id="tripViewSpecies" onclick="tripSetViewMode('species')">🦋 Arten <span class="view-mode-count" id="tripSpeciesCount">0</span></button>
                 </div>
+                <div id="tripHiddenBar" class="tr-hidden-bar" style="display:none"></div>
                 <div id="tripObsList"></div>
             </div>
         </div>
@@ -10318,6 +10323,7 @@
         let tripFilterTaxa = new Set();       // gewählte taxonomische Gruppen (leer = alle)
         let tripViewMode = 'observations';    // 'observations' | 'species'
         let tripSpeciesDrill = null;          // Art-Schlüssel: Durchklicken der Beobachtungen einer Art
+        let tripEditable = false;             // geöffnete Reise gehört zum eigenen Profil (Bearbeiten erlaubt)
         const sharedTrips = {};               // id -> Reise-Definition vom Server (geteilte/fremde Reisen)
 
         function loadTrips() {
@@ -10340,20 +10346,23 @@
             const a = new Date(from + 'T00:00:00'), b = new Date((to || tripTodayStr()) + 'T00:00:00');
             return Math.max(1, Math.round((b - a) / 86400000) + 1);
         }
-        // Alle Beobachtungen im Zeitraum, chronologisch sortiert (leeres "bis" = laufende Reise, bis heute)
+        // Alle Beobachtungen im Zeitraum, chronologisch sortiert (leeres "bis" = laufende Reise, bis heute);
+        // manuell ausgeblendete (trip.excluded) werden herausgefiltert
         function tripObservations(trip) {
             if (!trip) return [];
             const to = trip.to || '9999-12-31';
+            const ex = (trip.excluded && trip.excluded.length) ? new Set(trip.excluded.map(String)) : null;
             return allObservations
-                .filter(o => o.date && o.date >= trip.from && o.date <= to)
+                .filter(o => o.date && o.date >= trip.from && o.date <= to && !(ex && ex.has(String(o.id))))
                 .sort((a, b) => a.date === b.date
                     ? String(a.created || '').localeCompare(String(b.created || ''))
                     : (a.date < b.date ? -1 : 1));
         }
-        // speciesKey -> allererste Beobachtung (Datum) über ALLE Daten -> für "neue Arten"
-        function tripFirstSeenMap() {
+        // speciesKey -> allererste Beobachtung (Datum) über ALLE Daten. rgOnly=true: nur Forschungsqualität.
+        function tripFirstSeenMap(rgOnly) {
             const first = {};
             for (const o of allObservations) {
+                if (rgOnly && o.quality !== 'research') continue;
                 const k = o.scientific || o.name;
                 if (!k || !o.date) continue;
                 if (!first[k] || o.date < first[k]) first[k] = o.date;
@@ -10366,12 +10375,13 @@
             const species = new Set(), fq = new Set();
             for (const o of obs) {
                 const k = o.scientific || o.name; if (!k) continue;
-                species.add(k);
-                if (o.quality === 'research') fq.add(k);
+                species.add(k);                              // Arten: alle
+                if (o.quality === 'research') fq.add(k);      // FQ: Arten mit Forschungsqualität
             }
-            const first = tripFirstSeenMap();
+            // neu = Arten, deren allererste FORSCHUNGSQUALITÄTS-Beobachtung in den Zeitraum fällt
+            const firstRG = tripFirstSeenMap(true);
             let newSpecies = 0;
-            for (const k of species) { const f = first[k]; if (f && f >= trip.from && f <= to) newSpecies++; }
+            for (const k of fq) { const f = firstRG[k]; if (f && f >= trip.from && f <= to) newSpecies++; }
             let cover = '';
             for (const o of obs) { if (o.image) { cover = o.image; break; } }
             return { count: obs.length, species: species.size, fq: fq.size, newSpecies, cover, obs };
@@ -10381,7 +10391,7 @@
                 <span class="tr-stat" title="Beobachtungen"><b>${s.count}</b> Beob.</span>
                 <span class="tr-stat" title="Arten insgesamt"><b>${s.species}</b> Arten</span>
                 <span class="tr-stat" title="Arten in Forschungsqualität"><b>${s.fq}</b> FQ</span>
-                <span class="tr-stat" title="Erstmals überhaupt gesehen"><b>${s.newSpecies}</b> neu</span>
+                <span class="tr-stat" title="Erstmals in Forschungsqualität beobachtet"><b>${s.newSpecies}</b> neu</span>
             </div>`;
         }
 
@@ -10511,7 +10521,7 @@
                 await fetch('api/trips?user=' + encodeURIComponent(tripUserLogin()), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ trip: { id: trip.id, name: trip.name, from: trip.from, to: trip.to || '' } })
+                    body: JSON.stringify({ trip: { id: trip.id, name: trip.name, from: trip.from, to: trip.to || '', excluded: trip.excluded || [] } })
                 });
             } catch (e) {}
         }
@@ -10576,6 +10586,7 @@
             tripFilterTaxa = new Set();          // Filter je Reise zurücksetzen
             tripViewMode = 'observations';
             tripSpeciesDrill = null;
+            tripEditable = tripIsOwnProfile() && loadTrips().some(x => x.id === id);   // nur eigene Reisen bearbeitbar
             const running = !trip.to;
             document.getElementById('tripDetailTitle').innerHTML = trEsc(trip.name) + (running ? ' <span class="tr-live">● läuft noch</span>' : '');
             document.getElementById('tripDetailMeta').innerHTML =
@@ -10664,6 +10675,13 @@
             if (vo) vo.classList.toggle('active', tripViewMode === 'observations');
             if (vs) vs.classList.toggle('active', tripViewMode === 'species');
             tripRenderTaxaGrid();
+            const bar = document.getElementById('tripHiddenBar');
+            if (bar) {
+                const trip = resolveTrip(tripCurrentId);
+                const n = (trip && trip.excluded) ? trip.excluded.length : 0;
+                if (n > 0 && tripEditable) { bar.style.display = ''; bar.innerHTML = `🚫 ${n} Bild${n === 1 ? '' : 'er'} ausgeblendet · <button class="tr-linkbtn" onclick="tripRestoreExcluded()">wieder einblenden</button>`; }
+                else bar.style.display = 'none';
+            }
             const disp = tripDisplayObs();
             renderTripObsList(disp);
             drawTripMarkers(disp);
@@ -10701,6 +10719,7 @@
                 : `${fmtTripDate(o.date)}${o.place ? '<br>' + trEsc(o.place) : ''}`;
             return `<div class="rarity-rare-card" data-oid="${o.id}" onclick="${click}" style="--type:${t.c}; cursor:pointer" title="${title}">
                 ${isSpecies && opts.count > 1 ? `<span class="tr-count-badge">${opts.count}×</span>` : ''}
+                ${(!isSpecies && tripEditable) ? `<button class="tr-remove" onclick="event.stopPropagation(); tripRemoveObs('${o.id}')" title="Aus der Reise ausblenden" aria-label="Aus der Reise ausblenden">✕</button>` : ''}
                 <span class="rrc-type" style="background:${t.c}">${t.emoji}</span>
                 ${o.url ? `<a class="rr-link" href="${o.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Auf iNaturalist ansehen">↗</a>` : ''}
                 ${o.image ? `<img src="${o.image}" alt="${trEsc(o.name)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="rrc-noimg">${t.emoji}</div>`}
@@ -10744,6 +10763,34 @@
             tripSpeciesDrill = null;
             tripRefreshView();
             setTimeout(() => fitTripMap(tripDisplayObs()), 40);
+        }
+        // Ein Bild/Beobachtung manuell aus der Reise ausblenden (nur eigene Reise)
+        function tripRemoveObs(oid) {
+            if (!tripEditable) return;
+            const list = loadTrips(); const trip = list.find(x => x.id === tripCurrentId); if (!trip) return;
+            trip.excluded = trip.excluded || [];
+            if (!trip.excluded.map(String).includes(String(oid))) trip.excluded.push(oid);
+            saveTrips(list); publishTrip(trip);
+            tripReopenCurrent();
+        }
+        function tripRestoreExcluded() {
+            if (!tripEditable) return;
+            const list = loadTrips(); const trip = list.find(x => x.id === tripCurrentId); if (!trip) return;
+            trip.excluded = [];
+            saveTrips(list); publishTrip(trip);
+            tripReopenCurrent();
+        }
+        // Reise nach einer Änderung (Ausblenden/Einblenden) neu aufbauen: Stats, Route, Galerie
+        function tripReopenCurrent() {
+            const trip = resolveTrip(tripCurrentId); if (!trip) return;
+            const s = tripStats(trip);
+            tripCurrentObs = s.obs;
+            tripSpeciesDrill = null;
+            document.getElementById('tripDetailMeta').innerHTML =
+                `${fmtTripDate(trip.from)} – ${trip.to ? fmtTripDate(trip.to) : 'heute'} · ${tripDaySpan(trip.from, trip.to)} Tage` + tripStatRow(s);
+            drawTripPolyline(s.obs);
+            tripRefreshView();
+            setTimeout(() => fitTripMap(tripDisplayObs()), 60);
         }
         // Karte angeklickt -> Punkt auf der Leaflet-Karte hervorheben & Popup öffnen
         function travelSelectObs(id, opts) {

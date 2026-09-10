@@ -14,8 +14,11 @@ function cleanTrip(t, user) {
   const name = String(t.name || '').trim().slice(0, 80);
   const from = /^\d{4}-\d{2}-\d{2}$/.test(t.from) ? t.from : '';
   const to = /^\d{4}-\d{2}-\d{2}$/.test(t.to) ? t.to : '';   // leer = laufende Reise
+  const excluded = Array.isArray(t.excluded)
+    ? [...new Set(t.excluded.filter(x => x != null).map(x => x))].slice(0, 5000)   // manuell ausgeblendete Beobachtungs-IDs
+    : [];
   if (!id || !name || !from) return null;
-  return { id, name, from, to, user };
+  return { id, name, from, to, excluded, user };
 }
 
 export default async function handler(req, res) {
