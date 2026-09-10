@@ -3475,6 +3475,14 @@
                 <h3 id="tripDetailTitle"></h3>
                 <div class="tr-detail-meta" id="tripDetailMeta"></div>
                 <div id="tripMap"></div>
+                <details class="section sec-collapse" open id="tripTaxaWrap" style="margin-bottom:14px">
+                    <summary class="sec-summary"><svg class="icon"><use href="#icon-butterfly"/></svg> Taxonomische Gruppen <span class="sec-chevron">▼</span></summary>
+                    <div id="tripTaxaGrid" class="taxa-grid"></div>
+                </details>
+                <div class="view-mode-toggle" id="tripViewToggle">
+                    <button class="view-mode-btn active" id="tripViewObs" onclick="tripSetViewMode('observations')">📷 Beobachtungen <span class="view-mode-count" id="tripObsCount">0</span></button>
+                    <button class="view-mode-btn" id="tripViewSpecies" onclick="tripSetViewMode('species')">🦋 Arten <span class="view-mode-count" id="tripSpeciesCount">0</span></button>
+                </div>
                 <div id="tripObsList"></div>
             </div>
         </div>
@@ -10258,9 +10266,11 @@
         // ===== REISEN: Zeitraum -> Beobachtungen + Route ============
         // ============================================================
         const TRIPS_KEY = 'inat_trips_v1';
-        let tripMap = null, tripRouteLayer = null, tripCurrentId = null;
-        let tripCurrentObs = [];              // Beobachtungen der geöffneten Reise (für Klick->Karte)
-        let tripMarkerById = {};              // Beobachtungs-ID -> Leaflet-Marker
+        let tripMap = null, tripRouteLayer = null, tripMarkerLayer = null, tripCurrentId = null;
+        let tripCurrentObs = [];              // ALLE Beobachtungen der geöffneten Reise (Basis für Filter)
+        let tripMarkerById = {};              // Beobachtungs-ID -> Leaflet-Marker (nur angezeigte)
+        let tripFilterTaxa = new Set();       // gewählte taxonomische Gruppen (leer = alle)
+        let tripViewMode = 'observations';    // 'observations' | 'species'
         const sharedTrips = {};               // id -> Reise-Definition vom Server (geteilte Links)
 
         function loadTrips() {
@@ -10436,7 +10446,8 @@
             if (tripMap) return;
             tripMap = L.map('tripMap', { minZoom: 2, worldCopyJump: true }).setView([30, 10], 2);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', noWrap: true }).addTo(tripMap);
-            tripRouteLayer = L.layerGroup().addTo(tripMap);
+            tripRouteLayer = L.layerGroup().addTo(tripMap);    // Route-Linie (immer volle Reise)
+            tripMarkerLayer = L.layerGroup().addTo(tripMap);   // Fundpunkt-Marker (gefiltert)
         }
         function openTrip(id, keep) {
             const trip = resolveTrip(id);
@@ -10446,38 +10457,108 @@
             document.getElementById('tripDetail').style.display = 'block';
             const s = tripStats(trip);
             tripCurrentObs = s.obs;
+            tripFilterTaxa = new Set();          // Filter je Reise zurücksetzen
+            tripViewMode = 'observations';
             const running = !trip.to;
             document.getElementById('tripDetailTitle').innerHTML = trEsc(trip.name) + (running ? ' <span class="tr-live">● läuft noch</span>' : '');
             document.getElementById('tripDetailMeta').innerHTML =
                 `${fmtTripDate(trip.from)} – ${running ? 'heute' : fmtTripDate(trip.to)} · ${tripDaySpan(trip.from, trip.to)} Tage` + tripStatRow(s);
             const share = document.getElementById('tripDetailShare'); if (share) share.setAttribute('onclick', `shareTrip('${id}')`);
             initTripMap();
-            drawTripRoute(s.obs);
-            renderTripObsList(s.obs);
-            setTimeout(() => { if (tripMap) { tripMap.invalidateSize(); fitTripMap(s.obs); } }, keep ? 60 : 180);
+            drawTripPolyline(s.obs);             // Route-Linie = volle Reise
+            tripRefreshView();                   // Marker + Galerie + Filter (gefiltert)
+            setTimeout(() => { if (tripMap) { tripMap.invalidateSize(); fitTripMap(tripDisplayObs()); } }, keep ? 60 : 180);
         }
-        function drawTripRoute(obs) {
+        // Route-Linie über ALLE (geolokalisierten) Beobachtungen der Reise
+        function drawTripPolyline(obs) {
             if (!tripRouteLayer) return;
             tripRouteLayer.clearLayers();
-            tripMarkerById = {};
             const geo = obs.filter(o => typeof o.lat === 'number' && typeof o.lon === 'number');
-            if (geo.length > 1) {
-                L.polyline(geo.map(o => [o.lat, o.lon]), { color: '#9bcc5f', weight: 3, opacity: 0.85 }).addTo(tripRouteLayer);
-            }
-            geo.forEach((o, i) => {
-                const isStart = i === 0, isEnd = i === geo.length - 1;
+            if (geo.length > 1) L.polyline(geo.map(o => [o.lat, o.lon]), { color: '#9bcc5f', weight: 3, opacity: 0.85 }).addTo(tripRouteLayer);
+        }
+        // Marker für die aktuell angezeigten (gefilterten) Beobachtungen; Start/Ziel = Anfang/Ende der GESAMTEN Reise
+        function drawTripMarkers(obs) {
+            if (!tripMarkerLayer) return;
+            tripMarkerLayer.clearLayers();
+            tripMarkerById = {};
+            const allGeo = tripCurrentObs.filter(o => typeof o.lat === 'number' && typeof o.lon === 'number');
+            const startId = allGeo.length ? allGeo[0].id : null;
+            const endId = allGeo.length ? allGeo[allGeo.length - 1].id : null;
+            obs.filter(o => typeof o.lat === 'number' && typeof o.lon === 'number').forEach(o => {
+                const isStart = o.id === startId, isEnd = o.id === endId;
                 const color = isStart ? '#4caf50' : (isEnd ? '#e0654f' : '#9bcc5f');
                 const r = (isStart || isEnd) ? 8 : 5;
-                const m = L.circleMarker([o.lat, o.lon], { radius: r, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 }).addTo(tripRouteLayer);
+                const m = L.circleMarker([o.lat, o.lon], { radius: r, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 }).addTo(tripMarkerLayer);
                 const label = isStart ? '🚩 Start · ' : (isEnd ? '🏁 Ziel · ' : '');
                 m.bindPopup(`<div style="text-align:center;min-width:150px">${o.image ? `<img src="${o.image}" style="width:100%;max-width:180px;border-radius:8px;margin-bottom:6px">` : ''}<div style="font-weight:600">${trEsc(o.name)}</div><div style="font-size:.85em;color:#888">${label}${fmtTripDate(o.date)}${o.place ? '<br>' + trEsc(o.place) : ''}</div>${o.url ? `<a href="${o.url}" target="_blank" rel="noopener">Beobachtung ansehen →</a>` : ''}</div>`);
                 tripMarkerById[o.id] = m;
             });
         }
         function fitTripMap(obs) {
-            const geo = obs.filter(o => typeof o.lat === 'number' && typeof o.lon === 'number');
+            const geo = (obs && obs.length ? obs : tripCurrentObs).filter(o => typeof o.lat === 'number' && typeof o.lon === 'number');
             if (!tripMap || !geo.length) return;
             tripMap.fitBounds(L.latLngBounds(geo.map(o => [o.lat, o.lon])), { padding: [30, 30], maxZoom: 13 });
+        }
+
+        // --- Reise-lokale Filter (Taxonomie + Beobachtungen/Arten) -----------
+        function tripTaxaFiltered() {
+            return tripFilterTaxa.size ? tripCurrentObs.filter(o => o.taxon && tripFilterTaxa.has(o.taxon)) : tripCurrentObs;
+        }
+        function tripDisplayObs() {
+            let obs = tripTaxaFiltered();
+            if (tripViewMode === 'species') {
+                const byKey = new Map();
+                for (const o of obs) {
+                    const k = o.taxonId || o.scientific || o.name; if (!k) continue;
+                    const ex = byKey.get(k);
+                    if (!ex || (!ex.image && o.image)) byKey.set(k, o);   // pro Art eine Karte, bevorzugt mit Bild
+                }
+                obs = [...byKey.values()].sort((a, b) => a.date === b.date
+                    ? String(a.created || '').localeCompare(String(b.created || ''))
+                    : (a.date < b.date ? -1 : 1));
+            }
+            return obs;
+        }
+        function tripRenderTaxaGrid() {
+            const grid = document.getElementById('tripTaxaGrid'); if (!grid) return;
+            const perGroup = {};
+            for (const o of tripCurrentObs) { if (o.taxon && o.taxonId) (perGroup[o.taxon] || (perGroup[o.taxon] = new Set())).add(o.taxonId); }
+            const allSpecies = new Set(tripCurrentObs.filter(o => o.taxonId).map(o => o.taxonId));
+            let html = `<div class="taxa-card ${tripFilterTaxa.size === 0 ? 'active' : ''}" onclick="tripClearTaxa()"><div class="taxa-icon">🌍</div><div class="taxa-name">Alle</div><div class="taxa-count">${allSpecies.size}</div></div>`;
+            const groups = Object.keys(perGroup).sort((a, b) => perGroup[b].size - perGroup[a].size);
+            for (const key of groups) {
+                const cfg = taxaConfig[key] || (typeof rwIconicType === 'function' ? { icon: rwIconicType(key).emoji, name: rwIconicType(key).de } : { icon: '🔹', name: key });
+                const sel = tripFilterTaxa.has(key);
+                html += `<div class="taxa-card ${sel ? 'active' : ''}" onclick="tripToggleTaxa('${key}')"><div class="taxa-icon">${cfg.icon}</div><div class="taxa-name">${cfg.name}</div><div class="taxa-count">${perGroup[key].size}</div></div>`;
+            }
+            grid.innerHTML = html;
+        }
+        function tripRefreshView() {
+            const taxaSet = tripTaxaFiltered();
+            const spSet = new Set(taxaSet.map(o => o.taxonId || o.scientific || o.name).filter(Boolean));
+            const oc = document.getElementById('tripObsCount'); if (oc) oc.textContent = taxaSet.length.toLocaleString('de-DE');
+            const sc = document.getElementById('tripSpeciesCount'); if (sc) sc.textContent = spSet.size.toLocaleString('de-DE');
+            const vo = document.getElementById('tripViewObs'), vs = document.getElementById('tripViewSpecies');
+            if (vo) vo.classList.toggle('active', tripViewMode === 'observations');
+            if (vs) vs.classList.toggle('active', tripViewMode === 'species');
+            tripRenderTaxaGrid();
+            const disp = tripDisplayObs();
+            renderTripObsList(disp);
+            drawTripMarkers(disp);
+        }
+        function tripToggleTaxa(key) {
+            if (tripFilterTaxa.has(key)) tripFilterTaxa.delete(key); else tripFilterTaxa.add(key);
+            tripRefreshView();
+            setTimeout(() => fitTripMap(tripDisplayObs()), 40);
+        }
+        function tripClearTaxa() {
+            tripFilterTaxa.clear();
+            tripRefreshView();
+            setTimeout(() => fitTripMap(tripDisplayObs()), 40);
+        }
+        function tripSetViewMode(mode) {
+            tripViewMode = mode;
+            tripRefreshView();
         }
         // Beobachtungs-Karte im Seltenheitskarten-Stil
         function travelCardHtml(o) {
