@@ -3456,6 +3456,10 @@
             #tab-reisen .tr-drill-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
             #tab-reisen .tr-drill-title{font-weight:600;color:var(--accent)}
             #tab-reisen .tr-drill-head .tr-back{margin-bottom:0}
+            #tab-reisen .tr-mapnav{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;align-items:center;gap:10px;background:rgba(20,30,20,.92);border:1px solid var(--border);border-radius:999px;padding:5px 8px;box-shadow:0 4px 16px rgba(0,0,0,.45)}
+            #tab-reisen .tr-nav-btn{background:var(--accent);color:var(--on-accent);border:none;width:34px;height:34px;border-radius:50%;font-size:1.25em;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-family:inherit}
+            #tab-reisen .tr-nav-btn:hover{filter:brightness(1.1)}
+            #tab-reisen .tr-nav-label{color:#eafbe0;font-size:.85em;font-variant-numeric:tabular-nums;min-width:52px;text-align:center}
             .tr-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:rgba(20,30,20,.96);color:#eafbe0;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.5);font-size:14px;z-index:13000;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
             .tr-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
         </style>
@@ -3478,7 +3482,10 @@
             <div id="tripDetail" style="display:none">
                 <div class="tr-detail-head">
                     <button class="tr-back" onclick="showTripList()">← Alle Reisen</button>
-                    <button class="tr-share" id="tripDetailShare" onclick="">🔗 Reise teilen</button>
+                    <div style="display:flex;gap:8px">
+                        <button class="tr-back" id="tripDetailRename" onclick="" style="display:none">✏️ Umbenennen</button>
+                        <button class="tr-share" id="tripDetailShare" onclick="">🔗 Reise teilen</button>
+                    </div>
                 </div>
                 <h3 id="tripDetailTitle"></h3>
                 <div class="tr-detail-meta" id="tripDetailMeta"></div>
@@ -10403,6 +10410,7 @@
                         <div class="tr-card-head">
                             <div class="tr-card-name">${trEsc(t.name)}</div>
                             <div class="tr-card-actions">
+                                ${canEdit ? `<button class="tr-icon" onclick="event.stopPropagation(); renameTrip('${t.id}')" title="Umbenennen" aria-label="Reise umbenennen">✏️</button>` : ''}
                                 <button class="tr-icon" onclick="event.stopPropagation(); shareTrip('${t.id}')" title="Reise teilen" aria-label="Reise teilen">🔗</button>
                                 ${canEdit ? `<button class="tr-icon" onclick="event.stopPropagation(); deleteTrip('${t.id}')" title="Reise löschen" aria-label="Reise löschen">🗑</button>` : ''}
                             </div>
@@ -10438,6 +10446,17 @@
             saveTrips(loadTrips().filter(x => x.id !== id));
             unpublishTrip(id);
             if (tripCurrentId === id) showTripList(); else loadAndRenderTripList();
+        }
+        function renameTrip(id) {
+            if (!tripIsOwnProfile()) return;
+            const list = loadTrips(); const t = list.find(x => x.id === id); if (!t) return;
+            const input = prompt('Name der Reise:', t.name);
+            if (input == null) return;
+            const name = input.trim(); if (!name) return;
+            t.name = name; saveTrips(list); publishTrip(t);
+            if (tripCurrentId === id) {
+                document.getElementById('tripDetailTitle').innerHTML = trEsc(t.name) + (!t.to ? ' <span class="tr-live">● läuft noch</span>' : '');
+            } else loadAndRenderTripList();
         }
 
         // --- Teilen (server-seitig; Owner-Token) -----------------------------
@@ -10486,7 +10505,23 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', noWrap: true }).addTo(tripMap);
             tripRouteLayer = L.layerGroup().addTo(tripMap);    // Route-Linie (immer volle Reise)
             tripMarkerLayer = L.layerGroup().addTo(tripMap);   // Fundpunkt-Marker (gefiltert)
+            // Navigation zum Durchklicken (Pfeile ‹ ›) – erscheint bei aufgeklappter Art mit mehreren Beobachtungen
+            const mapEl = document.getElementById('tripMap');
+            const nav = document.createElement('div');
+            nav.id = 'tripMapNav'; nav.className = 'tr-mapnav'; nav.style.display = 'none';
+            nav.innerHTML = `<button class="tr-nav-btn" type="button" onclick="tripNavStep(-1)" aria-label="Vorherige Beobachtung">‹</button><span id="tripNavLabel" class="tr-nav-label"></span><button class="tr-nav-btn" type="button" onclick="tripNavStep(1)" aria-label="Nächste Beobachtung">›</button>`;
+            mapEl.appendChild(nav);
+            try { L.DomEvent.disableClickPropagation(nav); L.DomEvent.disableScrollPropagation(nav); } catch (e) {}
         }
+        // Pfeiltasten steuern die Durchklick-Navigation, wenn sie sichtbar ist
+        document.addEventListener('keydown', (e) => {
+            const nav = document.getElementById('tripMapNav');
+            if (!nav || nav.style.display === 'none') return;
+            const panel = document.getElementById('tab-reisen');
+            if (panel && !panel.classList.contains('active')) return;
+            if (e.key === 'ArrowLeft') { e.preventDefault(); tripNavStep(-1); }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); tripNavStep(1); }
+        });
         function openTrip(id, keep) {
             const trip = resolveTrip(id);
             if (!trip) { showTripList(); return; }
@@ -10503,6 +10538,8 @@
             document.getElementById('tripDetailMeta').innerHTML =
                 `${fmtTripDate(trip.from)} – ${running ? 'heute' : fmtTripDate(trip.to)} · ${tripDaySpan(trip.from, trip.to)} Tage` + tripStatRow(s);
             const share = document.getElementById('tripDetailShare'); if (share) share.setAttribute('onclick', `shareTrip('${id}')`);
+            const ren = document.getElementById('tripDetailRename');
+            if (ren) { const canEdit = tripIsOwnProfile() && loadTrips().some(x => x.id === id); ren.style.display = canEdit ? '' : 'none'; ren.setAttribute('onclick', `renameTrip('${id}')`); }
             initTripMap();
             drawTripPolyline(s.obs);             // Route-Linie = volle Reise
             tripRefreshView();                   // Marker + Galerie + Filter (gefiltert)
@@ -10587,6 +10624,7 @@
             const disp = tripDisplayObs();
             renderTripObsList(disp);
             drawTripMarkers(disp);
+            if (tripSpeciesDrill != null) tripNavShow(disp); else tripNavHide();
         }
         function tripToggleTaxa(key) {
             if (tripFilterTaxa.has(key)) tripFilterTaxa.delete(key); else tripFilterTaxa.add(key);
@@ -10665,16 +10703,37 @@
             setTimeout(() => fitTripMap(tripDisplayObs()), 40);
         }
         // Karte angeklickt -> Punkt auf der Leaflet-Karte hervorheben & Popup öffnen
-        function travelSelectObs(id) {
+        function travelSelectObs(id, opts) {
+            opts = opts || {};
             const o = tripCurrentObs.find(x => String(x.id) === String(id));
             document.querySelectorAll('#tripObsList .rarity-rare-card').forEach(c => c.classList.toggle('tr-selected', c.dataset.oid === String(id)));
+            if (opts.scrollCard) { const card = document.querySelector('#tripObsList .rarity-rare-card[data-oid="' + String(id).replace(/"/g, '\\"') + '"]'); if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
             if (!o || typeof o.lat !== 'number' || typeof o.lon !== 'number') return;
-            const mapEl = document.getElementById('tripMap'); if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (!opts.noScroll) { const mapEl = document.getElementById('tripMap'); if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
             if (tripMap) {
                 tripMap.setView([o.lat, o.lon], Math.max(tripMap.getZoom() || 0, 12), { animate: true });
                 const m = tripMarkerById[o.id];
                 if (m) setTimeout(() => m.openPopup(), 260);
             }
+        }
+        // Durchklick-Navigation (Pfeile) über die Beobachtungen der aufgeklappten Art
+        let tripNavObs = [], tripNavIndex = 0;
+        function tripNavShow(obs) {
+            tripNavObs = (obs || []).filter(o => typeof o.lat === 'number' && typeof o.lon === 'number');
+            const nav = document.getElementById('tripMapNav'); if (!nav) return;
+            if (tripNavObs.length > 1) {
+                tripNavIndex = 0;
+                const lbl = document.getElementById('tripNavLabel'); if (lbl) lbl.textContent = `1 / ${tripNavObs.length}`;
+                nav.style.display = '';
+            } else { nav.style.display = 'none'; tripNavObs = []; }
+        }
+        function tripNavHide() { const nav = document.getElementById('tripMapNav'); if (nav) nav.style.display = 'none'; tripNavObs = []; }
+        function tripNavStep(dir) {
+            if (tripNavObs.length < 2) return;
+            tripNavIndex = (tripNavIndex + dir + tripNavObs.length) % tripNavObs.length;
+            const o = tripNavObs[tripNavIndex];
+            const lbl = document.getElementById('tripNavLabel'); if (lbl) lbl.textContent = `${tripNavIndex + 1} / ${tripNavObs.length}`;
+            travelSelectObs(o.id, { noScroll: true, scrollCard: true });
         }
 
         // --- Geteilte Reise per Link öffnen (?trip=<id>) ---------------------
