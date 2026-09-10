@@ -9561,7 +9561,7 @@
         // Schema-Version: bei Änderungen an mapObservation/Gruppierung hochzählen,
         // damit alte Caches verworfen und einmalig komplett neu gemappt werden.
         // v2: Animalia-Sammeltopf in Knorpelfische/Krebstiere/Stachelhäuter/Nesseltiere aufgeteilt.
-        const CACHE_SCHEMA = 'v2';
+        const CACHE_SCHEMA = 'v3';   // v3: kompaktes Zeilenformat (keine wiederholten Schlüssel, url rekonstruiert)
         const CACHE_KEY_BASE = `inat_observations_cache_${CACHE_SCHEMA}`;
         const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
         function cacheKey() { return `${CACHE_KEY_BASE}_${USER_ID}`; }  // Cache pro Nutzer
@@ -9578,15 +9578,43 @@
             } catch (e) {}
         })();
 
-        function saveToCache(data) {
-            const cacheData = {
-                timestamp: Date.now(),
-                observations: data
-            };
+        // Kompaktes Cache-Format: eine Zeile (Array) je Beobachtung statt Objekt mit wiederholten Schlüsseln.
+        // Spart bei vielen Beobachtungen 40–60 % Speicher (verhindert localStorage-Quota-Überlauf -> kein Voll-Load bei jedem Start).
+        // 'url' wird beim Laden aus der id rekonstruiert und deshalb NICHT gespeichert.
+        const OBS_FIELDS = ['id', 'lat', 'lon', 'name', 'scientific', 'date', 'created', 'updated', 'place', 'placeIds', 'country', 'image', 'taxon', 'quality', 'taxonId', 'rank', 'rankLevel', 'identifications'];
+        function encodeObs(list) { return list.map(o => OBS_FIELDS.map(f => o[f])); }
+        function decodeObs(rows) {
+            return rows.map(r => {
+                const o = {};
+                for (let i = 0; i < OBS_FIELDS.length; i++) o[OBS_FIELDS[i]] = r[i];
+                o.url = `https://www.inaturalist.org/observations/${o.id}`;
+                return o;
+            });
+        }
+        // Rekonstruierbare/nicht-essenzielle Caches entfernen, um Platz für den Beobachtungs-Cache zu schaffen
+        function freeCacheSpace() {
             try {
-                localStorage.setItem(cacheKey(), JSON.stringify(cacheData));
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const k = localStorage.key(i);
+                    if (!k) continue;
+                    if (k.startsWith('inat_friend_summary_') ||
+                        (k.startsWith('inat_observations_cache') && k !== cacheKey())) {
+                        localStorage.removeItem(k);
+                    }
+                }
+            } catch (e) {}
+        }
+        function saveToCache(data) {
+            let payload;
+            try { payload = JSON.stringify({ timestamp: Date.now(), rows: encodeObs(data) }); }
+            catch (e) { console.warn('Cache serialize failed:', e); return; }
+            try {
+                localStorage.setItem(cacheKey(), payload);
             } catch (e) {
-                console.warn('Cache save failed:', e);
+                // Wahrscheinlich Quota überschritten -> Platz schaffen und einmal erneut versuchen
+                freeCacheSpace();
+                try { localStorage.setItem(cacheKey(), payload); }
+                catch (e2) { console.warn('Cache save failed (Quota?) – Größe≈' + Math.round(payload.length / 1024) + ' KB, Beobachtungen werden bei jedem Start neu geladen:', e2); }
             }
         }
 
@@ -9596,9 +9624,12 @@
                 const cached = localStorage.getItem(cacheKey());
                 if (!cached) return null;
                 const cacheData = JSON.parse(cached);
-                if (!cacheData.observations || !cacheData.observations.length) return null;
+                // Neues Zeilenformat (rows) bevorzugt; altes Objektformat (observations) als Rückfall
+                const observations = Array.isArray(cacheData.rows) ? decodeObs(cacheData.rows)
+                    : (Array.isArray(cacheData.observations) ? cacheData.observations : null);
+                if (!observations || !observations.length) return null;
                 return {
-                    observations: cacheData.observations,
+                    observations,
                     timestamp: cacheData.timestamp || 0,
                     age: Date.now() - (cacheData.timestamp || 0)
                 };
@@ -10366,29 +10397,41 @@
             document.getElementById('tripListView').style.display = 'block';
             loadAndRenderTripList();
         }
+        // Server-Reisen des Nutzers holen. null = Server nicht erreichbar (dann nicht überschreiben).
         async function fetchServerTrips(user) {
             try {
                 await backendProbe.catch(() => {});
+                if (!BACKEND_READY) return null;
                 const r = await fetch('api/trips?user=' + encodeURIComponent(String(user).toLowerCase()));
+                if (!r.ok) return null;
                 const j = await r.json().catch(() => null);
                 return (j && Array.isArray(j.trips)) ? j.trips : [];
-            } catch (e) { return []; }
+            } catch (e) { return null; }
         }
-        // Reisen des GERADE ANGEZEIGTEN Profils laden: eigenes = localStorage, fremdes = Server (nur ansehen)
+        // Reisen des GERADE ANGEZEIGTEN Profils laden: eigenes = lokal + Server-Abgleich (geräteübergreifend), fremdes = Server (nur ansehen)
         async function loadAndRenderTripList() {
             const own = tripIsOwnProfile();
             const box = document.getElementById('tripCreateBox'); if (box) box.style.display = own ? '' : 'none';
             const note = document.getElementById('tripProfileNote');
-            let trips;
             if (own) {
-                trips = loadTrips();
                 if (note) note.style.display = 'none';
+                renderTripListWith(loadTrips(), true);                 // 1) lokalen Stand sofort zeigen
+                const server = await fetchServerTrips(USER_ID);        // 2) mit Server abgleichen
+                if (server) {
+                    const serverIds = new Set(server.map(t => t.id));
+                    const localOnly = loadTrips().filter(t => !serverIds.has(t.id));
+                    localOnly.forEach(t => publishTrip(t));            // lokal-only (Migration/offline) hochladen
+                    const merged = [...server, ...localOnly];
+                    saveTrips(merged);                                  // Server = führend + lokale Extras behalten
+                    merged.forEach(t => { sharedTrips[t.id] = t; });
+                    renderTripListWith(merged, true);
+                }
             } else {
                 if (note) { note.style.display = ''; note.innerHTML = `🧳 Reisen von <strong>${trEsc(USER_ID)}</strong> — nur ansehen. Eigene Reisen legst du auf deinem eigenen Profil an.`; }
-                trips = await fetchServerTrips(USER_ID);
-                trips.forEach(t => { sharedTrips[t.id] = t; });   // für openTrip auflösbar machen
+                const server = (await fetchServerTrips(USER_ID)) || [];
+                server.forEach(t => { sharedTrips[t.id] = t; });        // für openTrip auflösbar machen
+                renderTripListWith(server, false);
             }
-            renderTripListWith(trips, own);
         }
         function renderTripListWith(trips, canEdit) {
             const wrap = document.getElementById('tripList');
