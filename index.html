@@ -4484,6 +4484,7 @@
                 name: obs.taxon?.preferred_common_name || obs.taxon?.name || obs.species_guess || 'Unbekannt',
                 scientific: obs.taxon?.name || '',
                 date: obs.observed_on || '',
+                obsTime: obs.time_observed_at || '',   // präzise Beobachtungs-Uhrzeit (für korrekte Routen-Reihenfolge)
                 created: obs.created_at || '',
                 updated: obs.updated_at || '',
                 place: obs.place_guess || '',
@@ -9580,7 +9581,7 @@
         // Schema-Version: bei Änderungen an mapObservation/Gruppierung hochzählen,
         // damit alte Caches verworfen und einmalig komplett neu gemappt werden.
         // v2: Animalia-Sammeltopf in Knorpelfische/Krebstiere/Stachelhäuter/Nesseltiere aufgeteilt.
-        const CACHE_SCHEMA = 'v3';   // v3: kompaktes Zeilenformat (keine wiederholten Schlüssel, url rekonstruiert)
+        const CACHE_SCHEMA = 'v4';   // v4: kompaktes Zeilenformat + obsTime (präzise Beobachtungszeit)
         const CACHE_KEY_BASE = `inat_observations_cache_${CACHE_SCHEMA}`;
         const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
         function cacheKey() { return `${CACHE_KEY_BASE}_${USER_ID}`; }  // Cache pro Nutzer
@@ -9600,7 +9601,7 @@
         // Kompaktes Cache-Format: eine Zeile (Array) je Beobachtung statt Objekt mit wiederholten Schlüsseln.
         // Spart bei vielen Beobachtungen 40–60 % Speicher (verhindert localStorage-Quota-Überlauf -> kein Voll-Load bei jedem Start).
         // 'url' wird beim Laden aus der id rekonstruiert und deshalb NICHT gespeichert.
-        const OBS_FIELDS = ['id', 'lat', 'lon', 'name', 'scientific', 'date', 'created', 'updated', 'place', 'placeIds', 'country', 'image', 'taxon', 'quality', 'taxonId', 'rank', 'rankLevel', 'identifications'];
+        const OBS_FIELDS = ['id', 'lat', 'lon', 'name', 'scientific', 'date', 'obsTime', 'created', 'updated', 'place', 'placeIds', 'country', 'image', 'taxon', 'quality', 'taxonId', 'rank', 'rankLevel', 'identifications'];
         function encodeObs(list) { return list.map(o => OBS_FIELDS.map(f => o[f])); }
         function decodeObs(rows) {
             return rows.map(r => {
@@ -10370,9 +10371,7 @@
             const ex = (trip.excluded && trip.excluded.length) ? new Set(trip.excluded.map(String)) : null;
             return allObservations
                 .filter(o => o.date && o.date >= trip.from && o.date <= to && !(ex && ex.has(String(o.id))))
-                .sort((a, b) => a.date === b.date
-                    ? String(a.created || '').localeCompare(String(b.created || ''))
-                    : (a.date < b.date ? -1 : 1));
+                .sort(tripChrono);
         }
         // speciesKey -> allererste Beobachtung (Datum) über ALLE Daten. rgOnly=true: nur Forschungsqualität.
         function tripFirstSeenMap(rgOnly) {
@@ -10687,7 +10686,17 @@
             return tripFilterTaxa.size ? tripCurrentObs.filter(o => o.taxon && tripFilterTaxa.has(o.taxon)) : tripCurrentObs;
         }
         function tripSpeciesKey(o) { return o.taxonId || o.scientific || o.name; }
-        function tripChrono(a, b) { return a.date === b.date ? String(a.created || '').localeCompare(String(b.created || '')) : (a.date < b.date ? -1 : 1); }
+        // Zeitpunkt einer Beobachtung: präzise Uhrzeit (time_observed_at) bevorzugt, sonst Datum, sonst Upload
+        function tripTimeMs(o) {
+            const t = o.obsTime || o.date || o.created || '';
+            const ms = Date.parse(t);
+            return isNaN(ms) ? 0 : ms;
+        }
+        function tripChrono(a, b) {
+            const d = tripTimeMs(a) - tripTimeMs(b);
+            if (d) return d;
+            return String(a.created || '').localeCompare(String(b.created || '')) || String(a.id).localeCompare(String(b.id));
+        }
         function tripDisplayObs() {
             let obs = tripTaxaFiltered();
             if (tripSpeciesDrill != null) {   // eine Art aufgeklappt -> alle ihre Beobachtungen (chronologisch)
