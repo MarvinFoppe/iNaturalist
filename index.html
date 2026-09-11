@@ -3452,6 +3452,11 @@
             #tab-reisen .rarity-rare-card .rr-link{position:absolute;bottom:8px;right:8px;z-index:12;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:.78em}
             #tab-reisen .rarity-rare-card .rr-link:hover{background:var(--accent);color:var(--on-accent)}
             #tab-reisen .tr-profile-note{background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:16px;color:var(--text-secondary);font-size:.9em}
+            #tab-reisen .tr-yearbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px}
+            #tab-reisen .tr-year-label{color:var(--text-secondary);font-size:.85em;margin-right:2px}
+            #tab-reisen .tr-year-chip{background:var(--bg-light);border:1px solid var(--border);color:var(--text-secondary);border-radius:999px;padding:5px 14px;cursor:pointer;font-family:inherit;font-size:.85em;font-variant-numeric:tabular-nums;transition:background .15s,color .15s,border-color .15s}
+            #tab-reisen .tr-year-chip:hover{border-color:var(--accent)}
+            #tab-reisen .tr-year-chip.active{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
             #tab-reisen .rarity-rare-card .tr-count-badge{position:absolute;top:8px;left:8px;z-index:12;background:var(--accent);color:var(--on-accent);font-size:.74em;font-weight:800;padding:3px 8px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
             #tab-reisen .tr-drill-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
             #tab-reisen .tr-drill-title{font-weight:600;color:var(--accent)}
@@ -3481,6 +3486,7 @@
                     </div>
                 </div>
                 <div id="tripProfileNote" class="tr-profile-note" style="display:none"></div>
+                <div id="tripYearBar" class="tr-yearbar" style="display:none"></div>
                 <div id="tripList"></div>
             </div>
             <div id="tripDetail" style="display:none">
@@ -10324,6 +10330,8 @@
         let tripViewMode = 'observations';    // 'observations' | 'species'
         let tripSpeciesDrill = null;          // Art-Schlüssel: Durchklicken der Beobachtungen einer Art
         let tripEditable = false;             // geöffnete Reise gehört zum eigenen Profil (Bearbeiten erlaubt)
+        let tripYearFilter = null;            // Jahres-Filter der Reise-Liste (null = alle)
+        let tripListRendered = null;          // zuletzt gerenderte Liste (für Neurendern beim Jahres-Filter)
         const sharedTrips = {};               // id -> Reise-Definition vom Server (geteilte/fremde Reisen)
 
         function loadTrips() {
@@ -10443,17 +10451,49 @@
                 renderTripListWith(server, false);
             }
         }
+        // Jahre, die eine Reise berührt (Von-Jahr bis Bis-Jahr; offen = bis heute)
+        function tripYearsOf(t) {
+            const fy = +String(t.from).slice(0, 4);
+            const ty = +String(t.to || tripTodayStr()).slice(0, 4);
+            const ys = [];
+            for (let y = fy; y <= ty && ys.length < 200; y++) ys.push(y);
+            return ys.length ? ys : [fy];
+        }
+        function tripSetYear(y) {
+            tripYearFilter = y;
+            if (tripListRendered) renderTripListWith(tripListRendered.trips, tripListRendered.canEdit);
+        }
         function renderTripListWith(trips, canEdit) {
             const wrap = document.getElementById('tripList');
             if (!wrap) return;
             trips = (trips || []).slice().sort((a, b) => (a.from < b.from ? 1 : -1));
+            tripListRendered = { trips, canEdit };
+            // Jahres-Filter-Chips aus allen Reisen aufbauen
+            const years = new Set();
+            trips.forEach(t => tripYearsOf(t).forEach(y => years.add(y)));
+            const yearList = [...years].sort((a, b) => b - a);
+            if (tripYearFilter != null && !years.has(tripYearFilter)) tripYearFilter = null;
+            const yearBar = document.getElementById('tripYearBar');
+            if (yearBar) {
+                if (yearList.length > 1) {
+                    yearBar.style.display = '';
+                    yearBar.innerHTML = `<span class="tr-year-label">Jahr:</span>`
+                        + `<button class="tr-year-chip ${tripYearFilter == null ? 'active' : ''}" onclick="tripSetYear(null)">Alle</button>`
+                        + yearList.map(y => `<button class="tr-year-chip ${tripYearFilter === y ? 'active' : ''}" onclick="tripSetYear(${y})">${y}</button>`).join('');
+                } else { yearBar.style.display = 'none'; }
+            }
             if (!trips.length) {
                 wrap.innerHTML = canEdit
                     ? '<div class="tr-empty"><div class="tr-empty-emoji">🧳</div><div class="tr-empty-title">Noch keine Reisen</div><div class="tr-empty-sub">Lege oben eine Reise mit Zeitraum an — alle Beobachtungen aus dieser Zeit landen automatisch darin.</div></div>'
                     : '<div class="tr-empty"><div class="tr-empty-emoji">🧳</div><div class="tr-empty-title">Keine Reisen</div><div class="tr-empty-sub">Dieses Profil hat noch keine Reisen angelegt.</div></div>';
                 return;
             }
-            wrap.innerHTML = '<div class="tr-cardgrid">' + trips.map(t => {
+            const filtered = tripYearFilter != null ? trips.filter(t => tripYearsOf(t).includes(tripYearFilter)) : trips;
+            if (!filtered.length) {
+                wrap.innerHTML = `<div class="tr-empty"><div class="tr-empty-emoji">📅</div><div class="tr-empty-title">Keine Reisen ${tripYearFilter}</div><div class="tr-empty-sub">In diesem Jahr gibt es keine Reise. <button class="tr-linkbtn" onclick="tripSetYear(null)">alle anzeigen</button></div></div>`;
+                return;
+            }
+            wrap.innerHTML = '<div class="tr-cardgrid">' + filtered.map(t => {
                 const s = tripStats(t);
                 const running = !t.to;
                 const dates = `${fmtTripDate(t.from)} – ${running ? '<span class="tr-live">läuft noch</span>' : fmtTripDate(t.to)}`;
