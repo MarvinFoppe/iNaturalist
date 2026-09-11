@@ -3513,8 +3513,10 @@
                     <div id="tripTaxaGrid" class="taxa-grid"></div>
                 </details>
                 <div class="view-mode-toggle" id="tripViewToggle">
-                    <button class="view-mode-btn active" id="tripViewObs" onclick="tripSetViewMode('observations')">📷 Beobachtungen <span class="view-mode-count" id="tripObsCount">0</span></button>
-                    <button class="view-mode-btn" id="tripViewSpecies" onclick="tripSetViewMode('species')">🦋 Arten <span class="view-mode-count" id="tripSpeciesCount">0</span></button>
+                    <button class="view-mode-btn active" id="tripViewObs" onclick="tripSetViewMode('observations')">📷 Beobachtungen <span class="view-mode-count" id="tripCntObs">0</span></button>
+                    <button class="view-mode-btn" id="tripViewSpecies" onclick="tripSetViewMode('species')">🦋 Arten <span class="view-mode-count" id="tripCntSpecies">0</span></button>
+                    <button class="view-mode-btn" id="tripViewFq" onclick="tripSetViewMode('fq')">🔬 Arten (FQ) <span class="view-mode-count" id="tripCntFq">0</span></button>
+                    <button class="view-mode-btn" id="tripViewNew" onclick="tripSetViewMode('new')">✨ Neu in FQ <span class="view-mode-count" id="tripCntNew">0</span></button>
                 </div>
                 <div id="tripHiddenBar" class="tr-hidden-bar" style="display:none"></div>
                 <div id="tripObsList"></div>
@@ -10378,25 +10380,32 @@
             const first = {};
             for (const o of allObservations) {
                 if (rgOnly && o.quality !== 'research') continue;
-                const k = o.scientific || o.name;
-                if (!k || !o.date) continue;
+                const k = tripSpeciesKey(o);
+                if (k == null || !o.date) continue;
                 if (!first[k] || o.date < first[k]) first[k] = o.date;
             }
             return first;
         }
+        // Art-Schlüssel einer "neu in FQ"-Art bestimmen: erste RG-Sichtung liegt im Reisezeitraum
+        function tripNewInFqKeys(trip) {
+            const firstRG = tripFirstSeenMap(true);
+            const to = trip.to || '9999-12-31';
+            const keys = new Set();
+            for (const k in firstRG) { const f = firstRG[k]; if (f && f >= trip.from && f <= to) keys.add(k); }
+            return keys;
+        }
         function tripStats(trip) {
             const obs = tripObservations(trip);
-            const to = trip.to || '9999-12-31';
             const species = new Set(), fq = new Set();
             for (const o of obs) {
-                const k = o.scientific || o.name; if (!k) continue;
+                const k = tripSpeciesKey(o); if (k == null) continue;
                 species.add(k);                              // Arten: alle
                 if (o.quality === 'research') fq.add(k);      // FQ: Arten mit Forschungsqualität
             }
             // neu = Arten, deren allererste FORSCHUNGSQUALITÄTS-Beobachtung in den Zeitraum fällt
-            const firstRG = tripFirstSeenMap(true);
+            const newKeys = tripNewInFqKeys(trip);
             let newSpecies = 0;
-            for (const k of fq) { const f = firstRG[k]; if (f && f >= trip.from && f <= to) newSpecies++; }
+            for (const k of fq) { if (newKeys.has(String(k))) newSpecies++; }
             let cover = '';
             if (trip.coverId) { const c = obs.find(o => String(o.id) === String(trip.coverId) && o.image); if (c) cover = c.image; }
             if (!cover) { for (const o of obs) { if (o.image) { cover = o.image; break; } } }
@@ -10716,16 +10725,22 @@
             if (tripSpeciesDrill != null) {   // eine Art aufgeklappt -> alle ihre Beobachtungen (chronologisch)
                 return obs.filter(o => tripSpeciesKey(o) === tripSpeciesDrill).sort(tripChrono);
             }
-            if (tripViewMode === 'species') {
-                const byKey = new Map();
-                for (const o of obs) {
-                    const k = tripSpeciesKey(o); if (k == null) continue;
-                    const ex = byKey.get(k);
-                    if (!ex || (!ex.image && o.image)) byKey.set(k, o);   // pro Art eine Karte, bevorzugt mit Bild
-                }
-                obs = [...byKey.values()].sort(tripChrono);
+            if (tripViewMode === 'observations') return obs;
+            // Arten-basierte Modi: Vorauswahl je Modus, dann pro Art eine Karte (bevorzugt mit Bild)
+            let pool = obs;
+            if (tripViewMode === 'fq') {
+                pool = obs.filter(o => o.quality === 'research');                         // nur Arten mit FQ
+            } else if (tripViewMode === 'new') {
+                const newKeys = tripNewInFqKeys(resolveTrip(tripCurrentId) || { from: '', to: '' });
+                pool = obs.filter(o => o.quality === 'research' && newKeys.has(String(tripSpeciesKey(o))));  // erstmalig in FQ
             }
-            return obs;
+            const byKey = new Map();
+            for (const o of pool) {
+                const k = tripSpeciesKey(o); if (k == null) continue;
+                const ex = byKey.get(k);
+                if (!ex || (!ex.image && o.image)) byKey.set(k, o);
+            }
+            return [...byKey.values()].sort(tripChrono);
         }
         function tripRenderTaxaGrid() {
             const grid = document.getElementById('tripTaxaGrid'); if (!grid) return;
@@ -10741,14 +10756,23 @@
             }
             grid.innerHTML = html;
         }
+        // Zähler je Anzeige-Modus (respektiert den Taxa-Filter)
+        function tripModeCounts() {
+            const base = tripTaxaFiltered();
+            const species = new Set(), fq = new Set();
+            for (const o of base) { const k = tripSpeciesKey(o); if (k == null) continue; species.add(k); if (o.quality === 'research') fq.add(k); }
+            const newKeys = tripNewInFqKeys(resolveTrip(tripCurrentId) || { from: '', to: '' });
+            let neu = 0; for (const k of fq) { if (newKeys.has(String(k))) neu++; }
+            return { observations: base.length, species: species.size, fq: fq.size, new: neu };
+        }
         function tripRefreshView() {
-            const taxaSet = tripTaxaFiltered();
-            const spSet = new Set(taxaSet.map(o => o.taxonId || o.scientific || o.name).filter(Boolean));
-            const oc = document.getElementById('tripObsCount'); if (oc) oc.textContent = taxaSet.length.toLocaleString('de-DE');
-            const sc = document.getElementById('tripSpeciesCount'); if (sc) sc.textContent = spSet.size.toLocaleString('de-DE');
-            const vo = document.getElementById('tripViewObs'), vs = document.getElementById('tripViewSpecies');
-            if (vo) vo.classList.toggle('active', tripViewMode === 'observations');
-            if (vs) vs.classList.toggle('active', tripViewMode === 'species');
+            const c = tripModeCounts();
+            const modes = { observations: 'tripViewObs', species: 'tripViewSpecies', fq: 'tripViewFq', new: 'tripViewNew' };
+            const cnts = { observations: 'tripCntObs', species: 'tripCntSpecies', fq: 'tripCntFq', new: 'tripCntNew' };
+            for (const m in modes) {
+                const b = document.getElementById(modes[m]); if (b) b.classList.toggle('active', tripViewMode === m);
+                const el = document.getElementById(cnts[m]); if (el) el.textContent = c[m].toLocaleString('de-DE');
+            }
             tripRenderTaxaGrid();
             const bar = document.getElementById('tripHiddenBar');
             if (bar) {
@@ -10818,7 +10842,7 @@
             if (tripSpeciesDrill != null) {
                 head = `<div class="tr-drill-head"><button class="tr-back" onclick="tripBackToSpecies()">← Zurück zu Arten</button><span class="tr-drill-title">${trEsc(obs[0].name)} · ${obs.length} Beobachtung${obs.length === 1 ? '' : 'en'}</span></div>`;
                 cards = obs.map(o => travelCardHtml(o, { mode: 'obs', coverId }));
-            } else if (tripViewMode === 'species') {
+            } else if (tripViewMode !== 'observations') {
                 const counts = {};
                 for (const o of tripTaxaFiltered()) { const k = tripSpeciesKey(o); if (k != null) counts[k] = (counts[k] || 0) + 1; }
                 cards = obs.map(o => travelCardHtml(o, { mode: 'species', count: counts[tripSpeciesKey(o)] || 1 }));
