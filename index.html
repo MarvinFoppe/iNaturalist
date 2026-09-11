@@ -10650,12 +10650,26 @@
             tripRefreshView();                   // Marker + Galerie + Filter (gefiltert)
             setTimeout(() => { if (tripMap) { tripMap.invalidateSize(); fitTripMap(tripDisplayObs()); } }, keep ? 60 : 180);
         }
-        // Route-Linie über ALLE (geolokalisierten) Beobachtungen der Reise
+        // Tages-Etappen: pro Kalendertag EIN Punkt (Mittel der geolokalisierten Beobachtungen), chronologisch nach Tag.
+        // Verhindert Zickzack innerhalb eines Tages / durch ungenaue Zeiten.
+        function tripDailyStages(obs) {
+            const byDay = new Map();
+            for (const o of obs) {
+                if (typeof o.lat !== 'number' || typeof o.lon !== 'number' || !o.date) continue;
+                let e = byDay.get(o.date);
+                if (!e) { e = { date: o.date, lat: 0, lon: 0, n: 0 }; byDay.set(o.date, e); }
+                e.lat += o.lat; e.lon += o.lon; e.n++;
+            }
+            return [...byDay.values()]
+                .sort((a, b) => a.date < b.date ? -1 : 1)
+                .map(e => ({ date: e.date, lat: e.lat / e.n, lon: e.lon / e.n, count: e.n }));
+        }
+        // Route-Linie über die Tages-Etappen (ein Punkt pro Tag)
         function drawTripPolyline(obs) {
             if (!tripRouteLayer) return;
             tripRouteLayer.clearLayers();
-            const geo = obs.filter(o => typeof o.lat === 'number' && typeof o.lon === 'number');
-            if (geo.length > 1) L.polyline(geo.map(o => [o.lat, o.lon]), { color: '#9bcc5f', weight: 3, opacity: 0.85 }).addTo(tripRouteLayer);
+            const days = tripDailyStages(obs);
+            if (days.length > 1) L.polyline(days.map(d => [d.lat, d.lon]), { color: '#9bcc5f', weight: 3, opacity: 0.85 }).addTo(tripRouteLayer);
         }
         // Marker für die aktuell angezeigten (gefilterten) Beobachtungen; Start/Ziel = Anfang/Ende der GESAMTEN Reise
         function drawTripMarkers(obs) {
