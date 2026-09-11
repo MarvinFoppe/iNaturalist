@@ -17,8 +17,9 @@ function cleanTrip(t, user) {
   const excluded = Array.isArray(t.excluded)
     ? [...new Set(t.excluded.filter(x => x != null).map(x => x))].slice(0, 5000)   // manuell ausgeblendete Beobachtungs-IDs
     : [];
+  const coverId = (t.coverId != null && String(t.coverId).length <= 40) ? String(t.coverId) : '';   // gewähltes Titelbild
   if (!id || !name || !from) return null;
-  return { id, name, from, to, excluded, user };
+  return { id, name, from, to, excluded, coverId, user };
 }
 
 export default async function handler(req, res) {

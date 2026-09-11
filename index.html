@@ -3422,8 +3422,11 @@
             #tab-reisen .tr-cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:4px}
             #tab-reisen .tr-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;display:flex;flex-direction:column}
             #tab-reisen .tr-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 8px 22px var(--shadow)}
-            #tab-reisen .tr-cover{height:120px;background-size:cover;background-position:center;background-color:var(--bg-light);display:flex;align-items:center;justify-content:center;font-size:2.4em;position:relative}
-            #tab-reisen .tr-live-badge{position:absolute;top:8px;left:8px;background:rgba(20,30,20,.72);color:#8ee06a;font-size:.7em;font-weight:700;padding:3px 9px;border-radius:999px;backdrop-filter:blur(4px)}
+            #tab-reisen .tr-cover{position:relative;aspect-ratio:16/10;background:var(--bg-light);display:flex;align-items:center;justify-content:center;font-size:2.4em;overflow:hidden}
+            #tab-reisen .tr-cover-empty{color:var(--text-muted)}
+            #tab-reisen .tr-cover-blur{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(18px) brightness(.55);transform:scale(1.15)}
+            #tab-reisen .tr-cover-img{position:relative;z-index:1;max-width:100%;max-height:100%;object-fit:contain;display:block}
+            #tab-reisen .tr-live-badge{position:absolute;top:8px;left:8px;z-index:2;background:rgba(20,30,20,.72);color:#8ee06a;font-size:.7em;font-weight:700;padding:3px 9px;border-radius:999px;backdrop-filter:blur(4px)}
             #tab-reisen .tr-card-body{padding:12px 14px}
             #tab-reisen .tr-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
             #tab-reisen .tr-card-name{font-weight:700;color:var(--accent);font-size:1.02em;line-height:1.2}
@@ -3461,8 +3464,13 @@
             #tab-reisen .tr-drill-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
             #tab-reisen .tr-drill-title{font-weight:600;color:var(--accent)}
             #tab-reisen .tr-drill-head .tr-back{margin-bottom:0}
-            #tab-reisen .rarity-rare-card .tr-remove{position:absolute;top:8px;left:8px;z-index:13;width:22px;height:22px;border-radius:50%;background:rgba(200,60,60,.85);color:#fff;border:none;cursor:pointer;font-size:.78em;display:flex;align-items:center;justify-content:center;line-height:1;padding:0}
+            #tab-reisen .rarity-rare-card .tr-obs-tools{position:absolute;top:8px;left:8px;z-index:13;display:flex;gap:5px}
+            #tab-reisen .rarity-rare-card .tr-tool{width:22px;height:22px;border-radius:50%;border:none;cursor:pointer;font-size:.78em;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;color:#fff}
+            #tab-reisen .rarity-rare-card .tr-remove{background:rgba(200,60,60,.85)}
             #tab-reisen .rarity-rare-card .tr-remove:hover{background:#e0654f}
+            #tab-reisen .rarity-rare-card .tr-cover-btn{background:rgba(0,0,0,.55)}
+            #tab-reisen .rarity-rare-card .tr-cover-btn:hover{background:var(--accent);color:var(--on-accent)}
+            #tab-reisen .rarity-rare-card .tr-cover-btn.is-cover{background:var(--accent);color:var(--on-accent)}
             #tab-reisen .tr-hidden-bar{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:8px 14px;margin-bottom:12px;color:var(--text-secondary);font-size:.85em}
             #tab-reisen .tr-linkbtn{background:none;border:none;color:var(--accent);cursor:pointer;font-family:inherit;font-size:1em;text-decoration:underline;padding:0}
             #tab-reisen .tr-mapnav{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;align-items:center;gap:10px;background:rgba(20,30,20,.92);border:1px solid var(--border);border-radius:999px;padding:5px 8px;box-shadow:0 4px 16px rgba(0,0,0,.45)}
@@ -10330,7 +10338,7 @@
         let tripViewMode = 'observations';    // 'observations' | 'species'
         let tripSpeciesDrill = null;          // Art-Schlüssel: Durchklicken der Beobachtungen einer Art
         let tripEditable = false;             // geöffnete Reise gehört zum eigenen Profil (Bearbeiten erlaubt)
-        let tripYearFilter = null;            // Jahres-Filter der Reise-Liste (null = alle)
+        let tripYearsSel = new Set();         // Jahres-Filter der Reise-Liste (leer = alle; mehrere möglich)
         let tripListRendered = null;          // zuletzt gerenderte Liste (für Neurendern beim Jahres-Filter)
         const sharedTrips = {};               // id -> Reise-Definition vom Server (geteilte/fremde Reisen)
 
@@ -10391,7 +10399,8 @@
             let newSpecies = 0;
             for (const k of fq) { const f = firstRG[k]; if (f && f >= trip.from && f <= to) newSpecies++; }
             let cover = '';
-            for (const o of obs) { if (o.image) { cover = o.image; break; } }
+            if (trip.coverId) { const c = obs.find(o => String(o.id) === String(trip.coverId) && o.image); if (c) cover = c.image; }
+            if (!cover) { for (const o of obs) { if (o.image) { cover = o.image; break; } } }
             return { count: obs.length, species: species.size, fq: fq.size, newSpecies, cover, obs };
         }
         function tripStatRow(s) {
@@ -10459,8 +10468,10 @@
             for (let y = fy; y <= ty && ys.length < 200; y++) ys.push(y);
             return ys.length ? ys : [fy];
         }
-        function tripSetYear(y) {
-            tripYearFilter = y;
+        function tripToggleYear(y) {
+            if (y == null) tripYearsSel.clear();
+            else if (tripYearsSel.has(y)) tripYearsSel.delete(y);
+            else tripYearsSel.add(y);
             if (tripListRendered) renderTripListWith(tripListRendered.trips, tripListRendered.canEdit);
         }
         function renderTripListWith(trips, canEdit) {
@@ -10472,14 +10483,14 @@
             const years = new Set();
             trips.forEach(t => tripYearsOf(t).forEach(y => years.add(y)));
             const yearList = [...years].sort((a, b) => b - a);
-            if (tripYearFilter != null && !years.has(tripYearFilter)) tripYearFilter = null;
+            [...tripYearsSel].forEach(y => { if (!years.has(y)) tripYearsSel.delete(y); });
             const yearBar = document.getElementById('tripYearBar');
             if (yearBar) {
                 if (yearList.length > 1) {
                     yearBar.style.display = '';
                     yearBar.innerHTML = `<span class="tr-year-label">Jahr:</span>`
-                        + `<button class="tr-year-chip ${tripYearFilter == null ? 'active' : ''}" onclick="tripSetYear(null)">Alle</button>`
-                        + yearList.map(y => `<button class="tr-year-chip ${tripYearFilter === y ? 'active' : ''}" onclick="tripSetYear(${y})">${y}</button>`).join('');
+                        + `<button class="tr-year-chip ${tripYearsSel.size === 0 ? 'active' : ''}" onclick="tripToggleYear(null)">Alle</button>`
+                        + yearList.map(y => `<button class="tr-year-chip ${tripYearsSel.has(y) ? 'active' : ''}" onclick="tripToggleYear(${y})">${y}</button>`).join('');
                 } else { yearBar.style.display = 'none'; }
             }
             if (!trips.length) {
@@ -10488,9 +10499,10 @@
                     : '<div class="tr-empty"><div class="tr-empty-emoji">🧳</div><div class="tr-empty-title">Keine Reisen</div><div class="tr-empty-sub">Dieses Profil hat noch keine Reisen angelegt.</div></div>';
                 return;
             }
-            const filtered = tripYearFilter != null ? trips.filter(t => tripYearsOf(t).includes(tripYearFilter)) : trips;
+            const filtered = tripYearsSel.size ? trips.filter(t => tripYearsOf(t).some(y => tripYearsSel.has(y))) : trips;
             if (!filtered.length) {
-                wrap.innerHTML = `<div class="tr-empty"><div class="tr-empty-emoji">📅</div><div class="tr-empty-title">Keine Reisen ${tripYearFilter}</div><div class="tr-empty-sub">In diesem Jahr gibt es keine Reise. <button class="tr-linkbtn" onclick="tripSetYear(null)">alle anzeigen</button></div></div>`;
+                const yrs = [...tripYearsSel].sort((a, b) => b - a).join(', ');
+                wrap.innerHTML = `<div class="tr-empty"><div class="tr-empty-emoji">📅</div><div class="tr-empty-title">Keine Reisen ${yrs}</div><div class="tr-empty-sub">In den gewählten Jahren gibt es keine Reise. <button class="tr-linkbtn" onclick="tripToggleYear(null)">alle anzeigen</button></div></div>`;
                 return;
             }
             wrap.innerHTML = '<div class="tr-cardgrid">' + filtered.map(t => {
@@ -10498,7 +10510,7 @@
                 const running = !t.to;
                 const dates = `${fmtTripDate(t.from)} – ${running ? '<span class="tr-live">läuft noch</span>' : fmtTripDate(t.to)}`;
                 return `<div class="tr-card" onclick="openTrip('${t.id}')">
-                    <div class="tr-cover" style="${s.cover ? `background-image:url('${s.cover}')` : ''}">${s.cover ? '' : '🧭'}${running ? '<span class="tr-live-badge">● live</span>' : ''}</div>
+                    <div class="tr-cover${s.cover ? '' : ' tr-cover-empty'}">${s.cover ? `<div class="tr-cover-blur" style="background-image:url('${s.cover}')"></div><img class="tr-cover-img" src="${s.cover}" alt="" loading="lazy">` : '🧭'}${running ? '<span class="tr-live-badge">● live</span>' : ''}</div>
                     <div class="tr-card-body">
                         <div class="tr-card-head">
                             <div class="tr-card-name">${trEsc(t.name)}</div>
@@ -10561,7 +10573,7 @@
                 await fetch('api/trips?user=' + encodeURIComponent(tripUserLogin()), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ trip: { id: trip.id, name: trip.name, from: trip.from, to: trip.to || '', excluded: trip.excluded || [] } })
+                    body: JSON.stringify({ trip: { id: trip.id, name: trip.name, from: trip.from, to: trip.to || '', excluded: trip.excluded || [], coverId: trip.coverId || '' } })
                 });
             } catch (e) {}
         }
@@ -10759,7 +10771,7 @@
                 : `${fmtTripDate(o.date)}${o.place ? '<br>' + trEsc(o.place) : ''}`;
             return `<div class="rarity-rare-card" data-oid="${o.id}" onclick="${click}" style="--type:${t.c}; cursor:pointer" title="${title}">
                 ${isSpecies && opts.count > 1 ? `<span class="tr-count-badge">${opts.count}×</span>` : ''}
-                ${(!isSpecies && tripEditable) ? `<button class="tr-remove" onclick="event.stopPropagation(); tripRemoveObs('${o.id}')" title="Aus der Reise ausblenden" aria-label="Aus der Reise ausblenden">✕</button>` : ''}
+                ${(!isSpecies && tripEditable) ? `<div class="tr-obs-tools">${o.image ? `<button class="tr-tool tr-cover-btn ${String(opts.coverId) === String(o.id) ? 'is-cover' : ''}" onclick="event.stopPropagation(); tripSetCover('${o.id}')" title="Als Titelbild festlegen" aria-label="Als Titelbild festlegen">★</button>` : ''}<button class="tr-tool tr-remove" onclick="event.stopPropagation(); tripRemoveObs('${o.id}')" title="Aus der Reise ausblenden" aria-label="Aus der Reise ausblenden">✕</button></div>` : ''}
                 <span class="rrc-type" style="background:${t.c}">${t.emoji}</span>
                 ${o.url ? `<a class="rr-link" href="${o.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Auf iNaturalist ansehen">↗</a>` : ''}
                 ${o.image ? `<img src="${o.image}" alt="${trEsc(o.name)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="rrc-noimg">${t.emoji}</div>`}
@@ -10777,17 +10789,18 @@
                 el.innerHTML = '<div class="tr-note">Keine Beobachtungen in diesem Zeitraum. Sobald Beobachtungen aus dieser Zeit geladen sind, erscheinen sie hier.</div>';
                 return;
             }
+            const coverId = (resolveTrip(tripCurrentId) || {}).coverId;
             let head = '';
             let cards;
             if (tripSpeciesDrill != null) {
                 head = `<div class="tr-drill-head"><button class="tr-back" onclick="tripBackToSpecies()">← Zurück zu Arten</button><span class="tr-drill-title">${trEsc(obs[0].name)} · ${obs.length} Beobachtung${obs.length === 1 ? '' : 'en'}</span></div>`;
-                cards = obs.map(o => travelCardHtml(o, { mode: 'obs' }));
+                cards = obs.map(o => travelCardHtml(o, { mode: 'obs', coverId }));
             } else if (tripViewMode === 'species') {
                 const counts = {};
                 for (const o of tripTaxaFiltered()) { const k = tripSpeciesKey(o); if (k != null) counts[k] = (counts[k] || 0) + 1; }
                 cards = obs.map(o => travelCardHtml(o, { mode: 'species', count: counts[tripSpeciesKey(o)] || 1 }));
             } else {
-                cards = obs.map(o => travelCardHtml(o, { mode: 'obs' }));
+                cards = obs.map(o => travelCardHtml(o, { mode: 'obs', coverId }));
             }
             el.innerHTML = head + '<div class="rarity-rare-grid">' + cards.join('') + '</div>';
         }
@@ -10819,6 +10832,15 @@
             trip.excluded = [];
             saveTrips(list); publishTrip(trip);
             tripReopenCurrent();
+        }
+        // Titelbild (Cover) der Reise auf eine bestimmte Beobachtung setzen
+        function tripSetCover(oid) {
+            if (!tripEditable) return;
+            const list = loadTrips(); const trip = list.find(x => x.id === tripCurrentId); if (!trip) return;
+            trip.coverId = String(oid);
+            saveTrips(list); publishTrip(trip);
+            tripRefreshView();          // Stern-Status aktualisieren
+            tripToast('★ Titelbild gesetzt');
         }
         // Reise nach einer Änderung (Ausblenden/Einblenden) neu aufbauen: Stats, Route, Galerie
         function tripReopenCurrent() {
