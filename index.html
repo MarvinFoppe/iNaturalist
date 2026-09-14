@@ -3015,6 +3015,14 @@
 
     <div id="errorContainer"></div>
 
+    <div class="species-mode-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px">
+        <span style="color:var(--text-secondary);font-size:.9em">Artenzählung:</span>
+        <div class="seg" role="group" aria-label="Artenzählung umschalten">
+            <button type="button" class="seg-btn" id="smSpecies" onclick="setSpeciesMode('species')" title="Unterarten &amp; Varietäten werden auf die Art gerollt – wie im iNaturalist-Profil">Arten</button>
+            <button type="button" class="seg-btn" id="smWithsub" onclick="setSpeciesMode('withsub')" title="Unterarten, Varietäten &amp; Hybriden werden einzeln gezählt">inkl. Unterarten</button>
+        </div>
+    </div>
+
     <div class="stats-container">
         <div class="stat-card">
             <div class="stat-number" id="totalCount">-</div>
@@ -3962,6 +3970,9 @@
         // Configuration
         const DEFAULT_USER = 'marvin12748';   // Standard-Nutzer (Seiten-Eigentümer)
         let USER_ID = DEFAULT_USER;            // Aktuell angezeigter Nutzer (per URL/Eingabe wechselbar)
+        // Autoritative RG-Artenzahl des aktuellen Nutzers (species_counts-Endpoint, wie im iNat-Profil).
+        // null = noch nicht geladen -> bis dahin greift die clientseitige Zählung als Fallback.
+        let rgSpeciesCountAuthoritative = null;
         const API_BASE = 'https://api.inaturalist.org/v1';
         const PER_PAGE = 200;
         const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000;
@@ -4497,6 +4508,8 @@
                 taxon: taxonGroupKey(obs.taxon),
                 quality: obs.quality_grade || '',
                 taxonId: obs.taxon?.id,
+                ancestorIds: obs.taxon?.ancestor_ids || [],   // für Leaf-Logik (Gattung raus, wenn Art vorhanden)
+                minSpeciesId: obs.taxon?.min_species_taxon_id ?? null,   // Art-Vorfahr (Unterart -> Art rollen)
                 rank: obs.taxon?.rank || '',
                 rankLevel: obs.taxon?.rank_level ?? null,
                 identifications: obs.num_identification_agreements || 0
@@ -4575,6 +4588,33 @@
             return { results: deduped, totalResults };
         }
 
+        // Autoritative RG-Artenzahl (wie iNat sie im Profil zeigt) über species_counts holen.
+        // species_counts zählt Leaf-Taxa und rollt Unterarten/Varietäten auf die Art hoch – die
+        // clientseitige Dedup nach taxonId würde solche Fälle doppelt zählen und läge zu hoch.
+        async function fetchRgSpeciesCount() {
+            const user = USER_ID;
+            const cacheKey = 'inat_rg_species_count_' + user.toLowerCase();
+            // Zwischenstand aus Cache sofort anwenden (vermeidet Flackern beim Neuladen)
+            try {
+                const cached = localStorage.getItem(cacheKey);
+                if (cached != null && cached !== '') rgSpeciesCountAuthoritative = parseInt(cached, 10);
+            } catch (e) {}
+            try {
+                const res = await inatFetch(`${API_BASE}/observations/species_counts?user_id=${encodeURIComponent(user)}&quality_grade=research&per_page=0`);
+                const data = await res.json();
+                if (typeof data.total_results === 'number') {
+                    // Nur übernehmen, wenn zwischenzeitlich nicht der Nutzer gewechselt wurde
+                    if (USER_ID === user) {
+                        rgSpeciesCountAuthoritative = data.total_results;
+                        try { localStorage.setItem(cacheKey, String(data.total_results)); } catch (e) {}
+                        renderBadges();
+                    }
+                }
+            } catch (e) {
+                console.warn('RG-Artenzahl (species_counts) konnte nicht geladen werden:', e);
+            }
+        }
+
         // Gemeinsame Nachverarbeitung nach jeder Datenaktualisierung
         function afterObservationsUpdated() {
             if (demoMode) return;   // Beispiel-Ansicht aktiv -> kein Überschreiben durch Hintergrund-Load
@@ -4599,6 +4639,7 @@
             document.getElementById('lastUpdate').textContent = new Date().toLocaleString('de-DE');
             saveToCache(allObservations);
             enrichCountriesFromPlaces();  // Länder im Hintergrund präzisieren
+            fetchRgSpeciesCount();        // autoritative RG-Artenzahl (iNat-Profilwert) nachladen
             maybeShowSpeciesRewards();    // neue RG-Arten seit letztem Besuch belohnen
             maybeShowRankRewards();       // neue Badge-Ränge seit letztem Besuch feiern
         }
@@ -5286,21 +5327,73 @@
             ensureRarity();
         }
 
+        // ===================== Arten-Zählmodus =====================
+        // 'species' = Leaf-Taxa: Unterarten/Varietäten werden auf die Art gerollt (= iNat-Profilwert).
+        // 'withsub' = jede taxon.id einzeln (Unterarten/Varietäten/Hybriden separat gezählt).
+        let speciesMode = 'species';
+        try { const sm = localStorage.getItem('inat_species_mode'); if (sm === 'species' || sm === 'withsub') speciesMode = sm; } catch (e) {}
+
+        // Eindeutige Arten in einer Beobachtungsliste zählen – je nach Modus.
+        // 'withsub': jede taxon.id einzeln (Unterarten/Varietäten/Hybriden separat).
+        // 'species': bildet den iNat-species_counts-Wert exakt nach – zwei Schritte:
+        //   1) Unterarten/Varietäten/Formen auf ihre Art rollen (min_species_taxon_id), auch wenn
+        //      die Art selbst nie separat beobachtet wurde.
+        //   2) Leaf-Collapse: einen Vorfahren (z. B. Gattung) nur zählen, wenn kein feineres Taxon
+        //      derselben Linie vorliegt.
+        function countSpecies(obsArr) {
+            if (speciesMode === 'withsub') {
+                const raw = new Set();
+                for (const o of obsArr) if (o.taxonId) raw.add(o.taxonId);
+                return raw.size;
+            }
+            const taxa = new Map();   // Art-Schlüssel -> ancestorIds
+            for (const o of obsArr) {
+                if (!o.taxonId) continue;
+                const key = (o.rankLevel != null && o.rankLevel < 10 && o.minSpeciesId) ? o.minSpeciesId : o.taxonId;
+                if (!taxa.has(key)) taxa.set(key, o.ancestorIds || []);
+            }
+            const nonLeaf = new Set();
+            for (const [id, anc] of taxa) {
+                for (const a of anc) { if (a !== id && taxa.has(a)) nonLeaf.add(a); }
+            }
+            return taxa.size - nonLeaf.size;
+        }
+
+        // Umschalter bedienen: Modus setzen, merken, alle Arten-Zähler neu berechnen.
+        function setSpeciesMode(mode) {
+            if (mode !== 'species' && mode !== 'withsub') return;
+            speciesMode = mode;
+            try { localStorage.setItem('inat_species_mode', mode); } catch (e) {}
+            updateSpeciesModeUI();
+            updateStats();
+            updateTaxaGrid();
+            updateViewModeCounts();
+            renderBadges();
+            try { renderReisen(); } catch (e) {}                              // Reise-Liste (Statzeilen)
+            try { if (tripCurrentId) tripRefreshView(); } catch (e) {}        // offene Reise (Zähler + Grid)
+        }
+        function updateSpeciesModeUI() {
+            const a = document.getElementById('smSpecies');
+            const b = document.getElementById('smWithsub');
+            if (a) a.classList.toggle('active', speciesMode === 'species');
+            if (b) b.classList.toggle('active', speciesMode === 'withsub');
+        }
+
         // Update statistics
         function updateStats() {
-            const species = new Set(filteredObservations.filter(o => o.taxonId).map(o => o.taxonId));
+            const speciesN = countSpecies(filteredObservations);
             const countries = new Set(filteredObservations.map(o => o.country).filter(c => c));
             const research = filteredObservations.filter(o => o.quality === 'research').length;
             const allCountries = new Set(allObservations.map(o => o.country).filter(c => c));
 
             document.getElementById('totalCount').textContent = allObservations.length.toLocaleString('de-DE');
             document.getElementById('filteredCount').textContent = filteredObservations.length.toLocaleString('de-DE');
-            document.getElementById('speciesCount').textContent = species.size.toLocaleString('de-DE');
+            document.getElementById('speciesCount').textContent = speciesN.toLocaleString('de-DE');
             document.getElementById('countryCount').textContent = countries.size.toLocaleString('de-DE');
             document.getElementById('researchCount').textContent = research.toLocaleString('de-DE');
 
             document.getElementById('authorObs').textContent = allObservations.length.toLocaleString('de-DE');
-            document.getElementById('authorSpecies').textContent = new Set(allObservations.filter(o => o.taxonId).map(o => o.taxonId)).size.toLocaleString('de-DE');
+            document.getElementById('authorSpecies').textContent = countSpecies(allObservations).toLocaleString('de-DE');
             document.getElementById('authorCountries').textContent = allCountries.size.toLocaleString('de-DE');
 
             computeCollectionNumbers();
@@ -6112,7 +6205,12 @@
         // Kennzahlen aus allen Research-Grade-Beobachtungen berechnen (optional andere Datenbasis)
         function computeBadgeMetrics(obsArr) {
             const research = (obsArr || allObservations).filter(o => o.quality === 'research');
-            const totalSpecies = new Set(research.filter(o => o.taxonId).map(o => o.taxonId)).size;
+            // Im Arten-Modus für den aktuellen Nutzer den exakten iNat-Wert (species_counts) nehmen,
+            // sobald geladen; sonst (inkl. Unterarten, Freunde, oder noch nicht geladen) clientseitig
+            // zählen. countSpecies() berücksichtigt den Modus (Leaf vs. jede taxon.id).
+            const totalSpecies = (!obsArr && speciesMode === 'species' && rgSpeciesCountAuthoritative != null)
+                ? rgSpeciesCountAuthoritative
+                : countSpecies(research);
 
             const groupSpecies = {};
             research.forEach(o => {
@@ -8552,31 +8650,28 @@
                 return true;
             });
 
-            // Collect unique species (taxonId) per taxonomic group
+            // Beobachtungen je taxonomischer Gruppe sammeln (für modusabhängige Artenzählung)
+            const taxaGroups = {};
             baseObservations.forEach(obs => {
-                if (obs.taxon && obs.taxonId) {
-                    if (!taxaSpecies[obs.taxon]) {
-                        taxaSpecies[obs.taxon] = new Set();
-                    }
-                    taxaSpecies[obs.taxon].add(obs.taxonId);
-                }
+                if (obs.taxon && obs.taxonId) (taxaGroups[obs.taxon] ||= []).push(obs);
             });
+            for (const key in taxaGroups) taxaSpecies[key] = countSpecies(taxaGroups[key]);
 
-            // Count total unique species
-            const allSpecies = new Set(baseObservations.filter(o => o.taxonId).map(o => o.taxonId));
+            // Gesamtzahl eindeutiger Arten (modusabhängig)
+            const allSpeciesCount = countSpecies(baseObservations);
 
             const grid = document.getElementById('taxaGrid');
             grid.innerHTML = `
                 <div class="taxa-card ${selectedTaxa.length === 0 ? 'active' : ''}" onclick="clearTaxaFilter()">
                     <div class="taxa-icon">🌍</div>
                     <div class="taxa-name">Alle</div>
-                    <div class="taxa-count">${allSpecies.size}</div>
+                    <div class="taxa-count">${allSpeciesCount}</div>
                     <div class="taxa-tooltip">Alle taxonomischen Gruppen anzeigen (Filter zurücksetzen)</div>
                 </div>
             `;
 
             Object.entries(taxaConfig).forEach(([key, config]) => {
-                const speciesCount = taxaSpecies[key]?.size || 0;
+                const speciesCount = taxaSpecies[key] || 0;
                 if (speciesCount > 0 || selectedTaxa.includes(key)) {
                     const isSelected = selectedTaxa.includes(key);
                     grid.innerHTML += `
@@ -8626,9 +8721,8 @@
             const withImages = filteredObservations.filter(o => o.image);
             const observationsCount = withImages.length;
 
-            // Count unique species (by taxonId)
-            const uniqueSpecies = new Set(withImages.filter(o => o.taxonId).map(o => o.taxonId));
-            const speciesCount = uniqueSpecies.size;
+            // Eindeutige Arten (modusabhängig: Leaf vs. jede taxon.id)
+            const speciesCount = countSpecies(withImages);
 
             document.getElementById('observationsCount').textContent = observationsCount.toLocaleString('de-DE');
             document.getElementById('speciesViewCount').textContent = speciesCount.toLocaleString('de-DE');
@@ -9134,6 +9228,7 @@
             try { hideRewardIcon(); hideRankIcon(); } catch (e) {}
             rewardPendingCards = null; rewardPendingIds = null;
             rankPendingEvents = null; rankPendingSnapshot = null;
+            rgSpeciesCountAuthoritative = null;   // RG-Artenzahl des alten Profils verwerfen
         }
 
         // Nutzer wechseln (validieren -> laden)
@@ -9583,7 +9678,8 @@
         // Schema-Version: bei Änderungen an mapObservation/Gruppierung hochzählen,
         // damit alte Caches verworfen und einmalig komplett neu gemappt werden.
         // v2: Animalia-Sammeltopf in Knorpelfische/Krebstiere/Stachelhäuter/Nesseltiere aufgeteilt.
-        const CACHE_SCHEMA = 'v4';   // v4: kompaktes Zeilenformat + obsTime (präzise Beobachtungszeit)
+        // v5: ancestorIds + minSpeciesId (für Arten/Unterarten-Zählmodus) – erzwingt einmaligen Voll-Load.
+        const CACHE_SCHEMA = 'v5';
         const CACHE_KEY_BASE = `inat_observations_cache_${CACHE_SCHEMA}`;
         const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
         function cacheKey() { return `${CACHE_KEY_BASE}_${USER_ID}`; }  // Cache pro Nutzer
@@ -9603,7 +9699,7 @@
         // Kompaktes Cache-Format: eine Zeile (Array) je Beobachtung statt Objekt mit wiederholten Schlüsseln.
         // Spart bei vielen Beobachtungen 40–60 % Speicher (verhindert localStorage-Quota-Überlauf -> kein Voll-Load bei jedem Start).
         // 'url' wird beim Laden aus der id rekonstruiert und deshalb NICHT gespeichert.
-        const OBS_FIELDS = ['id', 'lat', 'lon', 'name', 'scientific', 'date', 'obsTime', 'created', 'updated', 'place', 'placeIds', 'country', 'image', 'taxon', 'quality', 'taxonId', 'rank', 'rankLevel', 'identifications'];
+        const OBS_FIELDS = ['id', 'lat', 'lon', 'name', 'scientific', 'date', 'obsTime', 'created', 'updated', 'place', 'placeIds', 'country', 'image', 'taxon', 'quality', 'taxonId', 'ancestorIds', 'minSpeciesId', 'rank', 'rankLevel', 'identifications'];
         function encodeObs(list) { return list.map(o => OBS_FIELDS.map(f => o[f])); }
         function decodeObs(rows) {
             return rows.map(r => {
@@ -9704,6 +9800,7 @@
             USER_ID = ((urlUser || localStorage.getItem('inat_current_user') || DEFAULT_USER) + '').trim().replace(/^@/, '') || DEFAULT_USER;
             localStorage.setItem('inat_current_user', USER_ID);
 
+            try { updateSpeciesModeUI(); } catch (e) {}   // Arten/Unterarten-Umschalter passend markieren
             try { updateMyNameUI(); } catch (e) {}   // Feld "Mein iNaturalist-Name" mit gespeichertem Wert vorbelegen
             try { applyNerdOwnerUI(); } catch (e) {} // Nerd-Reiter nur auf freigeschalteten Geräten zeigen
             const _wantDemo = new URLSearchParams(location.search).get('demo') === '1';   // teilbarer Demo-Link
@@ -10708,7 +10805,13 @@
         function tripTaxaFiltered() {
             return tripFilterTaxa.size ? tripCurrentObs.filter(o => o.taxon && tripFilterTaxa.has(o.taxon)) : tripCurrentObs;
         }
-        function tripSpeciesKey(o) { return o.taxonId || o.scientific || o.name; }
+        // Art-Identität einer Beobachtung im Reisen-Feature. Im 'species'-Modus werden Unterarten/
+        // Varietäten auf ihre Art gerollt (min_species_taxon_id) – damit zählen/gruppieren Reisen
+        // genauso wie die Hauptstatistik. Fließt in Zählung, Grid, "neue Arten" und Drilldown ein.
+        function tripSpeciesKey(o) {
+            if (speciesMode === 'species' && o && o.rankLevel != null && o.rankLevel < 10 && o.minSpeciesId) return o.minSpeciesId;
+            return o.taxonId || o.scientific || o.name;
+        }
         // Zeitpunkt einer Beobachtung: präzise Uhrzeit (time_observed_at) bevorzugt, sonst Datum, sonst Upload
         function tripTimeMs(o) {
             const t = o.obsTime || o.date || o.created || '';
