@@ -3134,13 +3134,18 @@
         --pserif:'Playfair Display',Georgia,'Times New Roman',serif;
         --pmono:ui-monospace,'SF Mono',Menlo,monospace;
     }
-    /* Launcher-Icon im Badges-Tab (nur ein Icon) */
-    .sbk-iconbtn{display:none;place-items:center;width:46px;height:46px;padding:4px;border:1px solid var(--lea-edge);border-radius:12px;cursor:pointer;float:right;margin:-4px 0 0 8px;
-        background:radial-gradient(130% 120% at 30% 12%,var(--lea-hi),var(--lea) 55%,var(--lea-lo));
-        box-shadow:0 4px 12px rgba(20,12,4,.4),inset 0 1px 2px rgba(255,230,190,.2);transition:transform .12s,box-shadow .12s}
-    .sbk-iconbtn:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(20,12,4,.5),inset 0 1px 2px rgba(255,230,190,.2)}
-    .sbk-iconbtn img{width:100%;height:100%;border-radius:8px;display:block;
-        filter:grayscale(1) sepia(1) saturate(2.6) hue-rotate(-6deg) brightness(1.06) contrast(1.05)}
+    /* Launcher-Icon im Badges-Tab: Mini-Buch */
+    .sbk-iconbtn{display:none;position:relative;width:44px;height:56px;padding:0;border:none;cursor:pointer;float:right;margin:-6px 0 0 10px;
+        border-radius:3px 6px 6px 3px;
+        background:repeating-linear-gradient(93deg,rgba(255,240,210,.05) 0 1px,transparent 1px 4px),radial-gradient(135% 120% at 32% 12%,var(--lea-hi),var(--lea) 48%,var(--lea-lo));
+        box-shadow:2px 0 0 #f1e8d2,3px 0 0 #e0d3b4,4px 1px 0 #cdbd93,5px 4px 11px rgba(0,0,0,.5);
+        transition:transform .12s}
+    .sbk-iconbtn::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;border-radius:3px 0 0 3px;
+        background:linear-gradient(90deg,var(--lea-lo),rgba(0,0,0,.1) 60%,transparent);box-shadow:inset -2px 0 4px rgba(0,0,0,.5)}
+    .sbk-iconbtn img{position:absolute;top:50%;left:calc(50% + 2px);transform:translate(-50%,-50%);width:26px;height:26px;border-radius:5px;display:block;
+        filter:grayscale(1) sepia(1) saturate(2.7) hue-rotate(-6deg) brightness(1.08) contrast(1.06);
+        box-shadow:0 1px 3px rgba(0,0,0,.5)}
+    .sbk-iconbtn:hover{transform:translateY(-1px)}
     /* Overlay + Reader */
     #sammelbuchOverlay{position:fixed;inset:0;z-index:6000;display:none;align-items:center;justify-content:center;padding:20px;
         background:rgba(15,10,4,.82);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
@@ -3256,10 +3261,7 @@
 
     <div id="tab-badges" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnBadges">
         <div class="section">
-            <h2 class="section-title">🏅 Badges <span style="font-size:0.5em;color:var(--text-muted);font-weight:400;">nur Research Grade</span></h2>
-            <button type="button" class="sbk-iconbtn sbk-scope" id="sbkLauncher" onclick="openSammelbuch()" title="Sammelbuch öffnen" aria-label="Sammelbuch öffnen">
-                <img src="apple-touch-icon.png" alt="">
-            </button>
+            <h2 class="section-title">🏅 Badges <span style="font-size:0.5em;color:var(--text-muted);font-weight:400;">nur Research Grade</span><button type="button" class="sbk-iconbtn sbk-scope" id="sbkLauncher" onclick="openSammelbuch()" title="Sammelbuch öffnen" aria-label="Sammelbuch öffnen"><img src="apple-touch-icon.png" alt=""></button></h2>
             <div class="badges-intro" id="badgesHint"></div>
             <div class="badge-progress-wrap" id="badgesProgress"></div>
 
@@ -7351,7 +7353,7 @@
                 && String(USER_ID).toLowerCase() === String(DEFAULT_USER).toLowerCase(); }
             catch(e){ return false; }
         }
-        function sbkApplyGate(){ const l = document.getElementById('sbkLauncher'); if (l) l.style.display = sbkVisible() ? 'inline-grid' : 'none'; }
+        function sbkApplyGate(){ const l = document.getElementById('sbkLauncher'); if (l) l.style.display = sbkVisible() ? 'inline-block' : 'none'; }
 
         // Kennzahlen eines Kalendermonats für die Urkunde
         function sbkMonthData(ym, life){
