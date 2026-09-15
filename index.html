@@ -3162,18 +3162,32 @@
     .sbk-nav button{cursor:pointer;font:inherit;border:1px solid rgba(233,200,120,.35);background:rgba(40,26,14,.6);color:var(--gold-hi);border-radius:999px;padding:8px 16px}
     .sbk-nav button:disabled{opacity:.4;cursor:default}
     .sbk-nav .pg{font-family:var(--pmono);font-size:12px;color:var(--paper);min-width:130px;text-align:center;opacity:.85}
-    /* Einband (erste Seite) + Leerseite */
-    .sbk-spread.cover{grid-template-columns:1fr;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+    /* Einband (erste Seite): echtes Buch im Hochformat mit sichtbaren Seiten */
+    .sbk-frame.coverframe{background:none;box-shadow:none;padding:0}
+    .sbk-spread.cover{grid-template-columns:1fr;box-shadow:none;background:none;display:flex;align-items:center;justify-content:center;min-height:64vh;padding:24px 0}
     .sbk-spread.cover::after{display:none}
-    .sbk-cover{min-height:58vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;border-radius:4px;
-        background:radial-gradient(130% 120% at 28% 8%,var(--lea-hi),var(--lea) 46%,var(--lea-lo));box-shadow:inset 0 0 60px rgba(0,0,0,.5)}
-    .sbk-cover .med{width:150px;height:150px;border-radius:20px;padding:10px;
+    .sbk-book{position:relative;width:min(360px,76vw);aspect-ratio:0.72;max-height:80vh;border-radius:5px 10px 10px 5px;
+        background:
+            repeating-linear-gradient(93deg, rgba(255,240,210,.045) 0 2px, transparent 2px 6px),
+            radial-gradient(135% 120% at 32% 10%, var(--lea-hi), var(--lea) 46%, var(--lea-lo));
+        box-shadow:
+            3px 0 0 #f1e8d2, 5px 0 0 #eae0c8, 7px 1px 0 #e2d6ba, 9px 1px 0 #d9cba9,
+            11px 2px 0 #cfbf96, 13px 2px 0 #c4b184, 15px 3px 0 #b8a475,
+            18px 10px 30px rgba(0,0,0,.6)}
+    /* Buchrücken links */
+    .sbk-book::before{content:"";position:absolute;left:0;top:0;bottom:0;width:22px;border-radius:5px 0 0 5px;
+        background:linear-gradient(90deg,var(--lea-lo),rgba(0,0,0,.12) 62%,transparent);box-shadow:inset -6px 0 9px rgba(0,0,0,.45)}
+    /* Prägerand + Vignette */
+    .sbk-book::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+        box-shadow:inset 0 0 55px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,230,190,.15)}
+    .sbk-book-inner{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:0 26px 0 42px;text-align:center}
+    .sbk-book .med{width:min(190px,46%);aspect-ratio:1;border-radius:24px;padding:12px;
         background:linear-gradient(160deg,var(--lea-edge),var(--lea-lo));
-        box-shadow:inset 0 2px 4px rgba(255,230,190,.22),inset 0 -4px 8px rgba(0,0,0,.55),0 8px 18px rgba(0,0,0,.4)}
-    .sbk-cover .med img{width:100%;height:100%;border-radius:12px;display:block;
-        filter:grayscale(1) sepia(1) saturate(2.6) hue-rotate(-6deg) brightness(1.06) contrast(1.05)}
-    .sbk-cover .ct{font-family:var(--pserif);font-size:26px;letter-spacing:.08em;color:var(--gold-hi);text-shadow:0 1px 1px rgba(0,0,0,.5)}
-    .sbk-cover .cn{font-family:var(--pscript);font-size:34px;line-height:1;color:var(--paper);text-shadow:0 1px 1px rgba(0,0,0,.5)}
+        box-shadow:inset 0 2px 4px rgba(255,230,190,.22),inset 0 -5px 10px rgba(0,0,0,.55),0 10px 22px rgba(0,0,0,.45)}
+    .sbk-book .med img{width:100%;height:100%;border-radius:14px;display:block;
+        filter:grayscale(1) sepia(1) saturate(2.7) hue-rotate(-6deg) brightness(1.08) contrast(1.06)}
+    .sbk-book .ct{font-family:var(--pserif);font-size:30px;letter-spacing:.09em;color:var(--gold-hi);text-shadow:0 1px 2px rgba(0,0,0,.55)}
+    .sbk-book .cn{font-family:var(--pscript);font-size:36px;line-height:1;color:var(--paper);text-shadow:0 1px 2px rgba(0,0,0,.55)}
     .sbk-blank{display:grid;place-items:center;height:100%;min-height:40vh;font-size:44px;opacity:.13}
     /* Seiteninhalte */
     .sbk-eyebrow{font-family:var(--pmono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--pacc);margin:0 0 4px}
@@ -7429,9 +7443,10 @@
             const s = sbkSpreads[sbkIdx]; if (!s) return;
             const sp = document.getElementById('sbkSpread');
             sp.classList.toggle('cover', !!s.cover);
+            const frame = sp.closest('.sbk-frame'); if (frame) frame.classList.toggle('coverframe', !!s.cover);
             if (s.cover){
                 const name = sbkName();
-                sp.innerHTML = '<div class="sbk-cover"><div class="med"><img src="' + SBK_LOGO + '" alt=""></div><div class="ct">Sammelbuch</div><div class="cn">' + name + '</div></div>';
+                sp.innerHTML = '<div class="sbk-book"><div class="sbk-book-inner"><div class="med"><img src="' + SBK_LOGO + '" alt=""></div><div class="ct">Sammelbuch</div><div class="cn">' + name + '</div></div></div>';
             } else {
                 sp.innerHTML = s.html;
             }
