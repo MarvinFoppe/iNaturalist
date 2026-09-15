@@ -3134,19 +3134,22 @@
         --pserif:'Playfair Display',Georgia,'Times New Roman',serif;
         --pmono:ui-monospace,'SF Mono',Menlo,monospace;
     }
-    /* Launcher-Icon im Badges-Tab: Mini-Buch */
-    .sbk-headwrap{position:relative}
-    .sbk-iconbtn{display:none;position:absolute;top:50%;transform:translateY(-50%);right:clamp(16px,20vw,480px);width:62px;height:80px;padding:0;border:none;cursor:pointer;margin:0;z-index:3;
-        border-radius:3px 6px 6px 3px;
+    /* Launcher: Buch + Beschriftung (Button) */
+    .sbk-launchrow{text-align:center;margin:14px 0 6px}
+    .sbk-pill{display:none;align-items:center;gap:12px;margin:0 auto;padding:8px 18px 8px 9px;border-radius:14px;cursor:pointer;
+        background:linear-gradient(180deg,rgba(216,180,131,.16),rgba(216,180,131,.05));border:1px solid rgba(216,180,131,.42);
+        transition:transform .12s,box-shadow .12s}
+    .sbk-pill:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(0,0,0,.35)}
+    .sbk-mini{position:relative;width:42px;height:54px;flex:none;border-radius:3px 6px 6px 3px;
         background:repeating-linear-gradient(93deg,rgba(255,240,210,.05) 0 1px,transparent 1px 4px),radial-gradient(135% 120% at 32% 12%,var(--lea-hi),var(--lea) 48%,var(--lea-lo));
-        box-shadow:3px 0 0 #f1e8d2,5px 0 0 #e0d3b4,7px 1px 0 #cdbd93,9px 5px 14px rgba(0,0,0,.5);
-        transition:transform .12s}
-    .sbk-iconbtn::before{content:"";position:absolute;left:0;top:0;bottom:0;width:9px;border-radius:3px 0 0 3px;
+        box-shadow:3px 0 0 #f1e8d2,5px 0 0 #e0d3b4,7px 1px 0 #cdbd93,8px 4px 12px rgba(0,0,0,.5)}
+    .sbk-mini::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;border-radius:3px 0 0 3px;
         background:linear-gradient(90deg,var(--lea-lo),rgba(0,0,0,.1) 60%,transparent);box-shadow:inset -2px 0 4px rgba(0,0,0,.5)}
-    .sbk-iconbtn img{position:absolute;top:50%;left:calc(50% + 3px);transform:translate(-50%,-50%);width:38px;height:38px;border-radius:7px;display:block;
-        filter:grayscale(1) sepia(1) saturate(2.7) hue-rotate(-6deg) brightness(1.08) contrast(1.06);
-        box-shadow:0 1px 3px rgba(0,0,0,.5)}
-    .sbk-iconbtn:hover{transform:translateY(calc(-50% - 2px))}
+    .sbk-mini img{position:absolute;top:50%;left:calc(50% + 2px);transform:translate(-50%,-50%);width:26px;height:26px;border-radius:5px;display:block;
+        filter:grayscale(1) sepia(1) saturate(2.7) hue-rotate(-6deg) brightness(1.08) contrast(1.06);box-shadow:0 1px 3px rgba(0,0,0,.5)}
+    .sbk-pill .lbl{text-align:left;line-height:1.15}
+    .sbk-pill .lbl b{font-family:var(--pserif);font-size:16px;color:var(--text-primary)}
+    .sbk-pill .lbl span{display:block;font-size:12.5px;color:var(--accent-warm)}
     /* Overlay + Reader */
     #sammelbuchOverlay{position:fixed;inset:0;z-index:6000;display:none;align-items:center;justify-content:center;padding:20px;
         background:rgba(15,10,4,.82);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
@@ -3265,8 +3268,8 @@
             <div class="sbk-headwrap">
                 <h2 class="section-title">🏅 Badges <span style="font-size:0.5em;color:var(--text-muted);font-weight:400;">nur Research Grade</span></h2>
                 <div class="badges-intro" id="badgesHint"></div>
+                <div class="sbk-launchrow"><button type="button" class="sbk-pill sbk-scope" id="sbkLauncher" onclick="openSammelbuch()" aria-label="Sammelbuch öffnen"><span class="sbk-mini"><img src="apple-touch-icon.png" alt=""></span><span class="lbl"><b>Sammelbuch</b><span>öffnen ›</span></span></button></div>
                 <div class="badge-progress-wrap" id="badgesProgress"></div>
-                <button type="button" class="sbk-iconbtn sbk-scope" id="sbkLauncher" onclick="openSammelbuch()" title="Sammelbuch öffnen" aria-label="Sammelbuch öffnen"><img src="apple-touch-icon.png" alt=""></button>
             </div>
 
             <details class="badge-cat" id="catRanks" open>
@@ -7357,7 +7360,7 @@
                 && String(USER_ID).toLowerCase() === String(DEFAULT_USER).toLowerCase(); }
             catch(e){ return false; }
         }
-        function sbkApplyGate(){ const l = document.getElementById('sbkLauncher'); if (l) l.style.display = sbkVisible() ? 'inline-block' : 'none'; }
+        function sbkApplyGate(){ const l = document.getElementById('sbkLauncher'); if (l) l.style.display = sbkVisible() ? 'inline-flex' : 'none'; }
 
         // Kennzahlen eines Kalendermonats für die Urkunde
         function sbkMonthData(ym, life){
