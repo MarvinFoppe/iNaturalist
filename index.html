@@ -3135,7 +3135,7 @@
         --pmono:ui-monospace,'SF Mono',Menlo,monospace;
     }
     /* Launcher-Icon im Badges-Tab: Mini-Buch */
-    .sbk-iconbtn{display:none;position:relative;width:44px;height:56px;padding:0;border:none;cursor:pointer;float:right;margin:-6px 0 0 10px;
+    .sbk-iconbtn{display:none;position:relative;width:44px;height:56px;padding:0;border:none;cursor:pointer;float:right;margin:0 0 6px 12px;
         border-radius:3px 6px 6px 3px;
         background:repeating-linear-gradient(93deg,rgba(255,240,210,.05) 0 1px,transparent 1px 4px),radial-gradient(135% 120% at 32% 12%,var(--lea-hi),var(--lea) 48%,var(--lea-lo));
         box-shadow:2px 0 0 #f1e8d2,3px 0 0 #e0d3b4,4px 1px 0 #cdbd93,5px 4px 11px rgba(0,0,0,.5);
@@ -3261,7 +3261,8 @@
 
     <div id="tab-badges" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnBadges">
         <div class="section">
-            <h2 class="section-title">🏅 Badges <span style="font-size:0.5em;color:var(--text-muted);font-weight:400;">nur Research Grade</span><button type="button" class="sbk-iconbtn sbk-scope" id="sbkLauncher" onclick="openSammelbuch()" title="Sammelbuch öffnen" aria-label="Sammelbuch öffnen"><img src="apple-touch-icon.png" alt=""></button></h2>
+            <h2 class="section-title">🏅 Badges <span style="font-size:0.5em;color:var(--text-muted);font-weight:400;">nur Research Grade</span></h2>
+            <button type="button" class="sbk-iconbtn sbk-scope" id="sbkLauncher" onclick="openSammelbuch()" title="Sammelbuch öffnen" aria-label="Sammelbuch öffnen"><img src="apple-touch-icon.png" alt=""></button>
             <div class="badges-intro" id="badgesHint"></div>
             <div class="badge-progress-wrap" id="badgesProgress"></div>
 
