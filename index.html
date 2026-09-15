@@ -3134,20 +3134,13 @@
         --pserif:'Playfair Display',Georgia,'Times New Roman',serif;
         --pmono:ui-monospace,'SF Mono',Menlo,monospace;
     }
-    /* Launcher-Karte im Badges-Tab */
-    .sbk-launcher{display:none;align-items:center;gap:14px;cursor:pointer;margin:2px 0 18px;padding:12px 16px;border-radius:14px;border:1px solid var(--lea-edge);color:var(--paper);
-        background:radial-gradient(130% 120% at 25% 10%,var(--lea-hi),var(--lea) 50%,var(--lea-lo));
-        box-shadow:0 8px 20px rgba(20,12,4,.4);transition:transform .12s,box-shadow .12s}
-    .sbk-launcher:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(20,12,4,.5)}
-    .sbk-launcher .sbk-badge{width:56px;height:56px;flex:none;border-radius:11px;padding:5px;
-        background:linear-gradient(160deg,var(--lea-edge),var(--lea-lo));
-        box-shadow:inset 0 1px 2px rgba(255,230,190,.25),inset 0 -3px 6px rgba(0,0,0,.5)}
-    .sbk-launcher .sbk-badge img{width:100%;height:100%;border-radius:7px;display:block;
+    /* Launcher-Icon im Badges-Tab (nur ein Icon) */
+    .sbk-iconbtn{display:none;place-items:center;width:46px;height:46px;padding:4px;border:1px solid var(--lea-edge);border-radius:12px;cursor:pointer;float:right;margin:-4px 0 0 8px;
+        background:radial-gradient(130% 120% at 30% 12%,var(--lea-hi),var(--lea) 55%,var(--lea-lo));
+        box-shadow:0 4px 12px rgba(20,12,4,.4),inset 0 1px 2px rgba(255,230,190,.2);transition:transform .12s,box-shadow .12s}
+    .sbk-iconbtn:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(20,12,4,.5),inset 0 1px 2px rgba(255,230,190,.2)}
+    .sbk-iconbtn img{width:100%;height:100%;border-radius:8px;display:block;
         filter:grayscale(1) sepia(1) saturate(2.6) hue-rotate(-6deg) brightness(1.06) contrast(1.05)}
-    .sbk-launcher .lt{flex:1;min-width:0}
-    .sbk-launcher .lt b{font-family:var(--pserif);font-size:17px;display:block;line-height:1.15}
-    .sbk-launcher .lt span{font-size:12.5px;color:var(--gold-hi);opacity:.9}
-    .sbk-launcher .arw{color:var(--gold-hi);font-size:22px;flex:none}
     /* Overlay + Reader */
     #sammelbuchOverlay{position:fixed;inset:0;z-index:6000;display:none;align-items:center;justify-content:center;padding:20px;
         background:rgba(15,10,4,.82);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
@@ -3169,6 +3162,19 @@
     .sbk-nav button{cursor:pointer;font:inherit;border:1px solid rgba(233,200,120,.35);background:rgba(40,26,14,.6);color:var(--gold-hi);border-radius:999px;padding:8px 16px}
     .sbk-nav button:disabled{opacity:.4;cursor:default}
     .sbk-nav .pg{font-family:var(--pmono);font-size:12px;color:var(--paper);min-width:130px;text-align:center;opacity:.85}
+    /* Einband (erste Seite) + Leerseite */
+    .sbk-spread.cover{grid-template-columns:1fr;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+    .sbk-spread.cover::after{display:none}
+    .sbk-cover{min-height:58vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;border-radius:4px;
+        background:radial-gradient(130% 120% at 28% 8%,var(--lea-hi),var(--lea) 46%,var(--lea-lo));box-shadow:inset 0 0 60px rgba(0,0,0,.5)}
+    .sbk-cover .med{width:150px;height:150px;border-radius:20px;padding:10px;
+        background:linear-gradient(160deg,var(--lea-edge),var(--lea-lo));
+        box-shadow:inset 0 2px 4px rgba(255,230,190,.22),inset 0 -4px 8px rgba(0,0,0,.55),0 8px 18px rgba(0,0,0,.4)}
+    .sbk-cover .med img{width:100%;height:100%;border-radius:12px;display:block;
+        filter:grayscale(1) sepia(1) saturate(2.6) hue-rotate(-6deg) brightness(1.06) contrast(1.05)}
+    .sbk-cover .ct{font-family:var(--pserif);font-size:26px;letter-spacing:.08em;color:var(--gold-hi);text-shadow:0 1px 1px rgba(0,0,0,.5)}
+    .sbk-cover .cn{font-family:var(--pscript);font-size:34px;line-height:1;color:var(--paper);text-shadow:0 1px 1px rgba(0,0,0,.5)}
+    .sbk-blank{display:grid;place-items:center;height:100%;min-height:40vh;font-size:44px;opacity:.13}
     /* Seiteninhalte */
     .sbk-eyebrow{font-family:var(--pmono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--pacc);margin:0 0 4px}
     .sbk-ptitle{font-family:var(--pserif);font-size:22px;margin:0 0 12px;color:var(--ink)}
@@ -3231,17 +3237,15 @@
         border:1px solid var(--accent-warm);border-radius:8px;padding:8px 10px;color:var(--accent-warm);
         background:linear-gradient(180deg,rgba(216,180,131,.14),rgba(216,180,131,.05))}
     .sbk-openbtn:hover{background:rgba(216,180,131,.22)}
-    @media(prefers-reduced-motion:reduce){.sbk-spread{transition:none}.sbk-launcher{transition:none}}
+    @media(prefers-reduced-motion:reduce){.sbk-spread{transition:none}.sbk-iconbtn{transition:none}}
     </style>
 
     <div id="tab-badges" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnBadges">
         <div class="section">
             <h2 class="section-title">🏅 Badges <span style="font-size:0.5em;color:var(--text-muted);font-weight:400;">nur Research Grade</span></h2>
-            <div class="sbk-launcher sbk-scope" id="sbkLauncher" onclick="openSammelbuch()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSammelbuch();}">
-                <div class="sbk-badge"><img src="apple-touch-icon.png" alt="Sammelbuch-Logo"></div>
-                <div class="lt"><b>Sammelbuch</b><span>Auszeichnungen &amp; Monatsurkunden · zum Durchblättern</span></div>
-                <div class="arw">›</div>
-            </div>
+            <button type="button" class="sbk-iconbtn sbk-scope" id="sbkLauncher" onclick="openSammelbuch()" title="Sammelbuch öffnen" aria-label="Sammelbuch öffnen">
+                <img src="apple-touch-icon.png" alt="">
+            </button>
             <div class="badges-intro" id="badgesHint"></div>
             <div class="badge-progress-wrap" id="badgesProgress"></div>
 
@@ -7333,7 +7337,7 @@
                 && String(USER_ID).toLowerCase() === String(DEFAULT_USER).toLowerCase(); }
             catch(e){ return false; }
         }
-        function sbkApplyGate(){ const l = document.getElementById('sbkLauncher'); if (l) l.style.display = sbkVisible() ? 'flex' : 'none'; }
+        function sbkApplyGate(){ const l = document.getElementById('sbkLauncher'); if (l) l.style.display = sbkVisible() ? 'inline-grid' : 'none'; }
 
         // Kennzahlen eines Kalendermonats für die Urkunde
         function sbkMonthData(ym, life){
@@ -7360,7 +7364,7 @@
         }
 
         // Urkunde (Feldbuch-Optik) als HTML
-        function sbkCertHTML(name, d){
+        function sbkCertHTML(name, d, entryNo){
             const mi = +d.ym.slice(5,7) - 1, y = d.ym.slice(0,4);
             const monthName = SB_MONTH_NAMES[mi];
             const live = d.ym === sbkNowYM();
@@ -7372,12 +7376,14 @@
                 : (monthName + ' ' + y);
             const stamp = part ? '🌿 Teilnahme' : (t.medal + ' ' + t.name + ' · ' + SB_MONTH_ABBR[mi] + ' ' + y.slice(2));
             const flags = d.countries.map(getFlag).join(' ');
-            const note = 'Beobachtungen im Monat ' + monthName + ' ' + y + (d.countries.length ? ' — erhoben in ' + flags : '') + '.';
+            const note = d.countries.length
+                ? ('Beobachtungen im Monat ' + monthName + ' ' + y + ', erhoben in ' + flags + '.')
+                : ('Beobachtungen im Monat ' + monthName + ' ' + y + '.');
             const tally = d.groups.length
                 ? d.groups.map(x => { const it = rwIconicType(x.g); return `<div class="sbk-row"><span class="sbk-ic">${it.emoji}</span><span class="sbk-nm">${it.de}</span><span class="sbk-marks"></span><span class="sbk-dot" style="background:${it.c}"></span><span class="sbk-ct">${x.n}</span></div>`; }).join('')
                 : '<div class="sbk-nm" style="font-style:italic">noch keine bestimmten Arten</div>';
             return `<div class="sbk-cert">
-                <div class="ch"><span class="clog">Feldbuch · Eintrag ${String(mi+1).padStart(2,'0')}</span><span class="cdate">${dateStr}</span></div>
+                <div class="ch"><span class="clog">Feldbuch · Eintrag ${String(entryNo).padStart(2,'0')}</span><span class="cdate">${dateStr}</span></div>
                 <p class="ctitle">Teilnehmerurkunde</p>
                 <p class="cname">${name}</p>
                 <p class="sbk-note">${note}</p>
@@ -7392,65 +7398,47 @@
             </div>`;
         }
 
-        // Auszeichnungs-Doppelseite (aus computeBadgeMetrics)
-        function sbkBadgesSpread(){
-            const m = computeBadgeMetrics(allObservations);
-            const mc = n => n >= 50 ? 'g' : n >= 20 ? 's' : n >= 5 ? 'b' : '';
-            const groups = Object.keys(m.groupSpecies).map(g => ({ g, n: m.groupSpecies[g].size })).sort((a,b) => b.n - a.n).slice(0,6);
-            const left = '<p class="sbk-eyebrow">🧬 Taxonomische Gruppen</p><p class="sbk-ptitle">Auszeichnungen</p><div class="sbk-bgrid">'
-                + (groups.length ? groups.map(x => { const it = rwIconicType(x.g); return `<div class="sbk-bcell"><div class="sbk-bmed ${mc(x.n)}">${it.emoji}</div><div class="sbk-bname">${it.de}</div><div class="sbk-bval">${x.n} Arten</div></div>`; }).join('') : '<div class="sbk-bname">noch keine Arten</div>')
-                + '</div>';
-            const right = '<p class="sbk-eyebrow">🌍 Reichweite</p><p class="sbk-ptitle">Länder &amp; Rekorde</p><div class="sbk-bgrid">'
-                + `<div class="sbk-bcell"><div class="sbk-bmed g">🗺️</div><div class="sbk-bname">Länder</div><div class="sbk-bval">${m.countries.size}</div></div>`
-                + `<div class="sbk-bcell"><div class="sbk-bmed s">🧭</div><div class="sbk-bname">Kontinente</div><div class="sbk-bval">${m.continents.size}</div></div>`
-                + `<div class="sbk-bcell"><div class="sbk-bmed b">📅</div><div class="sbk-bname">Kalendertage</div><div class="sbk-bval">${m.days.size}</div></div>`
-                + `<div class="sbk-bcell"><div class="sbk-bmed g">⚡</div><div class="sbk-bname">Bester Tag</div><div class="sbk-bval">${m.bioblitz}</div></div>`
-                + `<div class="sbk-bcell"><div class="sbk-bmed g">🏅</div><div class="sbk-bname">Arten gesamt</div><div class="sbk-bval">${m.totalSpecies}</div></div>`
-                + '</div>';
-            return { l: left, r: right };
-        }
-
         function sbkBuild(){
             const name = sbkName();
             const life = sbLifetime();
             const ymSet = {};
             allObservations.forEach(o => { if (o.date && o.date.length >= 7){ const ym = o.date.slice(0,7); if (ym >= SEASON_START_YM) ymSet[ym] = 1; } });
-            const months = Object.keys(ymSet).sort();
-            const nowYM = sbkNowYM();
-            const tocRows = months.map((ym,i) => { const mi = +ym.slice(5,7)-1; const cnt = life.newByMonth[ym] || 0; const tier = sbMonthTier(cnt); const med = tier ? SB_TIER[tier].medal : '🌿'; return `<li><span class="med">${med}</span><span class="m">${SB_MONTH_NAMES[mi]} ${ym.slice(0,4)}</span><span class="dots"></span><span class="pg">${i+3}</span></li>`; }).join('');
-            const totSpecies = new Set(allObservations.filter(o => o.quality === 'research' && o.taxonId).map(o => o.taxonId)).size;
-            const totCountries = new Set(allObservations.filter(o => o.quality === 'research').map(o => o.country).filter(Boolean)).size;
-            const spreads = [];
-            spreads.push({
-                label: 'Titel',
-                l: `<div class="sbk-titleface"><img src="${SBK_LOGO}" alt="LEBEN"><p class="sbk-kick">Sammelbuch</p><p class="sbk-owner">${name}</p><p class="sbk-yr">${months.length ? ('seit ' + SB_MONTH_ABBR[+months[0].slice(5,7)-1] + ' ' + months[0].slice(0,4)) : '—'}</p></div>`,
-                r: `<div class="sbk-th"><div class="lbl">Inhalt</div><div class="orn">❧</div></div><div class="sbk-toc"><ul>${tocRows || '<li><span class="m">Noch keine Monate</span></li>'}</ul></div><div class="sbk-sum"><div><div class="n">${totSpecies}</div><div class="l">Arten</div></div><div><div class="n">${months.length}</div><div class="l">Urkunden</div></div><div><div class="n">${totCountries}</div><div class="l">Länder</div></div></div>`
-            });
-            const bs = sbkBadgesSpread();
-            spreads.push({ label: 'Auszeichnungen', l: bs.l, r: bs.r });
-            months.forEach(ym => {
-                const d = sbkMonthData(ym, life);
-                const mi = +ym.slice(5,7)-1, live = ym === nowYM;
-                const tier = d.tier;
-                const heroMedal = tier ? SB_TIER[tier].medal : '🌿';
-                const topDe = d.groups[0] ? rwIconicType(d.groups[0].g).de : null;
-                const intro = `<p class="sbk-eyebrow">${SB_MONTH_NAMES[mi]} ${ym.slice(0,4)}${live ? ' · läuft' : ''}</p>`
-                    + `<p class="sbk-ptitle">${tier ? SB_TIER[tier].name + ' erreicht' : 'Teilnahme'}</p>`
-                    + `<p class="sbk-note">${d.newCount} neue ${d.newCount === 1 ? 'Art' : 'Arten'} in diesem Monat${topDe ? ' · am meisten ' + topDe : ''}.</p>`
-                    + `<div class="sbk-monthhero">${heroMedal}</div>`;
-                spreads.push({ label: SB_MONTH_ABBR[mi] + ' ' + ym.slice(2,4), ym, l: intro, r: sbkCertHTML(name, d) });
-            });
+            const months = Object.keys(ymSet).sort();     // chronologisch, ältester = Eintrag 01
+            const blank = '<div class="sbk-page right"><div class="sbk-blank">🌿</div></div>';
+            // Erste Seite: der Bucheinband
+            const spreads = [{ cover: true, label: 'Einband' }];
+            // Danach je Monat EINE Seite, zwei Monate pro Doppelseite, Eintrag ab 01
+            for (let i = 0; i < months.length; i += 2){
+                const l = sbkCertHTML(name, sbkMonthData(months[i], life), i+1);
+                const hasR = (i+1) < months.length;
+                const r = hasR ? sbkCertHTML(name, sbkMonthData(months[i+1], life), i+2) : null;
+                spreads.push({
+                    yms: hasR ? [months[i], months[i+1]] : [months[i]],
+                    label: hasR ? ('Eintrag ' + String(i+1).padStart(2,'0') + '–' + String(i+2).padStart(2,'0')) : ('Eintrag ' + String(i+1).padStart(2,'0')),
+                    html: '<div class="sbk-page left">' + l + '</div>' + (hasR ? '<div class="sbk-page right">' + r + '</div>' : blank)
+                });
+            }
+            if (!months.length){
+                spreads.push({ yms: [], label: 'Leer',
+                    html: '<div class="sbk-page left"><div class="sbk-blank" style="font-size:15px;opacity:.5;text-align:center;padding:0 20px">Noch keine Beobachtungen in diesem Zeitraum.</div></div>' + blank });
+            }
             sbkSpreads = spreads;
         }
 
         function sbkPaint(){
             const s = sbkSpreads[sbkIdx]; if (!s) return;
             const sp = document.getElementById('sbkSpread');
-            sp.innerHTML = '<div class="sbk-page left">' + s.l + '<div class="sbk-pfoot">' + (sbkIdx*2+1) + '</div></div>'
-                         + '<div class="sbk-page right">' + s.r + '<div class="sbk-pfoot">' + (sbkIdx*2+2) + '</div></div>';
+            sp.classList.toggle('cover', !!s.cover);
+            if (s.cover){
+                const name = sbkName();
+                sp.innerHTML = '<div class="sbk-cover"><div class="med"><img src="' + SBK_LOGO + '" alt=""></div><div class="ct">Sammelbuch</div><div class="cn">' + name + '</div></div>';
+            } else {
+                sp.innerHTML = s.html;
+            }
             document.getElementById('sbkPg').textContent = (s.label || '') + ' · ' + (sbkIdx+1) + '/' + sbkSpreads.length;
             document.getElementById('sbkPrev').disabled = sbkIdx === 0;
             document.getElementById('sbkNext').disabled = sbkIdx === sbkSpreads.length - 1;
+            const nx = document.getElementById('sbkNext'); if (nx) nx.textContent = (sbkIdx === 0 ? 'Aufschlagen ›' : 'Weiter ›');
             sp.scrollTop = 0;
         }
         function sbkGo(n){
@@ -7466,8 +7454,8 @@
             if (!sbkVisible()) return;
             if (!Array.isArray(allObservations) || !allObservations.length){ alert('Deine Beobachtungen werden noch geladen …'); return; }
             sbkBuild();
-            let idx = 0;
-            if (ym){ const f = sbkSpreads.findIndex(s => s.ym === ym); if (f >= 0) idx = f; }
+            let idx = 0;   // Einband zuerst
+            if (ym){ const f = sbkSpreads.findIndex(s => s.yms && s.yms.indexOf(ym) >= 0); if (f >= 0) idx = f; }
             sbkIdx = idx;
             sbkPaint();
             document.getElementById('sammelbuchOverlay').classList.add('open');
