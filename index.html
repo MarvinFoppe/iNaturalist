@@ -3272,6 +3272,14 @@
         border:1px solid var(--accent-warm);border-radius:8px;padding:8px 10px;color:var(--accent-warm);
         background:linear-gradient(180deg,rgba(216,180,131,.14),rgba(216,180,131,.05))}
     .sbk-openbtn:hover{background:rgba(216,180,131,.22)}
+    .sbk-cardbtns{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+    .sbk-cardbtns .sbk-openbtn{margin-top:0}
+    .sbk-openbtn.ghost{border-color:var(--border);background:transparent;color:var(--text-secondary)}
+    .sbk-openbtn.ghost:hover{background:rgba(155,204,95,.10);color:var(--accent-warm)}
+    /* Monatskarten-Detail: Text bricht um, läuft nicht über den Rand */
+    .stampc-detail .sd-row{flex-wrap:wrap;gap:2px 8px}
+    .stampc-detail .sd-row span{min-width:0}
+    .stampc-detail .sd-row b{white-space:normal;min-width:0;text-align:right}
     @media(prefers-reduced-motion:reduce){.sbk-spread{transition:none}.sbk-iconbtn{transition:none}}
     </style>
 
@@ -6848,7 +6856,7 @@
                         + sbRow('Beobachtungstage', dcnt)
                         + (tGg ? sbRow('Häufigste neue Gruppe', (SB_GROUP_LABEL[tGg]||tGg)+' · '+tGn) : '')
                         + (nextT ? sbRow('Bis '+SB_TIER[tier+1].name, 'noch '+(nextT-cnt)+' neue Arten') : sbRow('Höchststufe', 'Gold 🥇', true))
-                        + (sbkVisible() ? `<button class="sbk-openbtn" onclick="event.stopPropagation();openSammelbuch('${ym}')">📜 Urkunde öffnen</button>` : '')
+                        + (sbkVisible() ? `<div class="sbk-cardbtns"><button class="sbk-openbtn" onclick="event.stopPropagation();openSammelbuch('${ym}')">📜 Urkunde ansehen</button><button class="sbk-openbtn ghost" onclick="event.stopPropagation();openSammelbuch()">📖 Zum Sammelbuch</button></div>` : '')
                         + `</div>`;
                 }
                 return `<div class="stampc ${SB_TIER[tier].cls} ${future?'stamp-future':''} ${isCur?'stamp-cur':''}"
