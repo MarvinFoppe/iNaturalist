@@ -7374,12 +7374,9 @@
 
         function sbkNowYM(){ const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0'); }
         function sbkName(){ const el = document.getElementById('authorName'); const n = el && el.textContent.trim(); return n || (typeof USER_ID !== 'undefined' ? USER_ID : 'Naturbeobachter'); }
-        // Vorerst nur für mich: nur auf dem freigeschalteten Gerät + eigenes Profil
-        function sbkVisible(){
-            try { return typeof isOwnerDevice === 'function' && isOwnerDevice()
-                && String(USER_ID).toLowerCase() === String(DEFAULT_USER).toLowerCase(); }
-            catch(e){ return false; }
-        }
+        // Für alle Accounts: Urkunde & Sammelbuch werden aus den Daten des gerade
+        // angezeigten Profils erzeugt und sind auf jedem Profil sichtbar.
+        function sbkVisible(){ return true; }
         function sbkApplyGate(){ const l = document.getElementById('sbkLauncher'); if (l) l.style.display = sbkVisible() ? 'inline-flex' : 'none'; }
 
         // Kennzahlen eines Kalendermonats für die Urkunde
@@ -8763,8 +8760,8 @@
         function applyNerdOwnerUI(){
             const btn = document.getElementById('tabBtnNerd');
             if(btn) btn.style.display = isOwnerDevice() ? '' : 'none';
-            const trip = document.getElementById('tabBtnReisen');   // Reisen-Reiter ebenfalls nur auf freigeschalteten Geräten
-            if(trip) trip.style.display = isOwnerDevice() ? '' : 'none';
+            const trip = document.getElementById('tabBtnReisen');   // Reisen-Reiter für alle Accounts sichtbar
+            if(trip) trip.style.display = '';
         }
 
         // ========================================================================
