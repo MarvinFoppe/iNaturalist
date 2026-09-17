@@ -3276,6 +3276,16 @@
     .sbk-cardbtns .sbk-openbtn{margin-top:0}
     .sbk-openbtn.ghost{border-color:var(--border);background:transparent;color:var(--text-secondary)}
     .sbk-openbtn.ghost:hover{background:rgba(155,204,95,.10);color:var(--accent-warm)}
+    /* Mini-Urkunde: echte Urkunde per JS auf Kartenbreite skaliert (Preview in der Monatskarte) */
+    .sbk-certmini{position:relative;border-radius:7px;overflow:hidden;cursor:pointer;
+        border:1px solid rgba(216,180,131,.3);box-shadow:0 6px 16px rgba(0,0,0,.4);transition:transform .14s,box-shadow .14s}
+    .sbk-certmini:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(0,0,0,.5)}
+    .sbk-certmini-inner{width:300px;transform-origin:top left}
+    .sbk-mini-paper{padding:16px 15px 18px;
+        background:radial-gradient(70% 55% at 20% 12%,rgba(150,118,66,.07),transparent 55%),radial-gradient(60% 50% at 85% 90%,rgba(120,88,46,.09),transparent 55%),linear-gradient(var(--paper),var(--paper2))}
+    .sbk-certmini-tap{position:absolute;left:0;right:0;bottom:0;padding:5px 9px;font-size:11.5px;font-weight:600;
+        color:var(--gold-hi);display:flex;justify-content:space-between;align-items:center;pointer-events:none;
+        background:linear-gradient(0deg,rgba(20,13,5,.92),rgba(20,13,5,.5) 72%,transparent)}
     /* Monatskarten-Detail: Text bricht um, läuft nicht über den Rand */
     .stampc-detail .sd-row{flex-wrap:wrap;gap:2px 8px}
     .stampc-detail .sd-row span{min-width:0}
@@ -6856,11 +6866,11 @@
                         + sbRow('Beobachtungstage', dcnt)
                         + (tGg ? sbRow('Häufigste neue Gruppe', (SB_GROUP_LABEL[tGg]||tGg)+' · '+tGn) : '')
                         + (nextT ? sbRow('Bis '+SB_TIER[tier+1].name, 'noch '+(nextT-cnt)+' neue Arten') : sbRow('Höchststufe', 'Gold 🥇', true))
-                        + (sbkVisible() ? `<div class="sbk-cardbtns"><button class="sbk-openbtn" onclick="event.stopPropagation();openSammelbuch('${ym}')">📜 Urkunde ansehen</button><button class="sbk-openbtn ghost" onclick="event.stopPropagation();openSammelbuch()">📖 Zum Sammelbuch</button></div>` : '')
+                        + (sbkVisible() ? `<div class="sbk-cardbtns">${sbkMiniCert(ym, life)}<button class="sbk-openbtn ghost" onclick="event.stopPropagation();openSammelbuch()">📖 Zum Sammelbuch</button></div>` : '')
                         + `</div>`;
                 }
                 return `<div class="stampc ${SB_TIER[tier].cls} ${future?'stamp-future':''} ${isCur?'stamp-cur':''}"
-                             ${clickable ? `onclick="this.classList.toggle('expanded')"` : ''}
+                             ${clickable ? `onclick="this.classList.toggle('expanded');sbkScaleMinis(this)"` : ''}
                              title="${SB_MONTH_NAMES[i]} ${sbAlbumYear}">
                             <div class="stampc-medal">${medal}</div>
                             <div class="stampc-mon">${mn}</div>
@@ -7437,6 +7447,42 @@
                 <div class="sbk-cfoot"><span class="sbk-stamp ${part?'part':''}">${stamp}</span><span class="sbk-csig">iNaturalist</span></div>
             </div>`;
         }
+
+        // Eintrags-Nummer eines Monats (chronologisch ab Saisonstart) – wie im Sammelbuch
+        function sbkEntryNo(ym){
+            const set = {};
+            allObservations.forEach(o => { if (o.date && o.date.length >= 7){ const m = o.date.slice(0,7); if (m >= SEASON_START_YM) set[m] = 1; } });
+            const months = Object.keys(set).sort();
+            const idx = months.indexOf(ym);
+            return idx >= 0 ? idx + 1 : months.length + 1;
+        }
+        // Verkleinerte, klickbare Urkunden-Vorschau für die Monatskarte (die echte Urkunde, per JS skaliert)
+        const SBK_MINI_W = 300;   // natürliche Breite von .sbk-certmini-inner
+        function sbkMiniCert(ym, life){
+            try {
+                const inner = sbkCertHTML(sbkName(), sbkMonthData(ym, life), sbkEntryNo(ym));
+                return `<div class="sbk-certmini sbk-scope" onclick="event.stopPropagation();openSammelbuch('${ym}')" title="Urkunde ansehen">`
+                     +   `<div class="sbk-certmini-inner"><div class="sbk-mini-paper">${inner}</div></div>`
+                     +   `<div class="sbk-certmini-tap"><span>📜 Urkunde ansehen</span><span>⤢</span></div>`
+                     + `</div>`;
+            } catch(e){
+                return `<button class="sbk-openbtn" onclick="event.stopPropagation();openSammelbuch('${ym}')">📜 Urkunde ansehen</button>`;
+            }
+        }
+        // Skaliert sichtbare Mini-Urkunden auf ihre Kartenbreite und setzt die Rahmenhöhe.
+        function sbkScaleMinis(scope){
+            const root = (scope && scope.querySelectorAll) ? scope : document;
+            root.querySelectorAll('.sbk-certmini').forEach(frame => {
+                const inner = frame.querySelector('.sbk-certmini-inner');
+                if (!inner) return;
+                const w = frame.clientWidth;
+                if (!w) return;                                  // noch nicht sichtbar (eingeklappt)
+                const s = w / SBK_MINI_W;
+                inner.style.transform = 'scale(' + s + ')';
+                frame.style.height = Math.ceil(inner.scrollHeight * s) + 'px';
+            });
+        }
+        window.addEventListener('resize', () => { try { sbkScaleMinis(document); } catch(e){} });
 
         function sbkBuild(){
             const name = sbkName();
