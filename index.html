@@ -3400,6 +3400,7 @@
                     <span class="rs-label">Sortierung:</span>
                     <div class="seg">
                         <button type="button" class="seg-btn active" id="rsModeRarity" onclick="setRaritySortMode('rarity')">★ Seltenheit</button>
+                        <button type="button" class="seg-btn" id="rsModeIucn" onclick="setRaritySortMode('iucn')" title="Nach IUCN-Gefährdungsstatus (Bonus-Punkte)">🛡️ Gefährdung</button>
                         <button type="button" class="seg-btn" id="rsModeColl" onclick="setRaritySortMode('coll')"># Sammel-Nr.</button>
                     </div>
                     <button type="button" class="rs-dir" id="rsDirBtn" onclick="toggleRaritySortDir()" title="Reihenfolge umdrehen">↑</button>
@@ -5882,6 +5883,13 @@
             if (raritySortMode === 'coll') {
                 // Arten ohne Nummer ans Ende
                 list.sort((a, b) => raritySortDir * ((a.no || Infinity) - (b.no || Infinity)));
+            } else if (raritySortMode === 'iucn') {
+                // Nach IUCN-Gefährdungsstatus, gewichtet über die Bonus-Punkte
+                // (EX 10 › EW 8 › CR 6 › EN 4 › VU 2 › NT 1 › LC/keine 0).
+                // Gleichstand: seltenere Art zuerst.
+                const bonusOf = s => (typeof window.iucnBonus === 'function')
+                    ? window.iucnBonus((window.ucIucn || {})[s.id]) : 0;
+                list.sort((a, b) => raritySortDir * ((bonusOf(b) - bonusOf(a)) || (b.level - a.level) || (a.n - b.n)));
             } else {
                 list.sort((a, b) => raritySortDir * ((b.level - a.level) || (a.n - b.n)));
             }
@@ -5901,14 +5909,17 @@
             renderRarityGrid(true);
         }
         function updateRaritySortUI() {
-            const br = document.getElementById('rsModeRarity'), bc = document.getElementById('rsModeColl');
+            const br = document.getElementById('rsModeRarity'), bc = document.getElementById('rsModeColl'), bi = document.getElementById('rsModeIucn');
             if (br) br.classList.toggle('active', raritySortMode === 'rarity');
             if (bc) bc.classList.toggle('active', raritySortMode === 'coll');
+            if (bi) bi.classList.toggle('active', raritySortMode === 'iucn');
             const dir = document.getElementById('rsDirBtn');
             if (dir) dir.textContent = raritySortDir > 0 ? '↑' : '↓';
             const info = document.getElementById('raritySortInfo');
             if (info) info.textContent = raritySortMode === 'coll'
                 ? (raritySortDir > 0 ? '#1 zuerst (Erstfund)' : 'neueste zuerst')
+                : raritySortMode === 'iucn'
+                ? (raritySortDir > 0 ? 'am stärksten gefährdet zuerst' : 'am wenigsten gefährdet zuerst')
                 : (raritySortDir > 0 ? 'seltenste zuerst' : 'häufigste zuerst');
         }
 
@@ -11590,6 +11601,9 @@
   let ucIucn = {};
   try { ucIucn = JSON.parse(localStorage.getItem('inat_iucn_v1')||'{}') || {}; } catch(e){ ucIucn = {}; }
   function ucSaveIucn(){ try{ localStorage.setItem('inat_iucn_v1', JSON.stringify(ucIucn)); }catch(e){} }
+  // Für die Sortierung „🛡️ Gefährdung" im Seltenheit-Reiter (Hauptskript) verfügbar machen.
+  window.ucIucn = ucIucn;
+  window.iucnBonus = iucnBonus;
   function ucExtractIucn(t){
     if(!t) return null;
     if(t.conservation_statuses && t.conservation_statuses.length){
@@ -11627,6 +11641,8 @@
       }catch(e){ /* Rest später erneut versuchen */ }
       chunk.forEach(id=>{ if(!(id in ucIucn)) ucIucn[id]='NE'; });
       ucSaveIucn(); ucRenderScoreBonus();
+      // Wird gerade nach Gefährdung sortiert, Raster mit den frisch geladenen Status neu ordnen.
+      try{ if(typeof raritySortMode!=='undefined' && raritySortMode==='iucn' && typeof renderRarityGrid==='function') renderRarityGrid(true); }catch(e){}
     }
   }
 
