@@ -8288,17 +8288,24 @@
             renderFriendsTab();
         }
 
-        // Zusammenfassung des Seiten-Eigentuemers (bleibt immer die "Du"-Karte,
-        // egal welches Profil gerade in der App geladen ist)
+        // Mein eigenes Profil: auf dem freigeschalteten Owner-Gerät ist das immer Marvin,
+        // sonst der festgelegte "Mein iNaturalist-Name" (bzw. das aktuell geladene Profil).
+        function myOwnLogin() {
+            if (isOwnerDevice()) return DEFAULT_USER;
+            return (localStorage.getItem('inat_my_user') || USER_ID || DEFAULT_USER);
+        }
+
+        // Zusammenfassung des eigenen Profils für die "Du"-Karte
         async function buildSelfSummary() {
-            // Eigentuemer ist gerade geladen -> aus bereits geladenen Daten (schnell)
-            if (USER_ID.toLowerCase() === DEFAULT_USER.toLowerCase()) {
+            const me = myOwnLogin();
+            // Eigenes Profil ist gerade geladen -> aus bereits geladenen Daten (schnell)
+            if (String(USER_ID).toLowerCase() === String(me).toLowerCase()) {
                 const name = document.getElementById('authorName')?.textContent || USER_ID;
                 const icon = document.getElementById('authorImage')?.src || '';
                 return computePersonSummary(USER_ID, name, icon, allObservations);
             }
-            // Ein Freundesprofil ist geladen -> Eigentuemer-Daten wie einen Freund holen (mit Cache)
-            return buildFriendSummary(DEFAULT_USER, false);
+            // Ein anderes Profil ist geladen -> eigene Daten wie einen Freund holen (mit Cache)
+            return buildFriendSummary(me, false);
         }
 
         async function addFriendFromInput() {
@@ -8307,7 +8314,7 @@
             const raw = (input.value || '').trim().replace(/^@/, '');
             errEl.textContent = '';
             if (!raw) return;
-            if (raw.toLowerCase() === USER_ID.toLowerCase() || raw.toLowerCase() === DEFAULT_USER.toLowerCase()) { errEl.textContent = 'Das bist du selbst.'; return; }
+            if (raw.toLowerCase() === String(myOwnLogin()).toLowerCase()) { errEl.textContent = 'Das bist du selbst.'; return; }
             const friends = loadFriends();
             if (friends.some(f => f.login.toLowerCase() === raw.toLowerCase())) { errEl.textContent = 'Schon in der Liste.'; return; }
             errEl.textContent = 'Prüfe …';
@@ -8430,14 +8437,15 @@
 
             try {
                 const friends = loadFriends();
-                // Die "Du"-Karte ist immer der Seiten-Eigentuemer – auch wenn gerade
-                // ein Freundesprofil in der App geladen ist.
-                const ownerName = (USER_ID.toLowerCase() === DEFAULT_USER.toLowerCase())
-                    ? (document.getElementById('authorName')?.textContent || DEFAULT_USER)
-                    : (loadFriendSummary(DEFAULT_USER)?.summary?.name || DEFAULT_USER);
+                // Die "Du"-Karte ist das eigene Profil (Owner-Gerät=Marvin, sonst der
+                // festgelegte/aktuelle Nutzer) – auch wenn gerade ein anderes Profil geladen ist.
+                const me = myOwnLogin();
+                const ownerName = (String(USER_ID).toLowerCase() === String(me).toLowerCase())
+                    ? (document.getElementById('authorName')?.textContent || me)
+                    : (loadFriendSummary(me)?.summary?.name || me);
                 const people = [
-                    { login: DEFAULT_USER, self: true, name: ownerName },
-                    ...friends.filter(f => f.login.toLowerCase() !== DEFAULT_USER.toLowerCase())
+                    { login: me, self: true, name: ownerName },
+                    ...friends.filter(f => f.login.toLowerCase() !== String(me).toLowerCase())
                               .map(f => ({ login: f.login, name: f.name }))
                 ];
 
