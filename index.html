@@ -11435,5 +11435,495 @@
             </div>
         </div>
     </div>
+<!-- ============================================================
+     REDESIGN v1 · nur für den Eigentümer (isOwnerDevice)
+     Einheitliche Arten-Karte · IUCN-Bonus · aufgeräumte Startseite
+     Kapselt bestehende Funktionen, non-owner bleibt unberührt.
+     ============================================================ -->
+<style id="redesignStyles">
+  /* --- Overview: Karte komplett anklickbar, redundante Buttons weg --- */
+  html.redesign .gallery-item{cursor:pointer}
+  html.redesign .gallery-item .gallery-expand-btn,
+  html.redesign .gallery-item .gallery-actions{display:none !important}
+  /* --- Entdopplung: Länder nur noch über die Kachel-Übersicht, Taxonomie nur über die Gruppen-Kacheln --- */
+  html.redesign .filter-group:has(> #countryFilterContainer){display:none}
+  html.redesign #fsTaxa{display:none}
+  /* --- Ein zusammengefasster, eingeklappter Filter-Block; Galerie sofort sichtbar --- */
+  html.redesign .uc-filterwrap{border:1px solid var(--border); border-radius:14px; background:var(--bg-card); margin:0 0 16px; overflow:hidden}
+  html.redesign .uc-filterwrap>summary{list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px; padding:14px 16px; font-weight:700; color:var(--text-primary); user-select:none}
+  html.redesign .uc-filterwrap>summary::-webkit-details-marker{display:none}
+  html.redesign .uc-filterwrap>summary:hover{color:var(--accent)}
+  html.redesign .uc-filterwrap .uc-fw-hint{margin-left:auto; font-weight:400; font-size:.8em; color:var(--text-muted)}
+  html.redesign .uc-filterwrap .uc-fw-chev{color:var(--text-muted); transition:transform .2s}
+  html.redesign .uc-filterwrap[open]>summary .uc-fw-chev{transform:rotate(180deg)}
+  /* innere Sektionen bündig einbetten, jede einzeln aufklappbar */
+  html.redesign .uc-filterwrap>.filter-section,
+  html.redesign .uc-filterwrap>.filter-details,
+  html.redesign .uc-filterwrap>details{margin:0 !important; border-radius:0 !important; border-left:none; border-right:none; border-top:1px solid var(--border); border-bottom:none}
+  html.redesign .uc-filterwrap>details>summary,
+  html.redesign .uc-filterwrap>.filter-details>summary{padding-left:16px; padding-right:16px}
+  /* kompakte, filigrane Sektions-Header (statt großer Playfair-Überschriften) */
+  html.redesign .uc-filterwrap .sec-collapse>.sec-summary,
+  html.redesign .uc-filterwrap .filter-summary{
+    font-family:'Open Sans',system-ui,sans-serif !important;
+    font-size:.92rem !important; font-weight:600 !important;
+    color:var(--text-secondary) !important; letter-spacing:0 !important;
+    margin:0 !important; gap:9px !important; padding:11px 16px !important;
+  }
+  html.redesign .uc-filterwrap .sec-collapse>.sec-summary:hover,
+  html.redesign .uc-filterwrap .filter-summary:hover{color:var(--accent) !important}
+  html.redesign .uc-filterwrap .sec-collapse>.sec-summary .icon{width:1em !important; height:1em !important; color:var(--accent)}
+  html.redesign .uc-filterwrap .sec-collapse>.sec-summary{font-size:.92rem}
+  html.redesign .uc-filterwrap .sec-collapse>.sec-summary .sec-chevron,
+  html.redesign .uc-filterwrap .filter-summary .badges-chevron{font-size:.68rem !important}
+  html.redesign .uc-filterwrap .sec-collapse>.sec-summary::after{height:1px !important; opacity:.45}
+  /* Emojis in den Headern verkleinern */
+  html.redesign .uc-filterwrap .sec-collapse>.sec-summary{line-height:1.2}
+  /* Inhalt der Sektionen bündig, wenn geöffnet */
+  html.redesign .uc-filterwrap>.sec-collapse{padding:0 !important}
+  html.redesign .uc-filterwrap>.sec-collapse[open]>*:not(summary){padding:0 16px 14px}
+
+  /* --- Unified Card Overlay --- */
+  .uc-overlay{position:fixed; inset:0; z-index:2147483000; display:none; align-items:flex-start; justify-content:center; padding:28px 14px; overflow-y:auto; background:rgba(6,11,8,.74); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px)}
+  .uc-overlay.open{display:flex}
+  /* Variante C · Foil-Deluxe (Sammelkarten-Look) */
+  .uc-close{position:fixed; top:16px; right:18px; z-index:2147483001; width:40px; height:40px; border-radius:50%; background:rgba(15,23,18,.82); border:1px solid var(--border); color:#fff; font-size:1.4rem; line-height:1; cursor:pointer}
+  .uc-close:hover{background:rgba(15,23,18,.98)}
+  .uc-cardwrap{width:100%; max-width:430px; animation:ucPop .2s ease}
+  @keyframes ucPop{from{transform:translateY(16px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+  /* Flip: erst Rückseite (Logo), dann aufdrehen */
+  .uc-flip{width:100%; perspective:1500px}
+  .uc-flip-inner{position:relative; transform-style:preserve-3d; transition:transform .75s cubic-bezier(.2,.75,.2,1)}
+  .uc-flip.revealed .uc-flip-inner{transform:rotateY(180deg)}
+  .uc-face{-webkit-backface-visibility:hidden; backface-visibility:hidden}
+  .uc-front{position:relative; transform:rotateY(180deg)}
+  .uc-back{position:absolute; inset:0; transform:rotateY(0deg); cursor:pointer; z-index:5;
+    border-radius:22px; overflow:hidden; box-shadow:0 22px 48px rgba(0,0,0,.55);
+    background:#e4eecd; border:1px solid var(--border)}
+  .uc-back-inner{position:absolute; inset:0; padding:0}
+  .uc-back-inner img{width:100%; height:100%; object-fit:cover; display:block}
+  .uc-back-hint{position:absolute; bottom:12px; left:50%; transform:translateX(-50%); color:#eaf3ec; background:rgba(13,20,16,.72); padding:5px 13px; border-radius:999px; font-size:.74rem; letter-spacing:.04em; -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px)}
+  @keyframes ucBackPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+  @keyframes ucHolo{0%{background-position:0 0}100%{background-position:200% 0}}
+  @keyframes ucShimmer{to{background-position:200% 0}}
+  .uc-ribbon{text-align:center; font-weight:800; font-size:.82rem; letter-spacing:.06em; text-transform:uppercase;
+    background:linear-gradient(90deg,#f6d365,#fda085,#f6d365); background-size:200% 100%;
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation:ucShimmer 2.8s linear infinite}
+  .uc-gem{min-width:44px; text-align:center; color:#fff; padding:5px 9px 4px; border-radius:12px;
+    border:1.5px solid rgba(255,255,255,.55); box-shadow:0 2px 8px rgba(0,0,0,.45); background:linear-gradient(160deg,#6b7d6b,#8a94a4)}
+  .uc-gem.t2{background:linear-gradient(160deg,#2f7fb0,#4aa3df)}
+  .uc-gem.t3{background:linear-gradient(160deg,#6d3fae,#9b6fc0)}
+  .uc-gem.t4{background:linear-gradient(160deg,#b9902b,#c99a63); color:#3a2c00; box-shadow:0 2px 14px rgba(240,207,99,.6)}
+  .uc-gem b{display:block; font-size:1.2rem; line-height:1; font-weight:800}
+  .uc-gem span{display:block; font-size:.5rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; opacity:.92}
+  .uc-typebadge{color:#fff; font-size:.72rem; font-weight:700; padding:4px 10px; border-radius:20px; border:1.5px solid rgba(255,255,255,.55); box-shadow:0 2px 6px rgba(0,0,0,.45)}
+  .uc-iucn{display:inline-flex; align-items:center; gap:5px; font-size:.72rem; font-weight:700; padding:3px 9px; border-radius:999px}
+  .uc-holo{position:absolute; inset:0; z-index:1; pointer-events:none; mix-blend-mode:color-dodge; opacity:.45;
+    background:linear-gradient(115deg,transparent 42%,rgba(120,200,255,.55),rgba(255,140,220,.55),transparent 60%); background-size:200% 200%; animation:ucHolo 3.8s linear infinite}
+  #ucMap{height:150px; border-radius:11px; overflow:hidden; border:1px solid var(--border); background:var(--bg-light)}
+  .uc-score{display:flex; align-items:stretch; gap:8px}
+  .uc-score .cell{flex:1; text-align:center; border-radius:10px; padding:8px 6px; background:rgba(255,255,255,.05); border:1px solid var(--border)}
+  .uc-score .cell.bonus{background:rgba(240,207,99,.12); border-color:rgba(240,207,99,.28)}
+  .uc-score .cell.total .v{color:#f0cf63}
+  .uc-score .cell .k{font-size:.58rem; text-transform:uppercase; letter-spacing:.05em; opacity:.8; color:var(--text-secondary)}
+  .uc-score .cell .v{font-size:1.15rem; font-weight:800; font-variant-numeric:tabular-nums; margin-top:2px; line-height:1.1}
+  .uc-score .op{align-self:center; font-size:1rem; font-weight:800; opacity:.7}
+  .uc-cardC{position:relative; border-radius:22px; padding:4px; box-shadow:0 22px 48px rgba(0,0,0,.55);
+    background:linear-gradient(160deg,var(--tv,var(--accent)),rgba(255,255,255,.15) 40%,var(--tv,var(--accent)))}
+  .uc-cardC.t1{--tv:#6b7d6b} .uc-cardC.t2{--tv:#3f80c4} .uc-cardC.t3{--tv:#8e44ad}
+  .uc-cardC.t4{--tv:#f0cf63; box-shadow:0 22px 48px rgba(0,0,0,.55),0 0 30px rgba(240,207,99,.4)}
+  .uc-inner{border-radius:18px; overflow:hidden; background:linear-gradient(180deg,#16241b,#0d1410); position:relative}
+  .uc-inner::before{content:""; position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.16; mix-blend-mode:screen;
+    background:linear-gradient(115deg,transparent 35%,rgba(120,200,255,.7),rgba(255,140,220,.7),transparent 62%); background-size:220% 220%; animation:ucHolo 5s linear infinite}
+  .uc-chero{position:relative; height:210px}
+  .uc-chero>img{width:100%; height:100%; object-fit:cover; display:block; cursor:zoom-in}
+  .uc-chero::after{content:""; position:absolute; inset:0; z-index:1; pointer-events:none; background:linear-gradient(180deg,transparent 48%,rgba(13,20,16,.96))}
+  .uc-corner{position:absolute; width:16px; height:16px; border:2px solid var(--tv,var(--accent)); z-index:3; opacity:.85}
+  .uc-cardC.t1 .uc-corner{--tv:#6b7d6b} .uc-cardC.t2 .uc-corner{--tv:#3f80c4} .uc-cardC.t3 .uc-corner{--tv:#8e44ad} .uc-cardC.t4 .uc-corner{--tv:#f0cf63}
+  .uc-corner.tl{top:8px;left:8px;border-right:none;border-bottom:none;border-radius:6px 0 0 0}
+  .uc-corner.tr{top:8px;right:8px;border-left:none;border-bottom:none;border-radius:0 6px 0 0}
+  .uc-ctop{position:absolute; z-index:4; top:12px; left:14px; right:14px; display:flex; justify-content:space-between; align-items:flex-start}
+  .uc-ctitle{position:absolute; z-index:4; left:16px; right:16px; bottom:12px; text-align:center}
+  .uc-ctitle h3{font-family:'Playfair Display',Georgia,serif; font-size:1.45rem; margin:2px 0 0; color:#fff; line-height:1.12}
+  .uc-ctitle .sci{font-style:italic; color:var(--text-secondary); font-size:.82rem}
+  .uc-cbody{position:relative; z-index:1; padding:16px 18px 20px}
+  .uc-csec{margin-top:16px}
+  .uc-csec:first-child{margin-top:0}
+  .uc-clabel{font-size:.64rem; letter-spacing:.12em; text-transform:uppercase; color:var(--accent-light); font-weight:700; margin-bottom:7px; text-align:center}
+  .uc-ctext{color:var(--text-secondary); font-size:.88rem; text-align:center; line-height:1.55}
+  .uc-ctext a{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-glow)}
+  .uc-weltweit{text-align:center; color:var(--text-muted); font-size:.8rem; margin:8px 0 10px; font-variant-numeric:tabular-nums}
+  .uc-inat{display:block; text-align:center; margin-top:14px; color:var(--accent); font-size:.9rem; text-decoration:none; font-weight:600}
+  @media (prefers-reduced-motion:reduce){ .uc-ribbon,.uc-holo,.uc-inner::before,.uc-cardwrap,.uc-back-inner img{animation:none !important} .uc-flip-inner{transition:none !important} }
+  @media (max-width:560px){ .uc-chero{height:180px} .uc-ctitle h3{font-size:1.28rem} }
+</style>
+<div class="uc-overlay" id="ucOverlay" role="dialog" aria-modal="true" aria-label="Arten-Detail"><button class="uc-close" id="ucCloseBtn" aria-label="Schließen">×</button><div class="uc-cardwrap" id="ucInner"></div></div>
+<script>
+(function(){
+  "use strict";
+  function redesignOn(){
+    try{
+      // Live: nur dein freigeschaltetes Gerät. Lokal/Preview: per ?redesign=1 oder localhost.
+      if(typeof isOwnerDevice==='function' && isOwnerDevice()) return true;
+      const p=new URLSearchParams(location.search);
+      if(p.get('redesign')==='1') return true;
+      if(p.get('redesign')==='0') return false;
+      if(location.hostname==='localhost' || location.hostname==='127.0.0.1') return true;
+      return false;
+    }catch(e){ return false; }
+  }
+
+  /* ---------- IUCN-Bonus (mit dir abgestimmt) ---------- */
+  const UC_RARITY_COLORS = {1:'#6b7d6b',2:'#5f9455',3:'#4a9d43',4:'#3a93a6',5:'#3f80c4',6:'#5e5ac9',7:'#8e44ad',8:'#c65b23',9:'#e67e22',10:'#f39c12'};
+  const IUCN_BONUS = { NT:1, VU:2, EN:4, CR:6, EW:8, EX:10 };
+  function iucnBonus(code){ return IUCN_BONUS[(code||'').toString().toUpperCase()] || 0; }
+  const IUCN_LABEL = (typeof iucnStatusMap!=='undefined') ? iucnStatusMap : {};
+  function iucnInfo(code){ const c=(code||'').toString().toUpperCase(); return IUCN_LABEL[c] || IUCN_LABEL['NE'] || {name:'Nicht bewertet',color:'#607d8b'}; }
+
+  /* ---------- IUCN-Status-Cache je Taxon (für Gesamt-Bonus) ---------- */
+  let ucIucn = {};
+  try { ucIucn = JSON.parse(localStorage.getItem('inat_iucn_v1')||'{}') || {}; } catch(e){ ucIucn = {}; }
+  function ucSaveIucn(){ try{ localStorage.setItem('inat_iucn_v1', JSON.stringify(ucIucn)); }catch(e){} }
+  function ucExtractIucn(t){
+    if(!t) return null;
+    if(t.conservation_statuses && t.conservation_statuses.length){
+      const iucn = t.conservation_statuses.find(s=>s.authority==='IUCN Red List');
+      return ((iucn?iucn.status:t.conservation_statuses[0].status)||'').toUpperCase() || null;
+    }
+    if(t.conservation_status) return (t.conservation_status.status||'').toUpperCase() || null;
+    return null;
+  }
+
+  /* fetchTaxonDetails mitschneiden -> IUCN-Cache füllen */
+  if(typeof window.fetchTaxonDetails==='function'){
+    const _ftd = window.fetchTaxonDetails;
+    window.fetchTaxonDetails = async function(taxonId){
+      const d = await _ftd.apply(this, arguments);
+      try{ if(d && d.conservationStatus){ ucIucn[taxonId]=(d.conservationStatus+'').toUpperCase(); ucSaveIucn(); } }catch(e){}
+      return d;
+    };
+  }
+
+  /* Bulk-Nachladen aller IUCN-Status für den Gesamt-Bonus (nur Owner, einmalig) */
+  let ucBulkStarted=false;
+  async function ensureIucnStatuses(){
+    if(ucBulkStarted) return;
+    const set = (typeof rarityRgSet!=='undefined' && rarityRgSet) ? rarityRgSet : new Set();
+    if(!set.size) return;
+    ucBulkStarted=true;
+    const ids=[...set].filter(id=>!(id in ucIucn));
+    for(let i=0;i<ids.length;i+=30){
+      const chunk=ids.slice(i,i+30);
+      try{
+        const res=await inatFetch(`${API_BASE}/taxa/${chunk.join(',')}?locale=de`);
+        const data=await res.json();
+        (data.results||[]).forEach(t=>{ ucIucn[t.id]=ucExtractIucn(t)||'NE'; });
+      }catch(e){ /* Rest später erneut versuchen */ }
+      chunk.forEach(id=>{ if(!(id in ucIucn)) ucIucn[id]='NE'; });
+      ucSaveIucn(); ucRenderScoreBonus();
+    }
+  }
+
+  /* ---------- Gesamt-Score: Bonus getrennt anzeigen ---------- */
+  function ucTotalBonus(){
+    const set=(typeof rarityRgSet!=='undefined' && rarityRgSet)?rarityRgSet:new Set();
+    let b=0; set.forEach(tid=>{ b+=iucnBonus(ucIucn[tid]); }); return b;
+  }
+  function ucRenderScoreBonus(){
+    if(!redesignOn()) return;
+    const el=document.getElementById('rarityScore'); if(!el) return;
+    const bonus=ucTotalBonus();
+    let span=document.getElementById('ucScoreBonus');
+    if(!span){ span=document.createElement('span'); span.id='ucScoreBonus'; span.style.cssText='color:var(--accent-warm);font-weight:800;margin-left:5px'; }
+    span.textContent = bonus>0 ? '(+'+bonus.toLocaleString('de-DE')+')' : '';
+    if(span.parentNode!==el) el.appendChild(span);
+    const card=document.getElementById('rarityScoreCard');
+    if(card) card.title = 'Grund-Score (wie bisher) + IUCN-Gefährdungs-Bonus getrennt oben drauf' + (bonus>0?(' · aktuell +'+bonus+' Bonus'):'');
+  }
+  if(typeof window.updateRarityScore==='function'){
+    const _urs=window.updateRarityScore;
+    window.updateRarityScore=function(){ _urs.apply(this,arguments); if(redesignOn()){ ensureIucnStatuses(); ucRenderScoreBonus(); } };
+  }
+
+  /* ---------- Die EINE einheitliche Arten-Detailkarte ---------- */
+  let ucMap=null;
+  function ucDestroyMap(){ if(ucMap){ try{ucMap.remove();}catch(e){} ucMap=null; } }
+  function ucClose(){ const ov=document.getElementById('ucOverlay'); if(ov) ov.classList.remove('open'); ucDestroyMap(); document.body.style.overflow=''; }
+  window.ucCloseUnifiedCard = ucClose;
+
+  function ucEsc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function ucFirstSentences(txt,n){
+    if(!txt) return '';
+    const clean=txt.replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
+    const s=clean.match(/[^.!?]+[.!?]+/g);
+    return s ? s.slice(0,n||3).join(' ').trim() : clean;
+  }
+
+  function openUnifiedCard(input){
+    if(!input) return;
+    const taxonId = input.taxonId || (input.taxon && input.taxon.id) || null;
+    const all = (typeof allObservations!=='undefined' && allObservations) ? allObservations : [];
+    const userObs = taxonId ? all.filter(o=>o.taxonId===taxonId) : (input.id?[input]:[]);
+    const primary = input.id ? input : (userObs[0] || input);
+    const name = primary.name || input.name || 'Unbekannt';
+    const sci  = primary.scientific || input.scientific || input.sci || '';
+    const rawImg = primary.image || input.image || '';
+    const image = rawImg ? rawImg.replace('/medium','/large').replace('medium.jp','large.jp') : '';
+    const level = (typeof rarityLevels!=='undefined' && rarityLevels) ? rarityLevels[taxonId] : undefined;
+    const tierName = (typeof RARITY_TIER_NAMES!=='undefined' && level) ? (RARITY_TIER_NAMES[level]||'') : '';
+    const cnt = (typeof rarityCounts!=='undefined' && rarityCounts) ? rarityCounts[taxonId] : undefined;
+    const inatUrl = primary.url || (taxonId?('https://www.inaturalist.org/taxa/'+taxonId):'#');
+    const fmt = (typeof formatDateDE==='function') ? formatDateDE : (d=>d);
+
+    const tier = level>=9?4:level>=7?3:level>=5?2:1;
+    const ty = (typeof rwIconicType==='function') ? rwIconicType(primary.taxon||input.taxon||input.group||'') : {c:'#7a7f8a',emoji:'🔍',de:(primary.taxon||'')};
+
+    const ov=document.getElementById('ucOverlay'), inner=document.getElementById('ucInner');
+    inner.innerHTML = `
+     <div class="uc-flip" id="ucFlip">
+      <div class="uc-flip-inner">
+       <div class="uc-face uc-back" id="ucBack" title="Aufdecken">
+         <div class="uc-back-inner"><img src="${ucEsc(typeof CARD_BACK_SRC!=='undefined'?CARD_BACK_SRC:'card-back.png')}" alt="" onerror="this.style.display='none'"></div>
+         <div class="uc-back-hint">tippen zum Aufdecken</div>
+       </div>
+       <div class="uc-face uc-front">
+      <div class="uc-cardC t${tier}">
+        <div class="uc-inner">
+          <div class="uc-chero">
+            <img src="${ucEsc(image)}" alt="${ucEsc(name)}" onerror="this.style.display='none'">
+            <span class="uc-corner tl"></span><span class="uc-corner tr"></span>
+            <div class="uc-ctop">
+              <span class="uc-typebadge" style="background:${ty.c}">${ty.emoji} ${ucEsc(ty.de||'')}</span>
+              ${level?`<div class="uc-gem t${tier}"><b>${level}</b><span>Seltenheit</span></div>`:''}
+            </div>
+            <div class="uc-ctitle">
+              ${level?`<div class="uc-ribbon">${ucEsc(tierName)}</div>`:''}
+              <h3>${ucEsc(name)}</h3>
+              ${sci?`<div class="sci">${ucEsc(sci)}</div>`:''}
+            </div>
+          </div>
+          <div class="uc-cbody">
+            <div class="uc-csec">
+              <div class="uc-clabel">Info</div>
+              <div class="uc-ctext" id="ucInfo">Lade Beschreibung…</div>
+            </div>
+            <div class="uc-csec" id="ucMapSec">
+              <div class="uc-clabel">Fundort${userObs.length>1?` · ${userObs.length} Beobachtungen`:''}</div>
+              <div id="ucMap"></div>
+            </div>
+            <div class="uc-csec">
+              <div class="uc-clabel">Gefährdung &amp; Score</div>
+              <div style="text-align:center;margin-bottom:6px"><span class="uc-iucn" id="ucIucnChip">…</span></div>
+              <div class="uc-weltweit">🔬 Weltweit ${cnt?cnt.toLocaleString('de-DE'):'—'}× (Forschungsqualität)</div>
+              <div class="uc-score">
+                <div class="cell"><div class="k">Score</div><div class="v">${level?level:'—'}</div></div>
+                <div class="op">+</div>
+                <div class="cell bonus"><div class="k" id="ucBonusK">Bonus</div><div class="v" id="ucBonusV">…</div></div>
+                <div class="op">=</div>
+                <div class="cell total"><div class="k">Gesamt</div><div class="v" id="ucTotalVal">${level?level:'—'}</div></div>
+              </div>
+              <div class="uc-weltweit" style="margin-top:8px">${level?'Grund-Score bleibt wie bisher – der Bonus zählt getrennt oben drauf.':'Nur Beobachtungen in Forschungsqualität werden bepunktet.'}</div>
+              <a class="uc-inat" href="${ucEsc(inatUrl)}" target="_blank" rel="noopener">Auf iNaturalist ansehen ↗</a>
+            </div>
+          </div>
+        </div>
+      </div>
+       </div>
+      </div>
+     </div>`;
+    ov.classList.add('open'); document.body.style.overflow='hidden';
+
+    // Flip: erst Rückseite zeigen, nach ~1s aufdrehen; Klick auf Rückseite dreht sofort
+    const flip=document.getElementById('ucFlip'), back=document.getElementById('ucBack');
+    let ucRevealed=false;
+    function ucReveal(){ if(ucRevealed) return; ucRevealed=true; if(flip) flip.classList.add('revealed'); setTimeout(()=>{ if(ucMap) ucMap.invalidateSize(); },780); }
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+    if(reduce){ if(flip) flip.classList.add('revealed'); }
+    else { if(back) back.onclick=e=>{ e.stopPropagation(); ucReveal(); }; setTimeout(ucReveal, 5000); }
+
+    // Hero-Bild -> Lightbox (falls vorhanden)
+    const heroImg=inner.querySelector('.uc-chero>img');
+    if(heroImg && image && typeof openLightbox==='function'){
+      heroImg.onclick=()=>{ try{ openLightbox(image, name, (primary.date?primary.date:'')+(primary.place?(' · '+primary.place):''), 0); }catch(e){} };
+    }
+
+    // Karte (Leaflet – dieselbe wie im Rest der App)
+    ucDestroyMap();
+    const pts=userObs.filter(o=>typeof o.lat==='number'&&typeof o.lon==='number');
+    const mapSec=document.getElementById('ucMapSec');
+    if(!pts.length){ if(mapSec) mapSec.style.display='none'; }
+    else{
+      try{
+        ucMap=L.map('ucMap',{attributionControl:false, worldCopyJump:true, minZoom:1}).setView([pts[0].lat,pts[0].lon],9);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{noWrap:true}).addTo(ucMap);
+        const group=L.featureGroup(pts.map(o=>{
+          const m=L.marker([o.lat,o.lon]);
+          m.bindPopup(`<b>${ucEsc(o.name||name)}</b><br>${ucEsc(o.date||'')}<br>${ucEsc(o.place||'')}`);
+          return m;
+        })).addTo(ucMap);
+        if(pts.length>1) ucMap.fitBounds(group.getBounds().pad(0.35));
+        setTimeout(()=>{ if(ucMap) ucMap.invalidateSize(); },70);
+      }catch(e){ if(mapSec) mapSec.style.display='none'; }
+    }
+
+    // Info + IUCN nachladen
+    if(taxonId && typeof fetchTaxonDetails==='function'){
+      fetchTaxonDetails(taxonId).then(d=>{
+        if(!document.getElementById('ucOverlay').classList.contains('open')) return;
+        const infoEl=document.getElementById('ucInfo');
+        let text = d && d.description ? ucFirstSentences(d.description,4) : '';
+        if(!text) text = 'Für diese Art liegt keine Wikipedia-Beschreibung vor.';
+        const wUrl = d && d.wikipedia_url ? d.wikipedia_url : ('https://de.wikipedia.org/wiki/'+encodeURIComponent(sci||name));
+        if(infoEl) infoEl.innerHTML = ucEsc(text)+` <a href="${ucEsc(wUrl)}" target="_blank" rel="noopener">Wikipedia ↗</a>`;
+        const code = d && d.conservationStatus ? (d.conservationStatus+'').toUpperCase() : (ucIucn[taxonId]||null);
+        ucApplyStatus(code, level);
+      });
+    } else {
+      ucApplyStatus(ucIucn[taxonId]||null, level);
+      const infoEl=document.getElementById('ucInfo'); if(infoEl) infoEl.textContent='Keine weiteren Infos verfügbar.';
+    }
+  }
+
+  function ucApplyStatus(code, level){
+    const info=iucnInfo(code||'NE');
+    const bonus=iucnBonus(code);
+    const onLight=!(info.color==='#000000'||info.color==='#f44336'||info.color==='#9c27b0');
+    const chip=document.getElementById('ucIucnChip');
+    if(chip){ chip.textContent='🛡️ '+(code||'NE')+' · '+info.name; chip.style.background=info.color; chip.style.color=onLight?'#0c130d':'#fff'; }
+    const bk=document.getElementById('ucBonusK'); if(bk) bk.textContent='Bonus '+(code||'NE');
+    const bv=document.getElementById('ucBonusV'); if(bv) bv.textContent = bonus?('+'+bonus):'0';
+    const tot=document.getElementById('ucTotalVal');
+    if(tot && level){ tot.textContent = level + (bonus?(' (+'+bonus+')'):''); }
+  }
+  window.openUnifiedCard = openUnifiedCard;
+
+  /* Overlay schließen: Button + Backdrop + Escape */
+  const ucCloseBtn=document.getElementById('ucCloseBtn'); if(ucCloseBtn) ucCloseBtn.onclick=ucClose;
+  document.getElementById('ucOverlay').addEventListener('click', e=>{ if(e.target.id==='ucOverlay') ucClose(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && document.getElementById('ucOverlay').classList.contains('open')) ucClose(); });
+
+  /* ---------- Einstiegspunkte auf die EINE Karte umleiten (nur Owner) ---------- */
+  // Seltenheit-Reiter + Nerd-Baum
+  if(typeof window.openSpeciesCard==='function'){
+    const _osc=window.openSpeciesCard;
+    window.openSpeciesCard=function(tid){ if(redesignOn()){ openUnifiedCard({taxonId:Number(tid)}); return; } return _osc.apply(this,arguments); };
+  }
+  // Übersicht: "Mehr erfahren"
+  if(typeof window.toggleDetails==='function'){
+    const _td=window.toggleDetails;
+    window.toggleDetails=function(cardEl,obs){ if(redesignOn()){ openUnifiedCard(obs); return; } return _td.apply(this,arguments); };
+  }
+  // Reisen: Beobachtungskarte
+  if(typeof window.travelSelectObs==='function'){
+    const _tso=window.travelSelectObs;
+    window.travelSelectObs=function(id,opts){
+      if(redesignOn()){
+        const list=(typeof tripCurrentObs!=='undefined'&&tripCurrentObs)?tripCurrentObs:[];
+        const o=list.find(x=>String(x.id)===String(id));
+        if(o){ openUnifiedCard(o); return; }
+      }
+      return _tso.apply(this,arguments);
+    };
+  }
+
+  /* Übersicht: ganze Kachel klickbar (schlägt das Inline-Lightbox-onclick per Capture) */
+  const galleryEl=document.getElementById('gallery');
+  if(galleryEl){
+    galleryEl.addEventListener('click', e=>{
+      if(!redesignOn()) return;
+      if(e.target.closest('a')||e.target.closest('.tile-nav')||e.target.closest('button')) return;
+      const item=e.target.closest('.gallery-item'); if(!item) return;
+      const id=Number(item.dataset.obsId);
+      const all=(typeof allObservations!=='undefined'&&allObservations)?allObservations:[];
+      const obs=all.find(x=>x.id===id) || (item.dataset.taxonId?{taxonId:Number(item.dataset.taxonId)}:null);
+      if(obs){ e.stopPropagation(); e.preventDefault(); openUnifiedCard(obs); }
+    }, true);
+  }
+
+  /* Erstbeobachtungen: Ergebniskarten -> einheitliche Detailkarte + ★-Badge */
+  if(typeof window.computeFirstSeen==='function'){
+    const _cfs2=window.computeFirstSeen;
+    window.computeFirstSeen=function(){
+      const r=_cfs2.apply(this,arguments);
+      if(redesignOn()){
+        try{
+          const list=(typeof fsLastResults!=='undefined'&&fsLastResults)?fsLastResults:[];
+          const lv=(typeof rarityLevels!=='undefined'&&rarityLevels)?rarityLevels:{};
+          document.querySelectorAll('#fsResults .fs-card').forEach((c,i)=>{
+            c.dataset.fsindex=i; c.style.cursor='pointer'; c.style.position='relative';
+            const obs=list[i]; const lvl=obs?lv[obs.taxonId]:null;
+            if(lvl && !c.querySelector('.uc-fs-badge')){
+              const b=document.createElement('span'); b.className='uc-fs-badge'; b.textContent='★ '+lvl;
+              b.style.cssText='position:absolute;top:6px;left:6px;z-index:2;font-size:.72rem;font-weight:700;color:#fff;padding:2px 7px;border-radius:999px;background:'+(UC_RARITY_COLORS[lvl]||'#4a9d43')+';box-shadow:0 2px 6px rgba(0,0,0,.4)';
+              c.appendChild(b);
+            }
+          });
+        }catch(e){}
+      }
+      return r;
+    };
+  }
+  const fsResultsEl=document.getElementById('fsResults');
+  if(fsResultsEl){
+    fsResultsEl.addEventListener('click', e=>{
+      if(!redesignOn()) return;
+      const card=e.target.closest('.fs-card'); if(!card) return;
+      e.preventDefault(); e.stopPropagation();
+      const list=(typeof fsLastResults!=='undefined'&&fsLastResults)?fsLastResults:[];
+      const obs=list[Number(card.dataset.fsindex)];
+      if(obs) openUnifiedCard(obs);
+    }, true);
+  }
+
+  /* ---------- Init (Owner) ---------- */
+  function ucInit(){
+    if(!redesignOn()) return;
+    document.documentElement.classList.add('redesign');
+
+    // Alle Filter + Weltkarte in EINEN zusammengefassten, eingeklappten Block bündeln.
+    // Reihenfolge im Block: Filter & Suche · Länder · Taxonomische Gruppen · Erstbeobachtungen · Weltkarte
+    const ov=document.getElementById('tab-overview');
+    const filterDet=document.getElementById('filterDetails');
+    const fsSec=document.getElementById('firstSeenSection');
+    const mapSec=document.getElementById('mapSection');
+    const cGridEl=document.getElementById('countriesGrid');
+    const tGridEl=document.getElementById('taxaGrid');
+    const cSec=(cGridEl&&cGridEl.closest)?cGridEl.closest('details, .section'):null;
+    const tSec=(tGridEl&&tGridEl.closest)?tGridEl.closest('details, .section'):null;
+    if(ov && !document.getElementById('ucFilterWrap')){
+      const wrap=document.createElement('details');
+      wrap.id='ucFilterWrap'; wrap.className='uc-filterwrap';
+      const sum=document.createElement('summary');
+      sum.innerHTML='<span>🔍 Filter, Länder, Gruppen &amp; Karte</span><span class="uc-fw-hint">tippen zum Ein-/Ausblenden</span><span class="uc-fw-chev">▾</span>';
+      wrap.appendChild(sum);
+      [filterDet, cSec, tSec, fsSec, mapSec].forEach(el=>{ if(el){ el.removeAttribute('open'); wrap.appendChild(el); } });
+      ov.insertBefore(wrap, ov.firstChild);
+
+      // Aktivfilter, Stats & Galerie direkt sichtbar (schnell zur Galerie)
+      const galSec=(document.getElementById('gallery')&&document.getElementById('gallery').closest)?document.getElementById('gallery').closest('.section'):null;
+      if(galSec){
+        ['activeFilters','errorContainer'].forEach(id=>{ const el=document.getElementById(id); if(el) ov.insertBefore(el, galSec); });
+        const smBar=ov.querySelector('.species-mode-bar'); if(smBar) ov.insertBefore(smBar, galSec);
+        const statsBar=ov.querySelector('.stats-container'); if(statsBar) ov.insertBefore(statsBar, galSec);
+      }
+      // leere übrig gebliebene .filter-section ausblenden
+      const leftover=ov.querySelector('.filter-section');
+      if(leftover && !leftover.querySelector('details, .multi-select-container, input, select')) leftover.style.display='none';
+    }
+
+    // "Länder manuell zuordnen" aus den Badges in den Nerd-Reiter verschieben
+    const mc=document.getElementById('mcSection'), nerd=document.getElementById('tab-nerd');
+    if(mc && nerd && mc.parentNode!==nerd){
+      const h=document.createElement('h3'); h.textContent='🌍 Länder manuell zuordnen';
+      h.style.cssText='font-family:\'Playfair Display\',Georgia,serif;color:var(--accent);margin:26px 0 6px';
+      nerd.appendChild(h); nerd.appendChild(mc); mc.style.display='';
+    }
+
+    ucRenderScoreBonus();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ucInit);
+  else ucInit();
+})();
+</script>
 </body>
 </html>
