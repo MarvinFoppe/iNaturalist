@@ -11563,14 +11563,12 @@
   "use strict";
   function redesignOn(){
     try{
-      // Live: nur dein freigeschaltetes Gerät. Lokal/Preview: per ?redesign=1 oder localhost.
-      if(typeof isOwnerDevice==='function' && isOwnerDevice()) return true;
+      // Für ALLE Accounts veröffentlicht. ?redesign=0 = Notausstieg zur alten Ansicht.
+      // (Der Nerd-Reiter bleibt separat via isOwnerDevice() nur für den Eigentümer.)
       const p=new URLSearchParams(location.search);
-      if(p.get('redesign')==='1') return true;
       if(p.get('redesign')==='0') return false;
-      if(location.hostname==='localhost' || location.hostname==='127.0.0.1') return true;
-      return false;
-    }catch(e){ return false; }
+      return true;
+    }catch(e){ return true; }
   }
 
   /* ---------- IUCN-Bonus (mit dir abgestimmt) ---------- */
