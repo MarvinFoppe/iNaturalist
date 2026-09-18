@@ -2364,6 +2364,24 @@
         @media (max-width: 768px) { .sec-collapse > .sec-summary { font-size: 1.5em; margin-bottom: 18px; } }
         @media (max-width: 480px) { .sec-collapse > .sec-summary { font-size: 1.35em; } }
 
+        /* Einklappbare Chip-Filter im Seltenheit-Reiter (per default zu) */
+        .rarity-filter-collapse > summary {
+            list-style: none; cursor: pointer; user-select: none;
+            display: flex; align-items: center; gap: 8px;
+            color: var(--accent); font-weight: 700; font-size: 1.15em;
+            margin: 18px 0 6px;
+        }
+        .rarity-filter-collapse > summary::-webkit-details-marker { display: none; }
+        .rarity-filter-collapse > summary .rf-active {
+            font-size: 0.68em; font-weight: 700; color: #fff;
+            background: var(--accent-warm); border-radius: 999px; padding: 2px 8px;
+        }
+        .rarity-filter-collapse > summary .rf-active:empty { display: none; }
+        .rarity-filter-collapse > summary .rf-chevron {
+            margin-left: auto; font-size: 0.7em; color: var(--text-muted); transition: transform 0.25s;
+        }
+        .rarity-filter-collapse[open] > summary .rf-chevron { transform: rotate(180deg); }
+
         /* Filter-Section einklappbar */
         .filter-details { border-radius: 12px; }
         .filter-summary {
@@ -3400,12 +3418,18 @@
                 </div>
                 <button class="filter-reset" onclick="resetRarityFilters()">× Filter zurücksetzen</button>
             </div>
-            <h3 style="color: var(--accent); margin: 18px 0 6px;">Filter nach Seltenheit</h3>
-            <div class="rarity-group-chips" id="rarityLevelChips"></div>
-            <h3 style="color: var(--accent); margin: 18px 0 6px;">Filter nach Tiergruppe</h3>
-            <div class="rarity-group-chips" id="rarityGroupChips"></div>
-            <h3 style="color: var(--accent); margin: 18px 0 6px;">Filter nach Gefährdung</h3>
-            <div class="rarity-group-chips" id="rarityIucnChips"></div>
+            <details class="rarity-filter-collapse">
+                <summary>Filter nach Seltenheit<span class="rf-active" id="rarityLevelActive"></span><span class="rf-chevron">▼</span></summary>
+                <div class="rarity-group-chips" id="rarityLevelChips"></div>
+            </details>
+            <details class="rarity-filter-collapse">
+                <summary>Filter nach Tiergruppe<span class="rf-active" id="rarityGroupActive"></span><span class="rf-chevron">▼</span></summary>
+                <div class="rarity-group-chips" id="rarityGroupChips"></div>
+            </details>
+            <details class="rarity-filter-collapse">
+                <summary>Filter nach Gefährdung<span class="rf-active" id="rarityIucnActive"></span><span class="rf-chevron">▼</span></summary>
+                <div class="rarity-group-chips" id="rarityIucnChips"></div>
+            </details>
             <h3 style="color: var(--accent); margin: 18px 0 6px;">Verteilung nach Level</h3>
             <div id="rarityDistribution"></div>
             <div class="rarity-sort-head">
@@ -5985,6 +6009,13 @@
                 html += `<span class="rarity-group-chip${rarityGroupFilter.has(g) ? ' active' : ''}" onclick="toggleRarityGroup('${g}')">${cfg.icon || ''} ${cfg.name || g} (${cnt[g]})</span>`;
             }
             el.innerHTML = html;
+            setRarityFilterBadge('rarityGroupActive', rarityGroupFilter.size);
+        }
+
+        // Aktiv-Zähler im Kopf eines eingeklappten Filters (leer = ausgeblendet)
+        function setRarityFilterBadge(id, n) {
+            const b = document.getElementById(id);
+            if (b) b.textContent = n ? (n + ' aktiv') : '';
         }
 
         function toggleRarityGroup(g) {
@@ -6008,6 +6039,7 @@
                 html += `<span class="rarity-group-chip${rarityLevelFilter.has(n) ? ' active' : ''}" onclick="toggleRarityLevel(${n})"><span class="rarity-swatch lvl-${n}"></span> ★${n} ${RARITY_TIER_NAMES[n]} (${cnt[n]})</span>`;
             }
             el.innerHTML = html;
+            setRarityFilterBadge('rarityLevelActive', rarityLevelFilter.size);
         }
 
         function toggleRarityLevel(n) {
@@ -6039,6 +6071,7 @@
                 html += `<span class="rarity-group-chip${rarityIucnFilter.has(code) ? ' active' : ''}" onclick="toggleRarityIucn('${code}')"><span class="ril-dot" style="display:inline-block;vertical-align:middle;width:11px;height:11px;margin-right:2px;background:${m.color};"></span> ${code} ${m.name} (${cnt[code]})</span>`;
             }
             el.innerHTML = html;
+            setRarityFilterBadge('rarityIucnActive', rarityIucnFilter.size);
         }
 
         function toggleRarityIucn(code) {
