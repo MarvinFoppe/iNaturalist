@@ -9340,14 +9340,32 @@
         // Rote Listen. Für einen belastbaren WELTWEITEN Gefährdungsstatus zählt nur die globale
         // IUCN Red List: regionale Listen führen häufige Arten teils als (regional/lokal) "ausgestorben",
         // was global falsch ist. iNat normalisiert jeden Eintrag über ein numerisches Feld `iucn`.
+        // WICHTIG: Auch unter der Behörde "IUCN Red List" gibt es orts-/regionsbezogene Einträge
+        // (Teilpopulationen, z. B. "Danube Delta" CR, "Europe" NT). Die weltweite Einstufung ist
+        // der Eintrag OHNE Ortsbezug (place == null). Bei mehreren zählt der zuletzt aktualisierte.
         const IUCN_NUM_TO_CODE = { 0:'NE', 5:'DD', 10:'LC', 20:'NT', 30:'VU', 40:'EN', 50:'CR', 60:'EW', 70:'EX' };
+        function iucnCodeOfStatus(s){
+            if(s.iucn != null && IUCN_NUM_TO_CODE[s.iucn]) return IUCN_NUM_TO_CODE[s.iucn];
+            const code = (s.status || '').toString().toUpperCase();
+            return iucnStatusMap[code] ? code : null;             // nur echte IUCN-Kürzel akzeptieren
+        }
         function iucnGlobalCode(taxon){
             if(!taxon) return null;
-            const g = (taxon.conservation_statuses || []).find(s => s && s.authority === 'IUCN Red List');
-            if(!g) return null;                                   // keine globale IUCN-Bewertung -> nicht bewertet
-            if(g.iucn != null && IUCN_NUM_TO_CODE[g.iucn]) return IUCN_NUM_TO_CODE[g.iucn];
-            const code = (g.status || '').toString().toUpperCase();
-            return iucnStatusMap[code] ? code : null;             // nur echte IUCN-Kürzel akzeptieren
+            const iucnAll = (taxon.conservation_statuses || []).filter(s => s && s.authority === 'IUCN Red List');
+            if(!iucnAll.length) return null;                      // keine IUCN-Bewertung -> nicht bewertet
+            // 1) Bevorzugt die globale Bewertung OHNE Ortsbezug (bei mehreren die neueste).
+            //    Fängt z. B. den Wolf (global LC, daneben regionale EX in UK/Irland) korrekt ab.
+            const globals = iucnAll.filter(s => !s.place && s.place_id == null);
+            if(globals.length){
+                globals.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')));
+                return iucnCodeOfStatus(globals[0]);
+            }
+            // 2) Kein place-loser Eintrag: manche Arten (z. B. Wildkaninchen) haben die globale
+            //    IUCN-Bewertung nur auf ihre Herkunftsregionen abgebildet. Nur wenn ALLE
+            //    IUCN-Einträge dieselbe Stufe zeigen, ist das eindeutig die Welt-Einstufung;
+            //    bei Widerspruch lieber nichts annehmen (kein geratenes „ausgestorben").
+            const codes = [...new Set(iucnAll.map(iucnCodeOfStatus).filter(Boolean))];
+            return codes.length === 1 ? codes[0] : null;
         }
         window.iucnGlobalCode = iucnGlobalCode;
 
@@ -11717,10 +11735,11 @@
 
   /* ---------- IUCN-Status-Cache je Taxon (für Gesamt-Bonus) ---------- */
   let ucIucn = {};
-  // v2: nur noch globale IUCN Red List (v1 enthielt fälschlich regionale "ausgestorben"-Status)
-  try { localStorage.removeItem('inat_iucn_v1'); } catch(e){}
-  try { ucIucn = JSON.parse(localStorage.getItem('inat_iucn_v2')||'{}') || {}; } catch(e){ ucIucn = {}; }
-  function ucSaveIucn(){ try{ localStorage.setItem('inat_iucn_v2', JSON.stringify(ucIucn)); }catch(e){} }
+  // v3: globale IUCN OHNE Ortsbezug (v1 nahm regionale Rote Listen, v2 nahm noch orts-
+  //     bezogene IUCN-Teilpopulationen wie "Danube Delta" -> falsches CR beim Karpfen)
+  try { localStorage.removeItem('inat_iucn_v1'); localStorage.removeItem('inat_iucn_v2'); } catch(e){}
+  try { ucIucn = JSON.parse(localStorage.getItem('inat_iucn_v3')||'{}') || {}; } catch(e){ ucIucn = {}; }
+  function ucSaveIucn(){ try{ localStorage.setItem('inat_iucn_v3', JSON.stringify(ucIucn)); }catch(e){} }
   // Für die Sortierung „🛡️ Gefährdung" im Seltenheit-Reiter (Hauptskript) verfügbar machen.
   window.ucIucn = ucIucn;
   window.iucnBonus = iucnBonus;
