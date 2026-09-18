@@ -2364,23 +2364,30 @@
         @media (max-width: 768px) { .sec-collapse > .sec-summary { font-size: 1.5em; margin-bottom: 18px; } }
         @media (max-width: 480px) { .sec-collapse > .sec-summary { font-size: 1.35em; } }
 
-        /* Einklappbare Chip-Filter im Seltenheit-Reiter (per default zu) */
-        .rarity-filter-collapse > summary {
-            list-style: none; cursor: pointer; user-select: none;
+        /* Kompakter, filigraner Chip-Filter im Seltenheit-Reiter: ein übergeordneter Filter, per default zu */
+        .rarity-chip-filters {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 6px 14px; margin: 8px 0 4px;
+        }
+        .rarity-chip-filters > .filter-summary { padding: 6px 0; font-size: 0.9em; }
+        .rarity-chip-filters > .filter-summary .icon { width: 1em; height: 1em; }
+        .rarity-chip-filters .filter-body { padding: 6px 0 10px; display: flex; flex-direction: column; gap: 14px; }
+        .rarity-chip-group .rarity-chip-label {
             display: flex; align-items: center; gap: 8px;
-            color: var(--accent); font-weight: 700; font-size: 1.15em;
-            margin: 18px 0 6px;
+            font-size: 0.72em; font-weight: 700; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;
         }
-        .rarity-filter-collapse > summary::-webkit-details-marker { display: none; }
-        .rarity-filter-collapse > summary .rf-active {
-            font-size: 0.68em; font-weight: 700; color: #fff;
-            background: var(--accent-warm); border-radius: 999px; padding: 2px 8px;
+        .rarity-chip-group .rf-active {
+            text-transform: none; letter-spacing: 0;
+            font-size: 0.88em; font-weight: 700; color: #fff;
+            background: var(--accent-warm); border-radius: 999px; padding: 1px 7px;
         }
-        .rarity-filter-collapse > summary .rf-active:empty { display: none; }
-        .rarity-filter-collapse > summary .rf-chevron {
-            margin-left: auto; font-size: 0.7em; color: var(--text-muted); transition: transform 0.25s;
+        .rarity-chip-group .rf-active:empty { display: none; }
+        /* Chips hier kleiner & filigraner als im übrigen Reiter */
+        .rarity-chip-filters .rarity-group-chips { gap: 6px; margin: 0; }
+        .rarity-chip-filters .rarity-group-chip {
+            padding: 3px 9px; font-size: 0.75em; font-weight: 500; border-radius: 13px; gap: 4px;
         }
-        .rarity-filter-collapse[open] > summary .rf-chevron { transform: rotate(180deg); }
 
         /* Filter-Section einklappbar */
         .filter-details { border-radius: 12px; }
@@ -3418,17 +3425,27 @@
                 </div>
                 <button class="filter-reset" onclick="resetRarityFilters()">× Filter zurücksetzen</button>
             </div>
-            <details class="rarity-filter-collapse">
-                <summary>Filter nach Seltenheit<span class="rf-active" id="rarityLevelActive"></span><span class="rf-chevron">▼</span></summary>
-                <div class="rarity-group-chips" id="rarityLevelChips"></div>
-            </details>
-            <details class="rarity-filter-collapse">
-                <summary>Filter nach Tiergruppe<span class="rf-active" id="rarityGroupActive"></span><span class="rf-chevron">▼</span></summary>
-                <div class="rarity-group-chips" id="rarityGroupChips"></div>
-            </details>
-            <details class="rarity-filter-collapse">
-                <summary>Filter nach Gefährdung<span class="rf-active" id="rarityIucnActive"></span><span class="rf-chevron">▼</span></summary>
-                <div class="rarity-group-chips" id="rarityIucnChips"></div>
+            <details class="filter-details rarity-chip-filters" id="rarityChipFilters">
+                <summary class="filter-summary">
+                    <svg class="icon"><use href="#icon-eye"/></svg>
+                    <span>Filter</span>
+                    <span class="filter-summary-hint" id="rarityChipFilterHint"></span>
+                    <span class="badges-chevron">▼</span>
+                </summary>
+                <div class="filter-body">
+                    <div class="rarity-chip-group">
+                        <div class="rarity-chip-label">Seltenheit<span class="rf-active" id="rarityLevelActive"></span></div>
+                        <div class="rarity-group-chips" id="rarityLevelChips"></div>
+                    </div>
+                    <div class="rarity-chip-group">
+                        <div class="rarity-chip-label">Tiergruppe<span class="rf-active" id="rarityGroupActive"></span></div>
+                        <div class="rarity-group-chips" id="rarityGroupChips"></div>
+                    </div>
+                    <div class="rarity-chip-group">
+                        <div class="rarity-chip-label">Gefährdung<span class="rf-active" id="rarityIucnActive"></span></div>
+                        <div class="rarity-group-chips" id="rarityIucnChips"></div>
+                    </div>
+                </div>
             </details>
             <h3 style="color: var(--accent); margin: 18px 0 6px;">Verteilung nach Level</h3>
             <div id="rarityDistribution"></div>
@@ -6012,10 +6029,15 @@
             setRarityFilterBadge('rarityGroupActive', rarityGroupFilter.size);
         }
 
-        // Aktiv-Zähler im Kopf eines eingeklappten Filters (leer = ausgeblendet)
+        // Aktiv-Zähler je Gruppe (leer = ausgeblendet) + Gesamt-Hinweis im übergeordneten Filter
         function setRarityFilterBadge(id, n) {
             const b = document.getElementById(id);
             if (b) b.textContent = n ? (n + ' aktiv') : '';
+            const hint = document.getElementById('rarityChipFilterHint');
+            if (hint) {
+                const total = rarityLevelFilter.size + rarityGroupFilter.size + rarityIucnFilter.size;
+                hint.textContent = total ? (total + ' aktiv') : '';
+            }
         }
 
         function toggleRarityGroup(g) {
