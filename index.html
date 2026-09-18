@@ -1566,6 +1566,18 @@
             backdrop-filter: blur(4px); z-index: 12;
             font-variant-numeric: tabular-nums; pointer-events: none;
         }
+        /* Info-Tafel der IUCN-Gefährdungsstufen (Seltenheit-Reiter, Sortierung „Gefährdung") */
+        .rarity-iucn-legend { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin: 10px 0 4px; }
+        .rarity-iucn-legend .ril-title { font-weight: 700; color: var(--text-primary); font-size: 0.92em; margin-bottom: 3px; }
+        .rarity-iucn-legend .ril-sub { color: var(--text-muted); font-size: 0.78em; margin-bottom: 12px; line-height: 1.4; }
+        .rarity-iucn-legend .ril-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px 16px; }
+        .ril-row { display: flex; align-items: center; gap: 10px; font-size: 0.83em; }
+        .ril-dot { width: 14px; height: 14px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset; }
+        .ril-code { font-weight: 700; font-family: ui-monospace, monospace; width: 26px; flex: none; color: var(--text-primary); }
+        .ril-name { color: var(--text-secondary); flex: 1; }
+        .ril-pts { font-weight: 700; color: var(--accent-warm); white-space: nowrap; }
+        .ril-pts.zero { color: var(--text-muted); font-weight: 600; }
+
         /* Sortier-Umschalter im Seltenheit-Reiter */
         .rarity-sort-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 24px 0 6px; }
         .rarity-sort-head h3 { margin: 0; }
@@ -3407,6 +3419,7 @@
                     <span class="rs-info" id="raritySortInfo">seltenste zuerst</span>
                 </div>
             </div>
+            <div class="rarity-iucn-legend" id="rarityIucnLegend" style="display:none;"></div>
             <div class="rarity-rare-grid" id="rarityRareGrid"></div>
             <div id="rarityGridSentinel" style="height: 1px;"></div>
             <div id="rarityGridInfo" style="text-align:center; color:var(--text-muted); margin-top:14px; font-size:0.85em;"></div>
@@ -5921,6 +5934,36 @@
                 : raritySortMode === 'iucn'
                 ? (raritySortDir > 0 ? 'am stärksten gefährdet zuerst' : 'am wenigsten gefährdet zuerst')
                 : (raritySortDir > 0 ? 'seltenste zuerst' : 'häufigste zuerst');
+            const legend = document.getElementById('rarityIucnLegend');
+            if (legend) {
+                if (raritySortMode === 'iucn') { renderRarityIucnLegend(legend); legend.style.display = ''; }
+                else legend.style.display = 'none';
+            }
+        }
+
+        // Info-Tafel: alle IUCN-Gefährdungsstufen mit Bedeutung und Bonus-Punkten
+        function renderRarityIucnLegend(el) {
+            if (!el || el.dataset.built === '1') return;   // Inhalt ist statisch, einmal aufbauen
+            // Reihenfolge: am stärksten gefährdet -> am wenigsten; Punkte = IUCN-Bonus
+            const order = [
+                ['EX', 10], ['EW', 8], ['CR', 6], ['EN', 4], ['VU', 2], ['NT', 1],
+                ['LC', 0], ['DD', 0], ['NE', 0]
+            ];
+            const rows = order.map(([code, pts]) => {
+                const m = iucnStatusMap[code] || iucnStatusMap['NE'];
+                const ptsTxt = pts > 0 ? ('+' + pts) : '0';
+                return `<div class="ril-row" title="${m.name}">
+                    <span class="ril-dot" style="background:${m.color};"></span>
+                    <span class="ril-code">${code}</span>
+                    <span class="ril-name">${m.name}</span>
+                    <span class="ril-pts${pts > 0 ? '' : ' zero'}">${ptsTxt} Pkt.</span>
+                </div>`;
+            }).join('');
+            el.innerHTML = `
+                <div class="ril-title">🛡️ IUCN-Gefährdungsstufen</div>
+                <div class="ril-sub">Weltweite Einstufung der IUCN Red List. Je stärker gefährdet, desto mehr Bonus-Punkte fließen in deinen Seltenheits-Score. Nur die globale Bewertung zählt – regionale Rote Listen bleiben außen vor.</div>
+                <div class="ril-grid">${rows}</div>`;
+            el.dataset.built = '1';
         }
 
         function renderRarityGroupChips() {
@@ -7641,9 +7684,9 @@
                 let wiki = rwStripHtml(t.wikipedia_summary||'');
                 const fullWiki = await rwWikiExtract(t.wikipedia_url||'');   // vollständiger Intro-Absatz
                 if(fullWiki && fullWiki.length > wiki.length) wiki = fullWiki;
+                const rwCode = iucnGlobalCode(t) || '';   // nur globale IUCN Red List
                 const f={ obsCount:t.observations_count||0, wiki,
-                    status:(t.conservation_status&&(t.conservation_status.status_name||t.conservation_status.status))||'',
-                    statusCode:(t.conservation_status&&t.conservation_status.status||'').toString().toUpperCase(),
+                    status:'', statusCode:rwCode,
                     ordnung:anc.order||'', familie:anc.family||'' };
                 rwFactCache[taxonId]=f; return f;
             }catch(e){ rwFactCache[taxonId]=null; return null; }
@@ -9223,6 +9266,21 @@
             'NE': { name: 'Nicht bewertet', color: '#607d8b', icon: '—' }
         };
 
+        // iNat liefert je Art viele Schutzstatus verschiedener Behörden – global (IUCN) UND regionale
+        // Rote Listen. Für einen belastbaren WELTWEITEN Gefährdungsstatus zählt nur die globale
+        // IUCN Red List: regionale Listen führen häufige Arten teils als (regional/lokal) "ausgestorben",
+        // was global falsch ist. iNat normalisiert jeden Eintrag über ein numerisches Feld `iucn`.
+        const IUCN_NUM_TO_CODE = { 0:'NE', 5:'DD', 10:'LC', 20:'NT', 30:'VU', 40:'EN', 50:'CR', 60:'EW', 70:'EX' };
+        function iucnGlobalCode(taxon){
+            if(!taxon) return null;
+            const g = (taxon.conservation_statuses || []).find(s => s && s.authority === 'IUCN Red List');
+            if(!g) return null;                                   // keine globale IUCN-Bewertung -> nicht bewertet
+            if(g.iucn != null && IUCN_NUM_TO_CODE[g.iucn]) return IUCN_NUM_TO_CODE[g.iucn];
+            const code = (g.status || '').toString().toUpperCase();
+            return iucnStatusMap[code] ? code : null;             // nur echte IUCN-Kürzel akzeptieren
+        }
+        window.iucnGlobalCode = iucnGlobalCode;
+
         // Fetch taxon details from API
         async function fetchTaxonDetails(taxonId) {
             if (taxonDetailsCache[taxonId]) {
@@ -9235,19 +9293,8 @@
                 const taxon = data.results?.[0];
 
                 if (taxon) {
-                    // Extract IUCN conservation status
-                    let conservationStatus = null;
-                    if (taxon.conservation_statuses && taxon.conservation_statuses.length > 0) {
-                        // Prefer IUCN status
-                        const iucn = taxon.conservation_statuses.find(s => s.authority === 'IUCN Red List');
-                        if (iucn) {
-                            conservationStatus = iucn.status;
-                        } else {
-                            conservationStatus = taxon.conservation_statuses[0].status;
-                        }
-                    } else if (taxon.conservation_status) {
-                        conservationStatus = taxon.conservation_status.status;
-                    }
+                    // Nur die globale IUCN-Red-List-Bewertung (keine regionalen Roten Listen)
+                    const conservationStatus = iucnGlobalCode(taxon);
 
                     const details = {
                         description: taxon.wikipedia_summary || null,
@@ -11599,18 +11646,17 @@
 
   /* ---------- IUCN-Status-Cache je Taxon (für Gesamt-Bonus) ---------- */
   let ucIucn = {};
-  try { ucIucn = JSON.parse(localStorage.getItem('inat_iucn_v1')||'{}') || {}; } catch(e){ ucIucn = {}; }
-  function ucSaveIucn(){ try{ localStorage.setItem('inat_iucn_v1', JSON.stringify(ucIucn)); }catch(e){} }
+  // v2: nur noch globale IUCN Red List (v1 enthielt fälschlich regionale "ausgestorben"-Status)
+  try { localStorage.removeItem('inat_iucn_v1'); } catch(e){}
+  try { ucIucn = JSON.parse(localStorage.getItem('inat_iucn_v2')||'{}') || {}; } catch(e){ ucIucn = {}; }
+  function ucSaveIucn(){ try{ localStorage.setItem('inat_iucn_v2', JSON.stringify(ucIucn)); }catch(e){} }
   // Für die Sortierung „🛡️ Gefährdung" im Seltenheit-Reiter (Hauptskript) verfügbar machen.
   window.ucIucn = ucIucn;
   window.iucnBonus = iucnBonus;
   function ucExtractIucn(t){
-    if(!t) return null;
-    if(t.conservation_statuses && t.conservation_statuses.length){
-      const iucn = t.conservation_statuses.find(s=>s.authority==='IUCN Red List');
-      return ((iucn?iucn.status:t.conservation_statuses[0].status)||'').toUpperCase() || null;
-    }
-    if(t.conservation_status) return (t.conservation_status.status||'').toUpperCase() || null;
+    // Nur die globale IUCN Red List – regionale Rote Listen liefern sonst falsche
+    // "ausgestorben"-Treffer bei weltweit häufigen Arten.
+    if(typeof window.iucnGlobalCode==='function') return window.iucnGlobalCode(t);
     return null;
   }
 
