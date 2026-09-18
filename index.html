@@ -3404,6 +3404,8 @@
             <div class="rarity-group-chips" id="rarityLevelChips"></div>
             <h3 style="color: var(--accent); margin: 18px 0 6px;">Filter nach Tiergruppe</h3>
             <div class="rarity-group-chips" id="rarityGroupChips"></div>
+            <h3 style="color: var(--accent); margin: 18px 0 6px;">Filter nach Gefährdung</h3>
+            <div class="rarity-group-chips" id="rarityIucnChips"></div>
             <h3 style="color: var(--accent); margin: 18px 0 6px;">Verteilung nach Level</h3>
             <div id="rarityDistribution"></div>
             <div class="rarity-sort-head">
@@ -4215,6 +4217,7 @@
         let rarityAllSpecies = [];             // {id,name,sci,image,url,level,n,group}
         let rarityGroupFilter = new Set();     // leer = alle Gruppen
         let rarityLevelFilter = new Set();     // leer = alle Seltenheits-Level
+        let rarityIucnFilter = new Set();      // leer = alle Gefährdungsstufen (IUCN-Codes)
         let rarityCountryFilter = [];          // ausgewaehlte Laender im Seltenheit-Reiter (leer = alle)
         const RARITY_GRID_BATCH = 40;
         let rarityGridShown = 0;
@@ -5841,6 +5844,7 @@
                 ['rarityDistribution', 'rarityRareGrid'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
                 renderRarityGroupChips();
                 renderRarityLevelChips();
+                renderRarityIucnChips();
                 const gi = document.getElementById('rarityGridInfo'); if (gi) gi.textContent = '';
                 return;
             }
@@ -5861,6 +5865,7 @@
 
             renderRarityGroupChips();
             renderRarityLevelChips();
+            renderRarityIucnChips();
             renderRarityDistribution();
             updateRaritySortUI();
             renderRarityGrid(true);
@@ -5877,6 +5882,7 @@
             rarityCountryFilter = [];
             rarityLevelFilter.clear();
             rarityGroupFilter.clear();
+            rarityIucnFilter.clear();
             const f = document.getElementById('rarityDateFrom'); if (f) f.value = '';
             const t = document.getElementById('rarityDateTo'); if (t) t.value = '';
             updateRarityCountrySelection();
@@ -5892,6 +5898,7 @@
             let list = rarityAllSpecies;
             if (rarityGroupFilter.size) list = list.filter(s => rarityGroupFilter.has(s.group));
             if (rarityLevelFilter.size) list = list.filter(s => rarityLevelFilter.has(s.level));
+            if (rarityIucnFilter.size) list = list.filter(s => rarityIucnFilter.has(rarityIucnCodeOf(s)));
             list = list.slice();
             if (raritySortMode === 'coll') {
                 // Arten ohne Nummer ans Ende
@@ -6009,6 +6016,36 @@
             renderRarityLevelChips();
             renderRarityGroupChips();
             renderRarityDistribution();
+            renderRarityGrid(true);
+        }
+
+        // Globaler IUCN-Code einer Art (aus dem live gefüllten Cache); nicht bewertet/noch nicht geladen -> 'NE'
+        function rarityIucnCodeOf(s) {
+            const c = (window.ucIucn || {})[s.id];
+            return c ? c.toString().toUpperCase() : 'NE';
+        }
+
+        function renderRarityIucnChips() {
+            const el = document.getElementById('rarityIucnChips');
+            if (!el) return;
+            const cnt = {};
+            for (const s of rarityAllSpecies) { const c = rarityIucnCodeOf(s); cnt[c] = (cnt[c] || 0) + 1; }
+            // Reihenfolge: am stärksten gefährdet -> am wenigsten -> nicht bewertet
+            const order = ['EX', 'EW', 'CR', 'EN', 'VU', 'NT', 'LC', 'DD', 'NE'];
+            let html = `<span class="rarity-group-chip${rarityIucnFilter.size === 0 ? ' active' : ''}" onclick="toggleRarityIucn('__ALL__')">Alle (${rarityAllSpecies.length})</span>`;
+            for (const code of order) {
+                if (!cnt[code]) continue;
+                const m = iucnStatusMap[code] || iucnStatusMap['NE'];
+                html += `<span class="rarity-group-chip${rarityIucnFilter.has(code) ? ' active' : ''}" onclick="toggleRarityIucn('${code}')"><span class="ril-dot" style="display:inline-block;vertical-align:middle;width:11px;height:11px;margin-right:2px;background:${m.color};"></span> ${code} ${m.name} (${cnt[code]})</span>`;
+            }
+            el.innerHTML = html;
+        }
+
+        function toggleRarityIucn(code) {
+            if (code === '__ALL__') rarityIucnFilter.clear();
+            else if (rarityIucnFilter.has(code)) rarityIucnFilter.delete(code);
+            else rarityIucnFilter.add(code);
+            renderRarityIucnChips();
             renderRarityGrid(true);
         }
 
@@ -9631,6 +9668,7 @@
             rarityReady = false;
             rarityGroupFilter.clear();
             rarityLevelFilter.clear();
+            rarityIucnFilter.clear();
             rarityAllSpecies = [];
             selectedCountries = [];
             selectedTaxa = [];
@@ -11687,8 +11725,14 @@
       }catch(e){ /* Rest später erneut versuchen */ }
       chunk.forEach(id=>{ if(!(id in ucIucn)) ucIucn[id]='NE'; });
       ucSaveIucn(); ucRenderScoreBonus();
-      // Wird gerade nach Gefährdung sortiert, Raster mit den frisch geladenen Status neu ordnen.
-      try{ if(typeof raritySortMode!=='undefined' && raritySortMode==='iucn' && typeof renderRarityGrid==='function') renderRarityGrid(true); }catch(e){}
+      // Frisch geladene Status übernehmen: Gefährdungs-Filter-Chips aktualisieren und –
+      // falls gerade danach sortiert oder gefiltert wird – das Raster neu aufbauen.
+      try{ if(typeof renderRarityIucnChips==='function') renderRarityIucnChips(); }catch(e){}
+      try{
+        const sortByIucn = (typeof raritySortMode!=='undefined' && raritySortMode==='iucn');
+        const filterByIucn = (typeof rarityIucnFilter!=='undefined' && rarityIucnFilter.size>0);
+        if((sortByIucn || filterByIucn) && typeof renderRarityGrid==='function') renderRarityGrid(true);
+      }catch(e){}
     }
   }
 
