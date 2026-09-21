@@ -3300,6 +3300,7 @@
     .sbk-marks{flex:1;border-bottom:1px dotted var(--pline);margin:0 2px 5px;align-self:flex-end}
     .sbk-dot{width:8px;height:8px;border-radius:50%}
     .sbk-ct{font-family:var(--pserif);font-weight:700;color:var(--ink);min-width:18px;text-align:right;font-variant-numeric:tabular-nums}
+    .sbk-ct small{font-size:11px;color:var(--pwarm);font-weight:400}
     .sbk-cfoot{display:flex;justify-content:space-between;align-items:center;border-top:2px solid var(--pline2);padding-top:9px;margin-top:12px}
     .sbk-stamp{transform:rotate(-7deg);border:2px solid var(--pgold2);color:var(--pgold2);border-radius:7px;padding:3px 10px;font-family:var(--pmono);font-size:10px;letter-spacing:.12em;text-transform:uppercase}
     .sbk-stamp.part{border-color:var(--pacc);color:var(--pacc)}
@@ -7540,22 +7541,29 @@
             life = life || sbLifetime();
             const inMonth = allObservations.filter(o => o.date && o.date.length >= 7 && o.date.slice(0,7) === ym);
             const research = inMonth.filter(o => o.quality === 'research');
-            const base = research.length ? research : inMonth;
-            const groupSpecies = {};
-            base.forEach(o => { if (o.taxon && o.taxonId) (groupSpecies[o.taxon] ||= new Set()).add(o.taxonId); });
-            const groups = Object.keys(groupSpecies).map(g => ({ g, n: groupSpecies[g].size })).sort((a,b) => b.n - a.n);
-            const perDay = {};
-            base.forEach(o => { if (o.date && o.taxonId) (perDay[o.date] ||= new Set()).add(o.taxonId); });
-            let best = 0; Object.values(perDay).forEach(s => { if (s.size > best) best = s.size; });
+            // Arten je Taxonomie: Gesamt (alle) und FQ (nur Forschungsqualität) getrennt zählen
+            const groupAll = {}, groupFq = {};
+            inMonth.forEach(o => { if (o.taxon && o.taxonId) (groupAll[o.taxon] ||= new Set()).add(o.taxonId); });
+            research.forEach(o => { if (o.taxon && o.taxonId) (groupFq[o.taxon] ||= new Set()).add(o.taxonId); });
+            const groups = Object.keys(groupAll)
+                .map(g => ({ g, n: groupAll[g].size, fq: (groupFq[g] ? groupFq[g].size : 0) }))
+                .sort((a,b) => b.n - a.n);
+            // Bester Tag: meiste Arten an einem Tag – Gesamt und FQ getrennt
+            const perDayAll = {}, perDayFq = {};
+            inMonth.forEach(o => { if (o.date && o.taxonId) (perDayAll[o.date] ||= new Set()).add(o.taxonId); });
+            research.forEach(o => { if (o.date && o.taxonId) (perDayFq[o.date] ||= new Set()).add(o.taxonId); });
+            let best = 0; Object.values(perDayAll).forEach(s => { if (s.size > best) best = s.size; });
+            let bestFq = 0; Object.values(perDayFq).forEach(s => { if (s.size > bestFq) bestFq = s.size; });
             const newCount = life.newByMonth[ym] || 0;
             return {
                 ym,
                 observations: inMonth.length,
                 fq: research.length,
-                species: new Set(base.filter(o => o.taxonId).map(o => o.taxonId)).size,
+                species: new Set(inMonth.filter(o => o.taxonId).map(o => o.taxonId)).size,
+                speciesFq: new Set(research.filter(o => o.taxonId).map(o => o.taxonId)).size,
                 countries: [...new Set(inMonth.map(o => o.country).filter(Boolean))],
                 groups, days: new Set(inMonth.map(o => o.date && o.date.slice(0,10)).filter(Boolean)).size,
-                best, newCount, tier: sbMonthTier(newCount)
+                best, bestFq, newCount, tier: sbMonthTier(newCount)
             };
         }
 
@@ -7576,20 +7584,19 @@
                 ? ('Beobachtungen im Monat ' + monthName + ' ' + y + ', erhoben in ' + flags + '.')
                 : ('Beobachtungen im Monat ' + monthName + ' ' + y + '.');
             const tally = d.groups.length
-                ? d.groups.map(x => { const it = rwIconicType(x.g); return `<div class="sbk-row"><span class="sbk-ic">${it.emoji}</span><span class="sbk-nm">${it.de}</span><span class="sbk-marks"></span><span class="sbk-dot" style="background:${it.c}"></span><span class="sbk-ct">${x.n}</span></div>`; }).join('')
+                ? d.groups.map(x => { const it = rwIconicType(x.g); return `<div class="sbk-row"><span class="sbk-ic">${it.emoji}</span><span class="sbk-nm">${it.de}</span><span class="sbk-marks"></span><span class="sbk-dot" style="background:${it.c}"></span><span class="sbk-ct">${x.fq}<small>/${x.n}</small></span></div>`; }).join('')
                 : '<div class="sbk-nm" style="font-style:italic">noch keine bestimmten Arten</div>';
             return `<div class="sbk-cert">
                 <div class="ch"><span class="clog">Feldbuch · Eintrag ${String(entryNo).padStart(2,'0')}</span><span class="cdate">${dateStr}</span></div>
                 <p class="ctitle">Teilnehmerurkunde</p>
                 <p class="cname">${name}</p>
                 <p class="sbk-note">${note}</p>
-                <div class="sbk-fld"><span class="k">Beobachtungen</span><span class="fill"></span><span class="v">${d.observations}</span></div>
-                <div class="sbk-fld"><span class="k">Forschungsqualität</span><span class="fill"></span><span class="v">${d.fq}<small>/${d.observations}</small></span></div>
-                <div class="sbk-fld"><span class="k">Arten gesamt</span><span class="fill"></span><span class="v">${d.species}</span></div>
+                <div class="sbk-fld" title="Forschungsqualität / Gesamt"><span class="k">Beobachtungen</span><span class="fill"></span><span class="v">${d.fq}<small>/${d.observations}</small></span></div>
+                <div class="sbk-fld" title="Forschungsqualität / Gesamt"><span class="k">Arten</span><span class="fill"></span><span class="v">${d.speciesFq}<small>/${d.species}</small></span></div>
                 <div class="sbk-fld"><span class="k">Länder</span><span class="fill"></span><span class="v">${d.countries.length}</span></div>
                 <div class="sbk-fld"><span class="k">Beobachtungstage</span><span class="fill"></span><span class="v">${d.days}</span></div>
-                <div class="sbk-fld"><span class="k">Bester Tag</span><span class="fill"></span><span class="v">${d.best}<small> Arten</small></span></div>
-                <div class="sbk-tsec" style="margin-top:12px"><div class="h">🔬 Arten je Taxonomie</div><div class="sbk-tally">${tally}</div></div>
+                <div class="sbk-fld" title="Meiste Arten an einem Tag · Forschungsqualität / Gesamt"><span class="k">Bester Tag</span><span class="fill"></span><span class="v">${d.bestFq}<small>/${d.best} Arten</small></span></div>
+                <div class="sbk-tsec" style="margin-top:12px" title="Forschungsqualität / Gesamt"><div class="h">🔬 Arten je Taxonomie</div><div class="sbk-tally">${tally}</div></div>
                 <div class="sbk-cfoot"><span class="sbk-stamp ${part?'part':''}">${stamp}</span><span class="sbk-csig">iNaturalist</span></div>
             </div>`;
         }
