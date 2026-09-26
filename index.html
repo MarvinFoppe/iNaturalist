@@ -293,7 +293,7 @@
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.95);
-            z-index: 10000;
+            z-index: 2147483100;
             display: none;
             justify-content: center;
             align-items: center;
@@ -1154,8 +1154,8 @@
         .gallery-item:hover .gallery-img { transform: scale(1.05); }
 
         .gallery-info { padding: 12px; }
-        .gallery-title { color: var(--accent); font-weight: 600; margin-bottom: 4px; font-size: 0.95em; }
-        .gallery-scientific { color: var(--text-muted); font-style: italic; font-size: 0.8em; }
+        .gallery-title { color: var(--accent); font-weight: 600; margin-bottom: 4px; font-size: 0.95em; overflow-wrap: break-word; word-break: break-word; hyphens: auto; }
+        .gallery-scientific { color: var(--text-muted); font-style: italic; font-size: 0.8em; overflow-wrap: break-word; word-break: break-word; }
         .gallery-meta { margin-top: 8px; font-size: 0.76em; color: var(--text-secondary); }
         .gallery-meta-upload { margin-top: 2px; color: var(--text-muted); }
 
@@ -1612,8 +1612,8 @@
         .rarity-rare-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 8px 22px var(--shadow); }
         .rarity-rare-card img { width: 100%; height: 120px; object-fit: cover; display: block; }
         .rarity-rare-info { padding: 10px; }
-        .rarity-rare-info .rr-name { font-weight: 600; color: var(--accent); font-size: 0.9em; }
-        .rarity-rare-info .rr-sci { font-style: italic; color: var(--text-muted); font-size: 0.75em; }
+        .rarity-rare-info .rr-name { font-weight: 600; color: var(--accent); font-size: 0.9em; overflow-wrap: break-word; word-break: break-word; hyphens: auto; }
+        .rarity-rare-info .rr-sci { font-style: italic; color: var(--text-muted); font-size: 0.75em; overflow-wrap: break-word; word-break: break-word; }
         .rarity-rare-info .rr-meta { color: var(--text-secondary); font-size: 0.75em; margin-top: 5px; }
         @media (max-width: 480px) {
             .rarity-dist-row { grid-template-columns: 120px 1fr 44px; font-size: 0.8em; gap: 8px; }
@@ -2975,7 +2975,6 @@
         <button class="main-tab active" id="tabBtnOverview" role="tab" aria-controls="tab-overview" aria-selected="true" onclick="switchMainTab('overview')">🌍 Übersicht</button>
         <button class="main-tab" id="tabBtnBadges" role="tab" aria-controls="tab-badges" aria-selected="false" onclick="switchMainTab('badges')">🏅 Badges</button>
         <button class="main-tab" id="tabBtnRarity" role="tab" aria-controls="tab-rarity" aria-selected="false" onclick="switchMainTab('rarity')">⭐ Seltenheit</button>
-        <button class="main-tab" id="tabBtnStats" role="tab" aria-controls="tab-stats" aria-selected="false" onclick="switchMainTab('stats')">📊 Statistiken</button>
         <button class="main-tab" id="tabBtnNearby" role="tab" aria-controls="tab-nearby" aria-selected="false" onclick="switchMainTab('nearby')">📍 In meiner Nähe</button>
         <button class="main-tab" id="tabBtnFriends" role="tab" aria-controls="tab-friends" aria-selected="false" onclick="switchMainTab('friends')">👥 Freunde</button>
         <button class="main-tab" id="tabBtnReisen" role="tab" aria-controls="tab-reisen" aria-selected="false" onclick="switchMainTab('reisen')" style="display:none">🧳 Reisen</button>
@@ -3489,78 +3488,6 @@
         </div>
     </div><!-- /tab-friends -->
 
-    <div id="tab-stats" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnStats">
-        <style>
-            #tab-stats .stats-toolbar{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:16px}
-            #tab-stats .st-field{display:flex;flex-direction:column;gap:6px}
-            #tab-stats .st-field > label{font-size:.8em;color:var(--text-secondary)}
-            /* .seg/.seg-btn/.stx-* -> jetzt zentral im Head definiert */
-            #tab-stats .stats-container{margin:0 0 22px}
-            #tab-stats .tc-cols{display:flex;gap:6px;align-items:flex-end;height:240px;overflow-x:auto;padding:14px 2px 0}
-            #tab-stats .tc-col{flex:1 1 0;min-width:26px;display:flex;flex-direction:column;align-items:center;height:100%}
-            #tab-stats .tc-val{font-size:.72em;color:var(--text-secondary);margin-bottom:4px;min-height:1em}
-            #tab-stats .tc-bar-wrap{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
-            #tab-stats .tc-bar{width:100%;max-width:52px;background:linear-gradient(180deg,var(--accent) 0%,var(--primary) 100%);border-radius:6px 6px 0 0;min-height:2px;transition:height .3s}
-            #tab-stats .tc-lbl{font-size:.72em;color:var(--text-muted);margin-top:6px;white-space:nowrap}
-            #tab-stats .stx-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-            #tab-stats .stx-name{width:140px;font-size:.85em;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-            #tab-stats .stx-bar-wrap{flex:1;background:var(--bg-light);border-radius:8px;height:18px;overflow:hidden}
-            #tab-stats .stx-bar{display:block;height:100%;border-radius:8px;min-width:2px}
-            #tab-stats .stx-count{width:44px;text-align:right;font-size:.85em;color:var(--text-primary)}
-        </style>
-        <div class="section">
-            <h2 class="section-title">📊 Statistiken</h2>
-            <p style="color:var(--text-secondary);margin-bottom:18px;max-width:780px;">
-                Wie sich deine Funde über die Zeit entwickeln. Wechsle zwischen Gesamt-Beobachtungen und
-                neu entdeckten Arten, wähle die Zeitbasis und filtere nach Qualität und Artengruppe.
-            </p>
-            <div class="stats-toolbar">
-                <div class="st-field">
-                    <label>Anzeige</label>
-                    <div class="seg" id="stMetricSeg">
-                        <button class="seg-btn active" data-v="observations" onclick="setStatsMetric('observations')">Beobachtungen</button>
-                        <button class="seg-btn" data-v="species" onclick="setStatsMetric('species')">Neue Arten</button>
-                    </div>
-                </div>
-                <div class="st-field">
-                    <label>Zeitbasis</label>
-                    <div class="seg" id="stTimeSeg">
-                        <button class="seg-btn active" data-v="year" onclick="setStatsTimebase('year')">Jahr</button>
-                        <button class="seg-btn" data-v="month" onclick="setStatsTimebase('month')">Monat</button>
-                        <button class="seg-btn" data-v="day" onclick="setStatsTimebase('day')">Tag</button>
-                    </div>
-                </div>
-                <div class="st-field" id="stYearWrap" style="display:none">
-                    <label>Jahr</label>
-                    <select id="stYear" class="filter-select" onchange="setStatsYear(this.value)"></select>
-                </div>
-                <div class="st-field" id="stMonthWrap" style="display:none">
-                    <label>Monat</label>
-                    <select id="stMonth" class="filter-select" onchange="setStatsMonth(this.value)"></select>
-                </div>
-                <div class="st-field">
-                    <label>Qualität</label>
-                    <select id="stQuality" class="filter-select" onchange="setStatsQuality(this.value)">
-                        <option value="all">Alle Beobachtungen</option>
-                        <option value="research">Research Grade</option>
-                        <option value="casual">Casual</option>
-                        <option value="needs_id">Needs ID</option>
-                    </select>
-                </div>
-            </div>
-            <div id="stTaxaFilter" class="stx-filter"></div>
-            <div id="stKpis" class="stats-container"></div>
-            <div class="chart-container" style="margin-bottom:22px">
-                <div class="chart-title" id="stTimeTitle">Beobachtungen pro Jahr</div>
-                <div id="stTimeChart"></div>
-            </div>
-            <div class="chart-container">
-                <div class="chart-title">Taxonomische Verteilung</div>
-                <div id="stTaxaChart"></div>
-            </div>
-        </div>
-    </div><!-- /tab-stats -->
-
     <div id="tab-nearby" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnNearby">
         <style>
             #tab-nearby .nb-intro{color:var(--text-secondary);margin-bottom:16px;max-width:820px}
@@ -3701,6 +3628,11 @@
             #tab-reisen .tr-year-chip{background:var(--bg-light);border:1px solid var(--border);color:var(--text-secondary);border-radius:999px;padding:5px 14px;cursor:pointer;font-family:inherit;font-size:.85em;font-variant-numeric:tabular-nums;transition:background .15s,color .15s,border-color .15s}
             #tab-reisen .tr-year-chip:hover{border-color:var(--accent)}
             #tab-reisen .tr-year-chip.active{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
+            #tab-reisen .tr-filterbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px}
+            #tab-reisen .tr-search{flex:1 1 220px;min-width:180px;background:var(--bg-light);border:1px solid var(--border);color:var(--text-primary);border-radius:10px;padding:9px 14px;font-family:inherit;font-size:.9em}
+            #tab-reisen .tr-search:focus{outline:none;border-color:var(--accent)}
+            #tab-reisen .tr-country{background:var(--bg-light);border:1px solid var(--border);color:var(--text-primary);border-radius:10px;padding:9px 14px;font-family:inherit;font-size:.9em;cursor:pointer;max-width:60%}
+            #tab-reisen .tr-country:focus{outline:none;border-color:var(--accent)}
             #tab-reisen .rarity-rare-card .tr-count-badge{position:absolute;top:8px;left:8px;z-index:12;background:var(--accent);color:var(--on-accent);font-size:.74em;font-weight:800;padding:3px 8px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
             #tab-reisen .tr-drill-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
             #tab-reisen .tr-drill-title{font-weight:600;color:var(--accent)}
@@ -3736,6 +3668,10 @@
                 </div>
                 <div id="tripProfileNote" class="tr-profile-note" style="display:none"></div>
                 <div id="tripYearBar" class="tr-yearbar" style="display:none"></div>
+                <div id="tripFilterBar" class="tr-filterbar" style="display:none">
+                    <input type="search" id="tripSearch" class="tr-search" placeholder="🔍 Reise suchen…" autocomplete="off" oninput="tripSetSearch(this.value)">
+                    <select id="tripCountry" class="tr-country" onchange="tripSetCountry(this.value)"><option value="">Alle Länder</option></select>
+                </div>
                 <div id="tripList"></div>
             </div>
             <div id="tripDetail" style="display:none">
@@ -6542,7 +6478,10 @@
             const countries = new Set(research.map(o => o.country).filter(Boolean));
             const continents = new Set([...countries].map(c => COUNTRY_META[c]?.[1]).filter(Boolean));
 
-            const days = new Set(research.map(o => (o.date && o.date.length >= 10) ? o.date.slice(5, 10) : null).filter(Boolean));
+            // Kalendertage: ein Tag zählt nur, wenn an ihm eine NEUE Art (erste jemalige RG-Sichtung) entdeckt wurde.
+            const firstSeenByTaxon = {};
+            for (const o of research) { if (o.taxonId == null || !o.date) continue; if (!firstSeenByTaxon[o.taxonId] || o.date < firstSeenByTaxon[o.taxonId]) firstSeenByTaxon[o.taxonId] = o.date; }
+            const days = new Set(Object.values(firstSeenByTaxon).filter(d => d && d.length >= 10).map(d => d.slice(5, 10)));
 
             const perDay = {};
             research.forEach(o => { if (o.date && o.taxonId) (perDay[o.date] ||= new Set()).add(o.taxonId); });
@@ -6638,13 +6577,20 @@
 
             const m = computeBadgeMetrics();
             const research = allObservations.filter(o => o.quality === 'research');
+            // Erst-Sichtungs-Beobachtung je Art (früheste RG-Beob.) – für die Kalendertage-Stufen:
+            // ein Tag wird nur gutgeschrieben, wenn an ihm eine neue Art entdeckt wurde.
+            const firstObsList = Object.values(research.reduce((acc, o) => {
+                if (o.taxonId == null || !o.date) return acc;
+                if (!acc[o.taxonId] || o.date < acc[o.taxonId].date) acc[o.taxonId] = o;
+                return acc;
+            }, {}));
 
             overview.innerHTML = [
                 badgeCardHTML('Arten gesamt', m.totalSpecies, LADDERS.total, { names: RANK_NAMES.total, icon: OVERVIEW_ICON.total, unit: ' Arten', reached: reachedDistinct(research, o => o.taxonId, LADDERS.total) }),
                 badgeCardHTML('Seltenheits-Score', rarityScoreTotal(), LADDERS.rarity, { names: RANK_NAMES.rarity, icon: OVERVIEW_ICON.rarity, unit: ' Pkt' }),
                 badgeCardHTML('Länder', m.countries.size, LADDERS.laender, { names: RANK_NAMES.laender, icon: OVERVIEW_ICON.laender, mapToggle: true, reached: reachedDistinct(research, o => o.country, LADDERS.laender) }),
                 badgeCardHTML('Kontinente', m.continents.size, LADDERS.kontinente, { names: RANK_NAMES.kontinente, icon: OVERVIEW_ICON.kontinente, max: 7, reached: reachedDistinct(research, o => COUNTRY_META[o.country]?.[1] || null, LADDERS.kontinente) }),
-                badgeCardHTML('Kalendertage', m.days.size, LADDERS.kalender, { names: RANK_NAMES.kalender, icon: OVERVIEW_ICON.kalender, max: 366, unit: ' Tage', calToggle: true, reached: reachedDistinct(research, o => (o.date && o.date.length >= 10) ? o.date.slice(5, 10) : null, LADDERS.kalender) }),
+                badgeCardHTML('Kalendertage', m.days.size, LADDERS.kalender, { names: RANK_NAMES.kalender, icon: OVERVIEW_ICON.kalender, max: 366, unit: ' Tage', calToggle: true, reached: reachedDistinct(firstObsList, o => (o.date && o.date.length >= 10) ? o.date.slice(5, 10) : null, LADDERS.kalender) }),
                 badgeCardHTML('Bester Tag', m.bioblitz, LADDERS.bioblitz, { names: RANK_NAMES.bioblitz, icon: OVERVIEW_ICON.bioblitz, suffix: '<small> Arten</small>', unit: ' Arten', reached: reachedMax(research, LADDERS.bioblitz) })
             ].join('');
 
@@ -7198,15 +7144,15 @@
                     const on = covered.has(key);
                     const today = key === todayKey;
                     total++; if (!on) missing++;
-                    cells += `<span class="cal-d ${on ? 'on' : ''} ${today ? 'today' : ''}" title="${d}. ${MN[mo]} – ${on ? 'beobachtet ✓' : 'fehlt'}${today ? ' (heute)' : ''}">${d}</span>`;
+                    cells += `<span class="cal-d ${on ? 'on' : ''} ${today ? 'today' : ''}" title="${d}. ${MN[mo]} – ${on ? 'neue Art entdeckt ✓' : 'keine neue Art'}${today ? ' (heute)' : ''}">${d}</span>`;
                 }
                 months += `<div class="cal-month"><h4>${MN[mo]}</h4><div class="cal-wd">${WD.map(w => `<span>${w}</span>`).join('')}</div><div class="cal-days">${cells}</div></div>`;
             }
 
             el.innerHTML = `
                 <div class="cal-legend">
-                    <span><span class="cml-swatch" style="background:#8bc34a;"></span> beobachtet (${(total - missing).toLocaleString('de-DE')})</span>
-                    <span><span class="cml-swatch" style="background:#243218;"></span> fehlt (${missing.toLocaleString('de-DE')})</span>
+                    <span><span class="cml-swatch" style="background:#8bc34a;"></span> neue Art entdeckt (${(total - missing).toLocaleString('de-DE')})</span>
+                    <span><span class="cml-swatch" style="background:#243218;"></span> keine neue Art (${missing.toLocaleString('de-DE')})</span>
                     <span><span class="cml-swatch" style="background:transparent;outline:2px solid var(--accent-light);outline-offset:-2px;"></span> heute</span>
                 </div>
                 <div class="cal-grid">${months}</div>`;
@@ -7224,16 +7170,38 @@
             return { fillColor: on ? '#8bc34a' : '#2a3a26', fillOpacity: on ? 0.9 : 0.55, color: '#0f1a0d', weight: 0.7 };
         }
 
+        // Flächentreue Equal-Earth-Projektion (Šavrič et al. 2018): zeigt echte Flächenverhältnisse
+        // (Grönland/Afrika korrekt), anders als Leaflets Web-Mercator-Default. Wir projizieren die
+        // Roh-Koordinaten selbst und zeichnen sie über Leaflets CRS.Simple – so bleiben Tooltips,
+        // Zoom/Pan und die Einfärbung erhalten, ganz ohne zusätzliche Bibliothek (offline-tauglich).
+        const EE_SCALE = 100;
+        function equalEarthLatLng(coords) {
+            const A1 = 1.340264, A2 = -0.081106, A3 = 0.000893, A4 = 0.003796;
+            const M = Math.sqrt(3) / 2;
+            const lon = coords[0] * Math.PI / 180, lat = coords[1] * Math.PI / 180;
+            const t = Math.asin(M * Math.sin(lat));
+            const t2 = t * t, t6 = t2 * t2 * t2, t7 = t6 * t, t8 = t7 * t, t9 = t8 * t, t3 = t2 * t;
+            const den = 9 * A4 * t8 + 7 * A3 * t6 + 3 * A2 * t2 + A1;
+            const x = (2 * Math.sqrt(3) * lon * Math.cos(t)) / (3 * den);
+            const y = A4 * t9 + A3 * t7 + A2 * t3 + A1 * t;
+            // CRS.Simple bildet latlng auf point(lng, -lat) ab -> lat=y (Norden oben), lng=x
+            return L.latLng(y * EE_SCALE, x * EE_SCALE);
+        }
+
         async function initCountryMap() {
             if (countryMap) return;
-            countryMap = L.map('countryMap', { attributionControl: false, worldCopyJump: true, minZoom: 1 }).setView([25, 5], 1.4);
+            countryMap = L.map('countryMap', { attributionControl: false, crs: L.CRS.Simple, minZoom: -8, maxZoom: 8, zoomSnap: 0.25 }).setView([0, 0], 0);
             try {
                 const geo = await (await fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')).json();
                 countryGeoLayer = L.geoJSON(geo, {
                     style: countryStyle,
+                    coordsToLatLng: equalEarthLatLng,
                     onEachFeature: (f, l) => l.bindTooltip(f.properties?.name || f.id, { sticky: true })
                 }).addTo(countryMap);
-                document.getElementById('countryMapNote').textContent = 'Tipp: Überseegebiete werden ggf. dem Mutterland zugeordnet.';
+                const b = countryGeoLayer.getBounds();
+                countryMap.fitBounds(b, { padding: [8, 8] });
+                countryMap.setMaxBounds(b.pad(0.3));
+                document.getElementById('countryMapNote').textContent = 'Flächentreue Weltkarte (Equal Earth) · Überseegebiete werden ggf. dem Mutterland zugeordnet.';
             } catch (e) {
                 console.warn('Weltkarte konnte nicht geladen werden:', e);
                 document.getElementById('countryMapNote').textContent = '⚠️ Weltkarte konnte nicht geladen werden (Internet nötig).';
@@ -7248,7 +7216,10 @@
             lg.classList.toggle('visible', show);
             if (show) {
                 initCountryMap().then(() => setTimeout(() => {
-                    if (countryMap) { countryMap.invalidateSize(); countryGeoLayer && countryGeoLayer.setStyle(countryStyle); }
+                    if (countryMap) {
+                        countryMap.invalidateSize();
+                        if (countryGeoLayer) { countryGeoLayer.setStyle(countryStyle); countryMap.fitBounds(countryGeoLayer.getBounds(), { padding: [8, 8] }); }
+                    }
                 }, 80));
             }
         }
@@ -8685,7 +8656,6 @@
             });
             if (name === 'badges' && countryMap) setTimeout(() => countryMap.invalidateSize(), 60);
             if (name === 'rarity') renderRarityDashboard();
-            if (name === 'stats') renderStats();
             if (name === 'nearby') renderNearby();
             if (name === 'reisen') renderReisen();
             if (name === 'friends') renderFriendsTab();
@@ -10045,6 +10015,24 @@
             document.body.style.overflow = 'hidden';
         }
 
+        // Open the shared lightbox from an explicit list of observations (used by the unified card).
+        // Shows the FULL image (object-fit:contain) and lets you swipe/click through every photo of the species.
+        function openObsLightbox(obsList, startIndex) {
+            const list = (obsList || []).filter(o => o && o.image);
+            if (!list.length) return;
+            lightboxImages = list.map(o => ({
+                url: (o.image || '').replace('medium', 'large'),
+                title: o.name || '',
+                meta: `${o.date || ''}${o.place ? ' · ' + String(o.place).substring(0, 60) : ''}`,
+                link: o.url || ''
+            }));
+            currentLightboxIndex = Math.min(Math.max(startIndex || 0, 0), lightboxImages.length - 1);
+            updateLightboxContent();
+            document.getElementById('lightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        window.openObsLightbox = openObsLightbox;
+
         function updateLightboxContent() {
             const current = lightboxImages[currentLightboxIndex];
             if (!current) return;
@@ -10081,7 +10069,9 @@
 
         function closeLightbox() {
             document.getElementById('lightbox').classList.remove('active');
-            document.body.style.overflow = '';
+            // Liegt darunter noch die Sammelkarte offen? Dann Hintergrund weiter gesperrt lassen.
+            const uc = document.getElementById('ucOverlay');
+            document.body.style.overflow = (uc && uc.classList.contains('open')) ? 'hidden' : '';
         }
 
         function navigateLightbox(direction) {
@@ -10475,187 +10465,6 @@
         }
         initInstallButton();
 
-        // ========================================================================
-        // Statistiken-Tab
-        // ========================================================================
-        let statsMetric = 'observations';   // 'observations' | 'species'
-        let statsTimebase = 'year';          // 'year' | 'month' | 'day'
-        let statsQuality = 'all';            // 'all' | 'research' | 'needs_id' | 'casual'
-        let statsSelectedTaxa = [];          // Gruppen-Keys (leer = alle)
-        let statsYear = null;                // gewähltes Jahr (Monat-/Tag-Ansicht)
-        let statsMonth = null;               // gewählter Monat 1–12 (Tag-Ansicht)
-        const MONTH_NAMES_DE = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
-
-        // Basisliste: alle Beobachtungen mit Datum, nach Qualität + Gruppe gefiltert
-        function statsBaseList() {
-            return (allObservations || []).filter(o => {
-                if (!o.date) return false;
-                if (statsQuality !== 'all' && o.quality !== statsQuality) return false;
-                if (statsSelectedTaxa.length && !statsSelectedTaxa.includes(o.taxon)) return false;
-                return true;
-            });
-        }
-
-        // Für "Neue Arten": je taxonId die früheste Beobachtung (innerhalb der gefilterten Liste)
-        function statsFirstSeenList(list) {
-            const first = {};
-            for (const o of list) {
-                if (o.taxonId == null) continue;
-                if (!first[o.taxonId] || o.date < first[o.taxonId].date) first[o.taxonId] = o;
-            }
-            return Object.values(first);
-        }
-
-        function setStatsMetric(m) { statsMetric = m; renderStats(); }
-        function setStatsTimebase(t) { statsTimebase = t; if (t !== 'day') statsMonth = null; renderStats(); }
-        function setStatsQuality(q) { statsQuality = q; renderStats(); }
-        function setStatsYear(y) { statsYear = y; statsMonth = null; renderStats(); }
-        function setStatsMonth(m) { statsMonth = +m; renderStats(); }
-        function clearStatsTaxa() { statsSelectedTaxa = []; renderStats(); }
-        function toggleStatsTaxa(key) {
-            const i = statsSelectedTaxa.indexOf(key);
-            if (i >= 0) statsSelectedTaxa.splice(i, 1); else statsSelectedTaxa.push(key);
-            renderStats();
-        }
-
-        function statsYearsAvailable() {
-            return [...new Set((allObservations || []).filter(o => o.date).map(o => o.date.slice(0, 4)))].sort();
-        }
-
-        function updateStatsControlStates() {
-            document.querySelectorAll('#stMetricSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === statsMetric));
-            document.querySelectorAll('#stTimeSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === statsTimebase));
-            const q = document.getElementById('stQuality'); if (q) q.value = statsQuality;
-
-            const years = statsYearsAvailable();
-            const yw = document.getElementById('stYearWrap');
-            const mw = document.getElementById('stMonthWrap');
-            if (statsTimebase === 'year') {
-                yw.style.display = 'none'; mw.style.display = 'none';
-            } else {
-                yw.style.display = '';
-                document.getElementById('stYear').innerHTML = years.map(y => `<option value="${y}" ${y === statsYear ? 'selected' : ''}>${y}</option>`).join('');
-                if (statsTimebase === 'day') {
-                    mw.style.display = '';
-                    if (statsMonth == null) {
-                        const monthsWithData = [...new Set((allObservations || []).filter(o => o.date && o.date.slice(0, 4) === statsYear).map(o => +o.date.slice(5, 7)))].sort((a, b) => a - b);
-                        statsMonth = monthsWithData.length ? monthsWithData[monthsWithData.length - 1] : 1;
-                    }
-                    document.getElementById('stMonth').innerHTML = MONTH_NAMES_DE.map((nm, i) => `<option value="${i + 1}" ${(i + 1) === +statsMonth ? 'selected' : ''}>${nm}</option>`).join('');
-                } else {
-                    mw.style.display = 'none';
-                }
-            }
-        }
-
-        function renderStatsTaxaFilter() {
-            const el = document.getElementById('stTaxaFilter'); if (!el) return;
-            const freq = {};
-            (allObservations || []).forEach(o => { if (o.taxon) freq[o.taxon] = (freq[o.taxon] || 0) + 1; });
-            const groups = Object.keys(freq).sort((a, b) => freq[b] - freq[a]);
-            const allActive = statsSelectedTaxa.length === 0;
-            let html = `<button class="stx-chip ${allActive ? 'active' : ''}" onclick="clearStatsTaxa()">Alle Gruppen</button>`;
-            html += groups.map(g => {
-                const t = rwIconicType(g);
-                const on = statsSelectedTaxa.includes(g);
-                return `<button class="stx-chip ${on ? 'active' : ''}" style="${on ? `border-color:${t.c};` : ''}" onclick="toggleStatsTaxa('${g}')">${t.emoji} ${t.de}</button>`;
-            }).join('');
-            el.innerHTML = html;
-        }
-
-        function renderStatsKpis(base) {
-            const el = document.getElementById('stKpis'); if (!el) return;
-            const obs = base.length;
-            const species = new Set(base.map(o => o.taxonId).filter(x => x != null)).size;
-            const countries = new Set(base.map(o => o.country).filter(Boolean)).size;
-            const byYear = {};
-            base.forEach(o => { const y = o.date.slice(0, 4); byYear[y] = (byYear[y] || 0) + 1; });
-            let topYear = '–', topYearN = 0;
-            for (const [y, n] of Object.entries(byYear)) if (n > topYearN) { topYearN = n; topYear = y; }
-            const cards = [
-                { n: obs, l: 'Beobachtungen' },
-                { n: species, l: 'Arten' },
-                { n: countries, l: 'Länder' },
-                { n: topYear, l: topYear === '–' ? 'Aktivstes Jahr' : `Aktivstes Jahr (${topYearN})` }
-            ];
-            el.innerHTML = cards.map(c => `<div class="stat-card"><div class="stat-number">${c.n}</div><div class="stat-label">${c.l}</div></div>`).join('');
-        }
-
-        function renderStatsTimeChart(base) {
-            const el = document.getElementById('stTimeChart');
-            const titleEl = document.getElementById('stTimeTitle');
-            if (!el) return;
-            const recs = statsMetric === 'species' ? statsFirstSeenList(base) : base;
-
-            let buckets = [], keyOf;
-            if (statsTimebase === 'year') {
-                buckets = statsYearsAvailable().map(y => ({ key: y, label: y }));
-                keyOf = d => d.slice(0, 4);
-            } else if (statsTimebase === 'month') {
-                buckets = MONTH_NAMES_DE.map((nm, i) => ({ key: `${statsYear}-${String(i + 1).padStart(2, '0')}`, label: nm }));
-                keyOf = d => d.slice(0, 7);
-            } else {
-                const days = new Date(+statsYear, +statsMonth, 0).getDate();
-                for (let d = 1; d <= days; d++) buckets.push({ key: `${statsYear}-${String(statsMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`, label: String(d) });
-                keyOf = d => d.slice(0, 10);
-            }
-
-            const counts = {};
-            for (const o of recs) { const k = keyOf(o.date); counts[k] = (counts[k] || 0) + 1; }
-            const max = Math.max(1, ...buckets.map(b => counts[b.key] || 0));
-            const total = buckets.reduce((s, b) => s + (counts[b.key] || 0), 0);
-
-            const metricLabel = statsMetric === 'species' ? 'Neue Arten' : 'Beobachtungen';
-            const ctx = statsTimebase === 'year' ? 'pro Jahr'
-                : statsTimebase === 'month' ? `pro Monat · ${statsYear}`
-                : `pro Tag · ${MONTH_NAMES_DE[+statsMonth - 1]} ${statsYear}`;
-            if (titleEl) titleEl.textContent = `${metricLabel} ${ctx} · gesamt ${total}`;
-
-            if (!buckets.length) { el.innerHTML = '<div style="color:var(--text-muted);padding:16px">Keine Daten für diesen Zeitraum.</div>'; return; }
-            el.innerHTML = `<div class="tc-cols">` + buckets.map(b => {
-                const c = counts[b.key] || 0;
-                const h = Math.round(100 * c / max);
-                return `<div class="tc-col" title="${b.label}: ${c}">
-                    <div class="tc-val">${c || ''}</div>
-                    <div class="tc-bar-wrap"><div class="tc-bar" style="height:${h}%"></div></div>
-                    <div class="tc-lbl">${b.label}</div>
-                </div>`;
-            }).join('') + `</div>`;
-        }
-
-        function renderStatsTaxaChart(base) {
-            const el = document.getElementById('stTaxaChart'); if (!el) return;
-            const recs = statsMetric === 'species' ? statsFirstSeenList(base) : base;
-            const cnt = {};
-            for (const o of recs) { const g = o.taxon || 'Animalia'; cnt[g] = (cnt[g] || 0) + 1; }
-            const entries = Object.entries(cnt).sort((a, b) => b[1] - a[1]);
-            const max = Math.max(1, ...entries.map(e => e[1]));
-            el.innerHTML = entries.map(([g, c]) => {
-                const t = rwIconicType(g);
-                return `<div class="stx-row">
-                    <span class="stx-name">${t.emoji} ${t.de}</span>
-                    <span class="stx-bar-wrap"><span class="stx-bar" style="width:${Math.round(100 * c / max)}%; background:${t.c}"></span></span>
-                    <span class="stx-count">${c}</span>
-                </div>`;
-            }).join('') || '<div style="color:var(--text-muted);padding:16px">Keine Daten.</div>';
-        }
-
-        function renderStats() {
-            if (!document.getElementById('tab-stats')) return;
-            if (!allObservations || !allObservations.length) {
-                const tc = document.getElementById('stTimeChart');
-                if (tc) tc.innerHTML = '<div style="color:var(--text-muted);padding:20px">Noch keine Daten geladen.</div>';
-                return;
-            }
-            const years = statsYearsAvailable();
-            if (statsYear == null || !years.includes(statsYear)) statsYear = years[years.length - 1];
-            updateStatsControlStates();
-            const base = statsBaseList();
-            renderStatsTaxaFilter();
-            renderStatsKpis(base);
-            renderStatsTimeChart(base);
-            renderStatsTaxaChart(base);
-        }
 
         // ========================================================================
         // "In meiner Nähe"-Tab
@@ -10990,6 +10799,8 @@
         let tripSpeciesDrill = null;          // Art-Schlüssel: Durchklicken der Beobachtungen einer Art
         let tripEditable = false;             // geöffnete Reise gehört zum eigenen Profil (Bearbeiten erlaubt)
         let tripYearsSel = new Set();         // Jahres-Filter der Reise-Liste (leer = alle; mehrere möglich)
+        let tripSearchQuery = '';             // Textsuche der Reise-Liste (nach Name)
+        let tripCountrySel = '';              // Länder-Filter der Reise-Liste (leer = alle)
         let tripListRendered = null;          // zuletzt gerenderte Liste (für Neurendern beim Jahres-Filter)
         const sharedTrips = {};               // id -> Reise-Definition vom Server (geteilte/fremde Reisen)
 
@@ -11130,6 +10941,23 @@
             else tripYearsSel.add(y);
             if (tripListRendered) renderTripListWith(tripListRendered.trips, tripListRendered.canEdit);
         }
+        // Länder einer Reise (aus ihren Beobachtungen abgeleitet – eine Reise hat kein eigenes Land-Feld)
+        function tripCountries(trip) {
+            return new Set(tripObservations(trip).map(o => o.country).filter(Boolean));
+        }
+        function tripSetSearch(v) {
+            tripSearchQuery = (v || '').trim().toLowerCase();
+            if (tripListRendered) renderTripListWith(tripListRendered.trips, tripListRendered.canEdit);
+        }
+        function tripSetCountry(v) {
+            tripCountrySel = v || '';
+            if (tripListRendered) renderTripListWith(tripListRendered.trips, tripListRendered.canEdit);
+        }
+        function tripClearFilters() {
+            tripSearchQuery = ''; tripCountrySel = ''; tripYearsSel.clear();
+            const si = document.getElementById('tripSearch'); if (si) si.value = '';
+            if (tripListRendered) renderTripListWith(tripListRendered.trips, tripListRendered.canEdit);
+        }
         function renderTripListWith(trips, canEdit) {
             const wrap = document.getElementById('tripList');
             if (!wrap) return;
@@ -11149,16 +10977,36 @@
                         + yearList.map(y => `<button class="tr-year-chip ${tripYearsSel.has(y) ? 'active' : ''}" onclick="tripToggleYear(${y})">${y}</button>`).join('');
                 } else { yearBar.style.display = 'none'; }
             }
+            const filterBar = document.getElementById('tripFilterBar');
             if (!trips.length) {
+                if (filterBar) filterBar.style.display = 'none';
                 wrap.innerHTML = canEdit
                     ? '<div class="tr-empty"><div class="tr-empty-emoji">🧳</div><div class="tr-empty-title">Noch keine Reisen</div><div class="tr-empty-sub">Lege oben eine Reise mit Zeitraum an — alle Beobachtungen aus dieser Zeit landen automatisch darin.</div></div>'
                     : '<div class="tr-empty"><div class="tr-empty-emoji">🧳</div><div class="tr-empty-title">Keine Reisen</div><div class="tr-empty-sub">Dieses Profil hat noch keine Reisen angelegt.</div></div>';
                 return;
             }
-            const filtered = tripYearsSel.size ? trips.filter(t => tripYearsOf(t).some(y => tripYearsSel.has(y))) : trips;
+            // Text-/Länder-Filterleiste befüllen (Länder aus den Beobachtungen aller Reisen)
+            if (filterBar) filterBar.style.display = 'flex';
+            const allCountries = new Set();
+            trips.forEach(t => tripCountries(t).forEach(c => allCountries.add(c)));
+            if (tripCountrySel && !allCountries.has(tripCountrySel)) tripCountrySel = '';
+            const countrySel = document.getElementById('tripCountry');
+            if (countrySel) {
+                const sorted = [...allCountries].sort((a, b) => a.localeCompare(b, 'de'));
+                countrySel.innerHTML = '<option value="">Alle Länder</option>' + sorted.map(c => `<option value="${trEsc(c)}">${trEsc(c)}</option>`).join('');
+                countrySel.value = tripCountrySel;
+                countrySel.style.display = sorted.length ? '' : 'none';
+            }
+            let filtered = tripYearsSel.size ? trips.filter(t => tripYearsOf(t).some(y => tripYearsSel.has(y))) : trips;
+            if (tripSearchQuery) filtered = filtered.filter(t => (t.name || '').toLowerCase().includes(tripSearchQuery));
+            if (tripCountrySel) filtered = filtered.filter(t => tripCountries(t).has(tripCountrySel));
             if (!filtered.length) {
-                const yrs = [...tripYearsSel].sort((a, b) => b - a).join(', ');
-                wrap.innerHTML = `<div class="tr-empty"><div class="tr-empty-emoji">📅</div><div class="tr-empty-title">Keine Reisen ${yrs}</div><div class="tr-empty-sub">In den gewählten Jahren gibt es keine Reise. <button class="tr-linkbtn" onclick="tripToggleYear(null)">alle anzeigen</button></div></div>`;
+                const parts = [];
+                if (tripSearchQuery) parts.push(`„${trEsc(tripSearchQuery)}"`);
+                if (tripCountrySel) parts.push(trEsc(tripCountrySel));
+                if (tripYearsSel.size) parts.push([...tripYearsSel].sort((a, b) => b - a).join(', '));
+                const crit = parts.length ? ' für ' + parts.join(' · ') : '';
+                wrap.innerHTML = `<div class="tr-empty"><div class="tr-empty-emoji">🔍</div><div class="tr-empty-title">Keine Reisen${crit}</div><div class="tr-empty-sub">Keine Reise passt zu den Filtern. <button class="tr-linkbtn" onclick="tripClearFilters()">Filter zurücksetzen</button></div></div>`;
                 return;
             }
             wrap.innerHTML = '<div class="tr-cardgrid">' + filtered.map(t => {
@@ -11722,13 +11570,16 @@
   .uc-chero{position:relative; height:210px}
   .uc-chero>img{width:100%; height:100%; object-fit:cover; display:block; cursor:zoom-in}
   .uc-chero::after{content:""; position:absolute; inset:0; z-index:1; pointer-events:none; background:linear-gradient(180deg,transparent 48%,rgba(13,20,16,.96))}
+  .uc-photocount{position:absolute; z-index:4; bottom:10px; right:12px; display:inline-flex; align-items:center; gap:4px;
+    font-size:.72rem; font-weight:700; color:#fff; padding:3px 9px; border-radius:999px;
+    background:rgba(13,20,16,.72); border:1px solid rgba(255,255,255,.35); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); pointer-events:none}
   .uc-corner{position:absolute; width:16px; height:16px; border:2px solid var(--tv,var(--accent)); z-index:3; opacity:.85}
   .uc-cardC.t1 .uc-corner{--tv:#6b7d6b} .uc-cardC.t2 .uc-corner{--tv:#3f80c4} .uc-cardC.t3 .uc-corner{--tv:#8e44ad} .uc-cardC.t4 .uc-corner{--tv:#f0cf63}
   .uc-corner.tl{top:8px;left:8px;border-right:none;border-bottom:none;border-radius:6px 0 0 0}
   .uc-corner.tr{top:8px;right:8px;border-left:none;border-bottom:none;border-radius:0 6px 0 0}
   .uc-ctop{position:absolute; z-index:4; top:12px; left:14px; right:14px; display:flex; justify-content:space-between; align-items:flex-start}
   .uc-ctitle{position:absolute; z-index:4; left:16px; right:16px; bottom:12px; text-align:center}
-  .uc-ctitle h3{font-family:'Playfair Display',Georgia,serif; font-size:1.45rem; margin:2px 0 0; color:#fff; line-height:1.12}
+  .uc-ctitle h3{font-family:'Playfair Display',Georgia,serif; font-size:1.45rem; margin:2px 0 0; color:#fff; line-height:1.12; overflow-wrap:break-word; word-break:break-word; hyphens:auto}
   .uc-ctitle .sci{font-style:italic; color:var(--text-secondary); font-size:.82rem}
   .uc-cbody{position:relative; z-index:1; padding:16px 18px 20px}
   .uc-csec{margin-top:16px}
@@ -11934,10 +11785,27 @@
     if(reduce){ if(flip) flip.classList.add('revealed'); }
     else { if(back) back.onclick=e=>{ e.stopPropagation(); ucReveal(); }; setTimeout(ucReveal, 5000); }
 
-    // Hero-Bild -> Lightbox (falls vorhanden)
+    // Hero-Bild -> Vollbild-Lightbox mit ALLEN Fotos dieser Art (Klick = ganzes Bild, Wischen = durchblättern)
     const heroImg=inner.querySelector('.uc-chero>img');
-    if(heroImg && image && typeof openLightbox==='function'){
-      heroImg.onclick=()=>{ try{ openLightbox(image, name, (primary.date?primary.date:'')+(primary.place?(' · '+primary.place):''), 0); }catch(e){} };
+    const photoObs=(userObs && userObs.length ? userObs : [primary])
+      .filter(o=>o && o.image)
+      .sort((a,b)=>((b.date||'').localeCompare(a.date||'')));
+    if(heroImg && typeof window.openObsLightbox==='function'){
+      heroImg.style.cursor='zoom-in';
+      // Hero zeigt das erste (neueste) Foto -> dort starten
+      const startIdx=Math.max(0, photoObs.findIndex(o=>o.image===primary.image));
+      heroImg.onclick=(e)=>{ e.stopPropagation(); try{ window.openObsLightbox(photoObs, startIdx); }catch(err){} };
+    }
+    // Zähl-Badge auf dem Hero, wenn mehrere Fotos existieren (Hinweis: antippen & wischen)
+    if(photoObs.length>1){
+      const chero=inner.querySelector('.uc-chero');
+      if(chero){
+        const badge=document.createElement('span');
+        badge.className='uc-photocount';
+        badge.textContent='📷 '+photoObs.length;
+        badge.title='Antippen für alle Fotos – wischen zum Blättern';
+        chero.appendChild(badge);
+      }
     }
 
     // Karte (Leaflet – dieselbe wie im Rest der App)
@@ -11993,7 +11861,13 @@
   /* Overlay schließen: Button + Backdrop + Escape */
   const ucCloseBtn=document.getElementById('ucCloseBtn'); if(ucCloseBtn) ucCloseBtn.onclick=ucClose;
   document.getElementById('ucOverlay').addEventListener('click', e=>{ if(e.target.id==='ucOverlay') ucClose(); });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && document.getElementById('ucOverlay').classList.contains('open')) ucClose(); });
+  document.addEventListener('keydown', e=>{
+    if(e.key!=='Escape') return;
+    // Liegt die Bild-Lightbox oben drauf? Dann schließt Escape zuerst nur die Lightbox.
+    const lb=document.getElementById('lightbox');
+    if(lb && lb.classList.contains('active')) return;
+    if(document.getElementById('ucOverlay').classList.contains('open')) ucClose();
+  });
 
   /* ---------- Einstiegspunkte auf die EINE Karte umleiten (nur Owner) ---------- */
   // Seltenheit-Reiter + Nerd-Baum
