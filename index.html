@@ -2295,15 +2295,21 @@
         .bcard-maptoggle {
             margin-top: 12px;
             width: 100%;
-            padding: 7px;
+            padding: 7px 6px;
             background: rgba(139,195,74,0.15);
             border: 1px solid var(--border);
             border-radius: 8px;
             color: var(--text-secondary);
             font-size: 0.75em;
+            line-height: 1.25;
             cursor: pointer;
             font-family: 'Open Sans', sans-serif;
             transition: background 0.2s;
+            white-space: normal;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            -webkit-hyphens: auto;
+            hyphens: auto;
         }
         .bcard-maptoggle:hover { background: rgba(139,195,74,0.3); color: var(--text-primary); }
 
