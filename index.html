@@ -3311,6 +3311,21 @@
     .sbk-dot{width:8px;height:8px;border-radius:50%}
     .sbk-ct{font-family:var(--pserif);font-weight:700;color:var(--ink);min-width:18px;text-align:right;font-variant-numeric:tabular-nums}
     .sbk-ct small{font-size:11px;color:var(--pwarm);font-weight:400}
+    /* neu-in-FQ je Gruppe */
+    .sbk-new{font-family:var(--pserif);font-weight:700;font-size:13px;color:var(--pgold2);min-width:18px;text-align:right;font-variant-numeric:tabular-nums}
+    .sbk-new.z{color:var(--ink-mute);font-weight:400;opacity:.55}
+    .sbk-tsec .h .side{font-family:var(--pmono);font-size:9px;letter-spacing:.02em;color:var(--pwarm);margin-left:auto;text-transform:none}
+    /* Kennzahlen-Tabelle (Urkunde) */
+    .sbk-ctbl{width:100%;border-collapse:collapse;margin-top:14px;font-variant-numeric:tabular-nums}
+    .sbk-ctbl thead th{font-family:var(--pmono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-mute);font-weight:400;text-align:right;padding:0 0 7px;border-bottom:2px solid var(--pline2)}
+    .sbk-ctbl thead th:first-child{text-align:left}
+    .sbk-ctbl tbody td{padding:10px 0;border-bottom:1px solid var(--pline);font-size:13px}
+    .sbk-ctbl tbody td.m{color:var(--ink)}
+    .sbk-ctbl tbody td.fq{text-align:right;font-family:var(--pserif);font-weight:700;font-size:18px;color:var(--ink)}
+    .sbk-ctbl tbody td.tot{text-align:right;font-family:var(--pserif);font-size:15px;color:var(--pwarm)}
+    .sbk-ctbl tbody tr.accent td.fq{color:var(--pgold2)}
+    .sbk-ctbl tbody tr:last-child td{border-bottom:none}
+    .sbk-ctbl tbody td.tot .dash{color:var(--ink-mute)}
     .sbk-cfoot{display:flex;justify-content:space-between;align-items:center;border-top:2px solid var(--pline2);padding-top:9px;margin-top:12px}
     .sbk-stamp{transform:rotate(-7deg);border:2px solid var(--pgold2);color:var(--pgold2);border-radius:7px;padding:3px 10px;font-family:var(--pmono);font-size:10px;letter-spacing:.12em;text-transform:uppercase}
     .sbk-stamp.part{border-color:var(--pacc);color:var(--pacc)}
@@ -7527,8 +7542,9 @@
             const groupAll = {}, groupFq = {};
             inMonth.forEach(o => { if (o.taxon && o.taxonId) (groupAll[o.taxon] ||= new Set()).add(o.taxonId); });
             research.forEach(o => { if (o.taxon && o.taxonId) (groupFq[o.taxon] ||= new Set()).add(o.taxonId); });
+            const newTop = life.newMonthTop[ym] || {};   // neu in FQ je Gruppe (erste FQ-Beobachtung im Monat)
             const groups = Object.keys(groupAll)
-                .map(g => ({ g, n: groupAll[g].size, fq: (groupFq[g] ? groupFq[g].size : 0) }))
+                .map(g => ({ g, n: groupAll[g].size, fq: (groupFq[g] ? groupFq[g].size : 0), nw: (newTop[g] || 0) }))
                 .sort((a,b) => b.n - a.n);
             // Bester Tag: meiste Arten an einem Tag – Gesamt und FQ getrennt
             const perDayAll = {}, perDayFq = {};
@@ -7566,19 +7582,22 @@
                 ? ('Beobachtungen im Monat ' + monthName + ' ' + y + ', erhoben in ' + flags + '.')
                 : ('Beobachtungen im Monat ' + monthName + ' ' + y + '.');
             const tally = d.groups.length
-                ? d.groups.map(x => { const it = rwIconicType(x.g); return `<div class="sbk-row"><span class="sbk-ic">${it.emoji}</span><span class="sbk-nm">${it.de}</span><span class="sbk-marks"></span><span class="sbk-dot" style="background:${it.c}"></span><span class="sbk-ct">${x.fq}<small>/${x.n}</small></span></div>`; }).join('')
+                ? d.groups.map(x => { const it = rwIconicType(x.g); const nw = x.nw > 0 ? `<span class="sbk-new">${x.nw}</span>` : '<span class="sbk-new z">–</span>'; return `<div class="sbk-row"><span class="sbk-ic">${it.emoji}</span><span class="sbk-nm">${it.de}</span><span class="sbk-marks"></span>${nw}<span class="sbk-dot" style="background:${it.c}"></span><span class="sbk-ct">${x.fq}<small>/${x.n}</small></span></div>`; }).join('')
                 : '<div class="sbk-nm" style="font-style:italic">noch keine bestimmten Arten</div>';
             return `<div class="sbk-cert">
                 <div class="ch"><span class="clog">Feldbuch · Eintrag ${String(entryNo).padStart(2,'0')}</span><span class="cdate">${dateStr}</span></div>
                 <p class="ctitle">Teilnehmerurkunde</p>
                 <p class="cname">${name}</p>
                 <p class="sbk-note">${note}</p>
-                <div class="sbk-fld" title="Forschungsqualität / Gesamt"><span class="k">Beobachtungen</span><span class="fill"></span><span class="v">${d.fq}<small>/${d.observations}</small></span></div>
-                <div class="sbk-fld" title="Forschungsqualität / Gesamt"><span class="k">Arten</span><span class="fill"></span><span class="v">${d.speciesFq}<small>/${d.species}</small></span></div>
-                <div class="sbk-fld"><span class="k">Länder</span><span class="fill"></span><span class="v">${d.countries.length}</span></div>
-                <div class="sbk-fld"><span class="k">Beobachtungstage</span><span class="fill"></span><span class="v">${d.days}</span></div>
-                <div class="sbk-fld" title="Meiste Arten an einem Tag · Forschungsqualität / Gesamt"><span class="k">Bester Tag</span><span class="fill"></span><span class="v">${d.bestFq}<small>/${d.best} Arten</small></span></div>
-                <div class="sbk-tsec" style="margin-top:12px" title="Forschungsqualität / Gesamt"><div class="h">🔬 Arten je Taxonomie</div><div class="sbk-tally">${tally}</div></div>
+                <table class="sbk-ctbl">
+                    <thead><tr><th>Kennzahl</th><th>Forsch.­qual.</th><th>Gesamt</th></tr></thead>
+                    <tbody>
+                        <tr><td class="m">🔭 Beobachtungen</td><td class="fq">${d.fq}</td><td class="tot">${d.observations}</td></tr>
+                        <tr><td class="m">🐾 Arten</td><td class="fq">${d.speciesFq}</td><td class="tot">${d.species}</td></tr>
+                        <tr class="accent"><td class="m">✦ Erstmalig beobachtet</td><td class="fq">${d.newCount}</td><td class="tot"><span class="dash">—</span></td></tr>
+                    </tbody>
+                </table>
+                <div class="sbk-tsec" style="margin-top:14px"><div class="h">🔬 Arten je Taxonomie <span class="side">✦ neu · FQ / Gesamt</span></div><div class="sbk-tally">${tally}</div></div>
                 <div class="sbk-cfoot"><span class="sbk-stamp ${part?'part':''}">${stamp}</span><span class="sbk-csig">iNaturalist</span></div>
             </div>`;
         }
