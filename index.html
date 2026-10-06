@@ -4573,27 +4573,38 @@
             if (!place) return null;
             const placeLower = place.toLowerCase();
 
-            // Search through all countries and their patterns
-            for (const country of countryDatabase) {
-                for (const pattern of country.patterns) {
-                    // Patterns starting with ", " are suffix patterns (e.g. ", de" at end)
-                    if (pattern.startsWith(', ')) {
-                        // Check if place ends with this pattern or has it followed by more text
-                        if (placeLower.endsWith(pattern) || placeLower.includes(pattern + ',') || placeLower.includes(pattern + ' ')) {
-                            return country.name;
-                        }
-                    } else {
-                        // For regular patterns, use word boundary matching
-                        // Create regex with word boundaries to avoid partial matches
-                        // e.g. "india" should not match "indiana"
-                        const regex = new RegExp('(^|[^a-zäöüß])' + pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^a-zäöüß])', 'i');
-                        if (regex.test(placeLower)) {
-                            return country.name;
+            // Prüft einen gegebenen Text (Teilstring des Ortes) gegen alle Länder-Muster
+            const matchIn = (hay) => {
+                for (const country of countryDatabase) {
+                    for (const pattern of country.patterns) {
+                        // Patterns starting with ", " are suffix patterns (e.g. ", de" at end)
+                        if (pattern.startsWith(', ')) {
+                            const iso = pattern.slice(2);
+                            if (hay === iso || hay.endsWith(pattern) || hay.includes(pattern + ',') || hay.includes(pattern + ' ')) {
+                                return country.name;
+                            }
+                        } else {
+                            // Word-boundary matching, e.g. "india" darf nicht "indiana" treffen
+                            const regex = new RegExp('(^|[^a-zäöüß])' + pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^a-zäöüß])', 'i');
+                            if (regex.test(hay)) {
+                                return country.name;
+                            }
                         }
                     }
                 }
+                return null;
+            };
+
+            // 1) iNat hängt das Land als LETZTES Komma-Segment an -> dort zuerst suchen.
+            //    So gewinnt das echte Land, bevor ein mehrdeutiges Innen-Token
+            //    (z.B. "loreto", "como", "marche") fälschlich ein fremdes Land trifft.
+            const segments = placeLower.split(',').map(s => s.trim()).filter(Boolean);
+            if (segments.length > 1) {
+                const lastSeg = matchIn(segments[segments.length - 1]);
+                if (lastSeg) return lastSeg;
             }
-            return null;
+            // 2) Fallback: ganzen String durchsuchen (Orte ohne Land am Ende).
+            return matchIn(placeLower);
         }
 
         // Get country by date (fallback for unrecognized places)
@@ -4830,8 +4841,8 @@
                 console.groupEnd();
             }
 
-            populateCountryFilter();
-            applyFilters();  // respektiert aktive Filter (statt sie zurückzusetzen)
+            try { populateCountryFilter(); applyFilters(); }  // respektiert aktive Filter (statt sie zurückzusetzen)
+            catch (e) { console.error('[render] populateCountryFilter/applyFilters fehlgeschlagen', e); }
             document.getElementById('lastUpdate').textContent = new Date().toLocaleString('de-DE');
             saveToCache(allObservations);
             enrichCountriesFromPlaces();  // Länder im Hintergrund präzisieren
@@ -10542,7 +10553,7 @@
             nearbyCircle = L.circle([nearbyLat, nearbyLon], { radius: nearbyRadius * 1000, color: '#8bc34a', fillColor: '#8bc34a', fillOpacity: 0.12, weight: 2.5, dashArray: '6 7' }).addTo(nearbyMap);
             nearbySpeciesLayer = L.layerGroup().addTo(nearbyMap);
             nearbyMarker.on('drag', e => { const p = e.target.getLatLng(); setNearbyCenter(p.lat, p.lng, false); });
-            nearbyMap.on('click', e => { setNearbyCenter(e.latlng.lat, e.latlng.lng, true); });
+            nearbyMap.on('click', e => { if (nearbySelectedTid) return; setNearbyCenter(e.latlng.lat, e.latlng.lng, true); });
         }
 
         function setNearbyCenter(lat, lon, pan) {
@@ -10754,7 +10765,7 @@
                 const pts = [];
                 for (const o of obs) {
                     pts.push([o.lat, o.lon]);
-                    const m = L.circleMarker([o.lat, o.lon], { radius: 6, color: '#fff', weight: 1, fillColor: t.c, fillOpacity: 0.85 });
+                    const m = L.circleMarker([o.lat, o.lon], { radius: 9, color: '#fff', weight: 1, fillColor: t.c, fillOpacity: 0.85, bubblingMouseEvents: false });
                     m.bindPopup(`<div style="text-align:center;min-width:150px">${o.image ? `<img src="${o.image}" style="width:100%;max-width:180px;border-radius:8px;margin-bottom:6px">` : ''}<div style="font-weight:600">${sp ? sp.name : o.name}</div><div style="font-size:.85em;color:#888">${o.date || ''}${o.place ? '<br>' + o.place : ''}</div><a href="${o.url}" target="_blank" rel="noopener">Beobachtung ansehen →</a></div>`);
                     nearbySpeciesLayer.addLayer(m);
                 }
