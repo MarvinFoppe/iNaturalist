@@ -1,7 +1,7 @@
 // Test-Push an alle abonnierten Geräte (zum Verifizieren der Push-Kette).
 import webpush from 'web-push';
 import { getRedis } from './_redis.js';
-import { isOwner } from './_auth.js';
+import { isOwner, readBody } from './_auth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,7 +17,11 @@ export default async function handler(req, res) {
   try {
     webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:m.foppe@more-fire.com', process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
     const redis = getRedis();
-    const map = (await redis.hgetall('subs')) || {};
+    // Wenn ein konkretes Abo mitgeschickt wird, NUR an dieses Gerät senden (eindeutiger Test);
+    // sonst an alle gespeicherten Abos (wie bisher / wie der Cron).
+    const body = readBody(req);
+    const only = body && body.subscription && body.subscription.endpoint ? body.subscription : null;
+    const map = only ? { [only.endpoint]: only } : ((await redis.hgetall('subs')) || {});
     const payload = JSON.stringify({ title: '🔔 Test', body: 'Push funktioniert! 🌿', url: 'https://i-naturalist.vercel.app/' });
     let sent = 0, removed = 0;
     const errors = [];

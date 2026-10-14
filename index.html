@@ -10846,17 +10846,21 @@
             if (disBtn) disBtn.onclick = async () => { await disablePush(); close(); togglePushPanel(); };
             const testBtn = document.getElementById('ppTest');
             if (testBtn) testBtn.onclick = async () => {
-                msg('sende Test …');
+                msg('sende Test an dieses Gerät …');
                 const token = localStorage.getItem('inat_owner_token');
                 if (!token) { msg('Kein Owner-Token auf diesem Gerät – bitte einmal als Owner freischalten.', false); return; }
                 try {
-                    const r = await fetch('api/test-push', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+                    // Genau dieses Gerät gezielt testen: aktuelles Abo holen + frisch am Server anmelden.
+                    const reg = await navigator.serviceWorker.ready;
+                    const sub = await reg.pushManager.getSubscription();
+                    if (!sub) { msg('Kein Abo auf diesem Gerät. Bitte „Push abschalten" → „Push aktivieren".', false); return; }
+                    await fetch('api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sub) });
+                    const r = await fetch('api/test-push', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription: sub }) });
                     const j = await r.json().catch(() => ({}));
                     if (!r.ok) { msg('Fehler: ' + (j.error || r.status), false); return; }
-                    if (!j.subscribers) { msg('0 Abos am Server. Bitte „Push abschalten" → „Push aktivieren" (Abo neu anmelden).', false); return; }
-                    if (j.sent > 0) { msg(`Gesendet an ${j.sent}/${j.subscribers} Gerät(e). Sollte gleich erscheinen.`); return; }
+                    if (j.sent > 0) { msg('An dieses Gerät gesendet ✓ – erscheint die Benachrichtigung jetzt?'); return; }
                     const e0 = (j.errors && j.errors[0]) || {};
-                    msg(`Versand fehlgeschlagen (0/${j.subscribers}). FCM-Code ${e0.code || '?'}: ${e0.body || 'unbekannt'}`, false);
+                    msg(`Versand an dieses Gerät fehlgeschlagen. FCM-Code ${e0.code || '?'}: ${e0.body || 'unbekannt'}`, false);
                 } catch (e) { msg('Netzwerkfehler: ' + e.message, false); }
             };
         }
