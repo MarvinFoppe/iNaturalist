@@ -20,11 +20,17 @@ export default async function handler(req, res) {
     const map = (await redis.hgetall('subs')) || {};
     const payload = JSON.stringify({ title: '🔔 Test', body: 'Push funktioniert! 🌿', url: 'https://i-naturalist.vercel.app/' });
     let sent = 0, removed = 0;
+    const errors = [];
     for (const [endpoint, sub] of Object.entries(map)) {
       try { await webpush.sendNotification(sub, payload); sent++; }
-      catch (err) { if (err && (err.statusCode === 404 || err.statusCode === 410)) { await redis.hdel('subs', endpoint); removed++; } }
+      catch (err) {
+        const code = err && err.statusCode;
+        if (code === 404 || code === 410) { await redis.hdel('subs', endpoint); removed++; }
+        // FCM-Fehlercode + Kurzmeldung mitgeben (zur Diagnose im Gerät sichtbar)
+        errors.push({ code: code || null, body: (err && (err.body || err.message) || '').toString().slice(0, 200), host: (() => { try { return new URL(endpoint).host; } catch (e) { return ''; } })() });
+      }
     }
-    res.status(200).json({ subscribers: Object.keys(map).length, sent, removed });
+    res.status(200).json({ subscribers: Object.keys(map).length, sent, removed, errors });
   } catch (e) {
     res.status(500).json({ error: String(e) });
   }

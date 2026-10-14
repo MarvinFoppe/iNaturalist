@@ -10840,7 +10840,10 @@
                     const r = await fetch('api/test-push', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
                     const j = await r.json().catch(() => ({}));
                     if (!r.ok) { msg('Fehler: ' + (j.error || r.status), false); return; }
-                    msg(`Gesendet an ${j.sent}/${j.subscribers} Gerät(e). Sollte gleich erscheinen.`);
+                    if (!j.subscribers) { msg('0 Abos am Server. Bitte „Push abschalten" → „Push aktivieren" (Abo neu anmelden).', false); return; }
+                    if (j.sent > 0) { msg(`Gesendet an ${j.sent}/${j.subscribers} Gerät(e). Sollte gleich erscheinen.`); return; }
+                    const e0 = (j.errors && j.errors[0]) || {};
+                    msg(`Versand fehlgeschlagen (0/${j.subscribers}). FCM-Code ${e0.code || '?'}: ${e0.body || 'unbekannt'}`, false);
                 } catch (e) { msg('Netzwerkfehler: ' + e.message, false); }
             };
         }
