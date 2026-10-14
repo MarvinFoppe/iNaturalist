@@ -2982,6 +2982,84 @@
         </div>
     </div>
 
+    <!-- ===== Postfach / Inbox-Leiste (nur auf dem eigenen, freigeschalteten Gerät) ===== -->
+    <style>
+      .inbox-toggle{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:11200;
+        display:none;flex-direction:column;align-items:center;gap:4px;cursor:pointer;
+        background:linear-gradient(135deg,var(--accent) 0%,var(--accent-light) 100%);
+        color:var(--on-accent);border:none;border-radius:0 14px 14px 0;padding:14px 9px;
+        box-shadow:0 4px 16px rgba(0,0,0,.4);font-weight:700;font-size:13px;letter-spacing:.3px;}
+      .inbox-toggle .it-emoji{font-size:20px;line-height:1;filter:grayscale(.1);}
+      .inbox-toggle .it-label{writing-mode:vertical-rl;text-orientation:mixed;text-transform:uppercase;font-size:11px;}
+      .inbox-badge{min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#e8505b;color:#fff;
+        font-size:11px;font-weight:800;display:none;align-items:center;justify-content:center;line-height:20px;}
+      .inbox-badge.show{display:inline-flex;}
+      .inbox-scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:11250;opacity:0;visibility:hidden;
+        transition:opacity .25s ease,visibility .25s ease;}
+      .inbox-scrim.open{opacity:1;visibility:visible;}
+      .inbox-panel{position:fixed;left:0;top:0;bottom:0;width:380px;max-width:88vw;z-index:11300;
+        background:linear-gradient(160deg,var(--bg-medium) 0%,var(--bg-dark) 100%);
+        border-right:1px solid var(--border);box-shadow:6px 0 30px rgba(0,0,0,.5);
+        transform:translateX(-102%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+        display:flex;flex-direction:column;}
+      .inbox-panel.open{transform:translateX(0);}
+      .inbox-head{display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid var(--border);}
+      .inbox-head h2{font-size:17px;margin:0;color:var(--accent);display:flex;align-items:center;gap:8px;}
+      .inbox-head .ib-close{margin-left:auto;background:none;border:none;color:var(--text-secondary);
+        font-size:24px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:8px;}
+      .inbox-head .ib-close:hover{background:var(--bg-light);color:var(--text-primary);}
+      .inbox-body{overflow-y:auto;padding:10px 12px 28px;flex:1;-webkit-overflow-scrolling:touch;}
+      .ib-sec{margin-bottom:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg-card);overflow:hidden;}
+      .ib-sec>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:9px;
+        font-weight:700;font-size:14px;color:var(--text-primary);user-select:none;}
+      .ib-sec>summary::-webkit-details-marker{display:none;}
+      .ib-sec>summary .ib-chev{margin-left:auto;transition:transform .2s;color:var(--text-muted);font-size:12px;}
+      .ib-sec[open]>summary .ib-chev{transform:rotate(90deg);}
+      .ib-cnt{min-width:22px;height:20px;padding:0 6px;border-radius:999px;background:var(--bg-light);
+        color:var(--text-secondary);font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;}
+      .ib-cnt.alert{background:#e8505b;color:#fff;}
+      .ib-cnt.warn{background:var(--accent-warm);color:var(--on-accent);}
+      .ib-cnt.ok{background:var(--accent);color:var(--on-accent);}
+      .ib-seclist{padding:4px 10px 12px;}
+      .ib-sub{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);
+        margin:10px 2px 6px;display:flex;align-items:center;gap:6px;}
+      .ib-item{display:flex;gap:10px;align-items:center;padding:7px 6px;border-radius:9px;text-decoration:none;color:inherit;}
+      .ib-item:hover{background:var(--bg-light);}
+      .ib-thumb{width:46px;height:46px;border-radius:8px;object-fit:cover;flex:none;background:var(--bg-light);}
+      .ib-meta{min-width:0;flex:1;}
+      .ib-name{font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+      .ib-sci{font-size:11px;font-style:italic;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+      .ib-line{font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+      .ib-tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;margin-right:4px;}
+      .ib-tag.you{background:var(--accent);color:var(--on-accent);}
+      .ib-tag.risk{background:#e8505b;color:#fff;}
+      .ib-tag.down{background:var(--accent-warm);color:var(--on-accent);}
+      .ib-empty{font-size:12px;color:var(--text-muted);padding:8px 6px;text-align:center;}
+      .ib-more{display:block;text-align:center;font-size:12px;color:var(--accent);text-decoration:none;padding:8px;font-weight:600;}
+      .ib-more:hover{text-decoration:underline;}
+      .ib-actions{display:flex;gap:8px;padding:0 2px 6px;}
+      .ib-btn{flex:1;background:var(--bg-light);color:var(--text-secondary);border:1px solid var(--border);
+        border-radius:9px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;}
+      .ib-btn:hover{color:var(--text-primary);border-color:var(--accent);}
+      .ib-filterbar{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-secondary);padding:2px 4px 8px;}
+      .ib-filterbar input{accent-color:var(--accent);}
+      @media(max-width:600px){ .inbox-toggle .it-label{display:none;} .inbox-toggle{padding:12px 8px;} }
+    </style>
+    <button id="inboxToggle" class="inbox-toggle" type="button" onclick="INBOX.open()"
+            aria-label="Postfach öffnen" title="Postfach">
+        <span class="it-emoji">📥</span>
+        <span class="inbox-badge" id="inboxBadge"></span>
+        <span class="it-label">Postfach</span>
+    </button>
+    <div id="inboxScrim" class="inbox-scrim" onclick="INBOX.close()"></div>
+    <aside id="inboxPanel" class="inbox-panel" aria-hidden="true" aria-label="Postfach">
+        <div class="inbox-head">
+            <h2>📥 Postfach</h2>
+            <button class="ib-close" type="button" onclick="INBOX.close()" aria-label="Schließen">×</button>
+        </div>
+        <div class="inbox-body" id="inboxBody"></div>
+    </aside>
+
     <div class="main-tabs" role="tablist" aria-label="Ansicht wählen">
         <button class="main-tab active" id="tabBtnOverview" role="tab" aria-controls="tab-overview" aria-selected="true" onclick="switchMainTab('overview')">🌍 Übersicht</button>
         <button class="main-tab" id="tabBtnBadges" role="tab" aria-controls="tab-badges" aria-selected="false" onclick="switchMainTab('badges')">🏅 Badges</button>
@@ -4695,8 +4773,33 @@
             return iconic;
         }
 
+        // Bestimmungs-Zustand aus den (ohnehin mitgelieferten) Rohdaten ableiten.
+        // NUR-LESEND: wertet das aus, was die normale Such-API je Beobachtung schon liefert –
+        // keine zusätzlichen Abfragen, kein Schreibzugriff, kein Login. Das schwere
+        // identifications-Array wird NICHT gespeichert, nur diese kompakten Flags.
+        function classifyIdState(obs) {
+            const q = obs.quality_grade || '';
+            const ids = (obs.identifications || []).filter(i => i && i.current && !i.hidden && !i.spam);
+            const ownerLogin = (obs.user && obs.user.login) || '';
+            // Bestimmer auf Art-Ebene (rank_level <= 10 = Art oder feiner)
+            const spIdentifiers = new Set();
+            for (const i of ids) {
+                const rl = (i.taxon && i.taxon.rank_level);
+                if (rl != null && rl <= 10 && i.user && i.user.login) spIdentifiers.add(i.user.login);
+            }
+            const disagree = obs.num_identification_disagreements || 0;
+            // FQ-fähig: Foto(mappable setzt Ort voraus), Datum, nicht in Gefangenschaft
+            const eligible = !!(obs.mappable && !obs.captive && obs.observed_on);
+            // „eine Einordnung bis FQ": genau ein Art-Bestimmer, keine Widersprüche
+            const oneAway = q === 'needs_id' && eligible && spIdentifiers.size === 1 && disagree === 0;
+            // „kann von mir kommen": der eine Art-Bestimmer bist NICHT du -> du stimmst zu -> FQ
+            const youCanConfirm = oneAway && !!ownerLogin && !spIdentifiers.has(ownerLogin);
+            return { oneAway, youCanConfirm };
+        }
+
         // Rohes API-Objekt -> schlankes internes Beobachtungsobjekt
         function mapObservation(obs) {
+            const idState = classifyIdState(obs);
             return {
                 id: obs.id,
                 lat: obs.geojson?.coordinates?.[1] || null,
@@ -4719,7 +4822,13 @@
                 minSpeciesId: obs.taxon?.min_species_taxon_id ?? null,   // Art-Vorfahr (Unterart -> Art rollen)
                 rank: obs.taxon?.rank || '',
                 rankLevel: obs.taxon?.rank_level ?? null,
-                identifications: obs.num_identification_agreements || 0
+                identifications: obs.num_identification_agreements || 0,
+                // --- Postfach/Inbox: kompakte Felder (aus denselben Rohdaten, keine Extra-Calls) ---
+                disagreements: obs.num_identification_disagreements || 0,
+                identCount: obs.identifications_count || 0,
+                commentsCount: obs.comments_count || 0,
+                oneAway: idState.oneAway,
+                youCanConfirm: idState.youCanConfirm
             };
         }
 
@@ -4849,6 +4958,7 @@
             fetchRgSpeciesCount();        // autoritative RG-Artenzahl (iNat-Profilwert) nachladen
             maybeShowSpeciesRewards();    // neue RG-Arten seit letztem Besuch belohnen
             maybeShowRankRewards();       // neue Badge-Ränge seit letztem Besuch feiern
+            try { INBOX.refresh(allObservations); } catch (e) { console.warn('Postfach-Refresh fehlgeschlagen:', e); }
         }
 
         // VOLLSTÄNDIGER Load (alle Beobachtungen von vorn)
@@ -9850,6 +9960,7 @@
                     document.getElementById('lastUpdate').textContent = 'aktuell (aus Cache)';
                     maybeShowSpeciesRewards();  // auch bei reinem Cache-Start prüfen
                     maybeShowRankRewards();     // Rang-Aufstiege auch bei Cache-Start prüfen
+                    try { INBOX.refresh(allObservations); } catch (e) {}   // Postfach auch bei Cache-Start füllen
                     return;
                 }
                 // 3) Sehr alt -> voll neu laden (fängt auch gelöschte Beobachtungen), sonst nur Delta
@@ -10261,7 +10372,10 @@
         // damit alte Caches verworfen und einmalig komplett neu gemappt werden.
         // v2: Animalia-Sammeltopf in Knorpelfische/Krebstiere/Stachelhäuter/Nesseltiere aufgeteilt.
         // v5: ancestorIds + minSpeciesId (für Arten/Unterarten-Zählmodus) – erzwingt einmaligen Voll-Load.
-        const CACHE_SCHEMA = 'v5';
+        // v6: Postfach-Felder (disagreements/identCount/commentsCount/visionOnly/oneAway/youCanConfirm).
+        // v7: visionOnly neu definiert (needs_id, genau 1 KI-Art-Bestimmung) – erzwingt Neuberechnung.
+        // v8: Nur-KI-Liste entfernt, visionOnly-Feld raus.
+        const CACHE_SCHEMA = 'v8';
         const CACHE_KEY_BASE = `inat_observations_cache_${CACHE_SCHEMA}`;
         const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
         function cacheKey() { return `${CACHE_KEY_BASE}_${USER_ID}`; }  // Cache pro Nutzer
@@ -10281,7 +10395,7 @@
         // Kompaktes Cache-Format: eine Zeile (Array) je Beobachtung statt Objekt mit wiederholten Schlüsseln.
         // Spart bei vielen Beobachtungen 40–60 % Speicher (verhindert localStorage-Quota-Überlauf -> kein Voll-Load bei jedem Start).
         // 'url' wird beim Laden aus der id rekonstruiert und deshalb NICHT gespeichert.
-        const OBS_FIELDS = ['id', 'lat', 'lon', 'name', 'scientific', 'date', 'obsTime', 'created', 'updated', 'place', 'placeIds', 'country', 'image', 'taxon', 'quality', 'taxonId', 'ancestorIds', 'minSpeciesId', 'rank', 'rankLevel', 'identifications'];
+        const OBS_FIELDS = ['id', 'lat', 'lon', 'name', 'scientific', 'date', 'obsTime', 'created', 'updated', 'place', 'placeIds', 'country', 'image', 'taxon', 'quality', 'taxonId', 'ancestorIds', 'minSpeciesId', 'rank', 'rankLevel', 'identifications', 'disagreements', 'identCount', 'commentsCount', 'oneAway', 'youCanConfirm'];
         function encodeObs(list) { return list.map(o => OBS_FIELDS.map(f => o[f])); }
         function decodeObs(rows) {
             return rows.map(r => {
@@ -10373,6 +10487,142 @@
             gallery.innerHTML = skeletons;
         }
 
+        // ========================================================================
+        // ===== POSTFACH / INBOX =================================================
+        // Drei Listen + Benachrichtigungen, komplett aus bereits geladenen Daten.
+        // NUR-LESEND: keine zusätzlichen API-Abfragen, kein Login, kein Schreibzugriff.
+        // Sichtbar nur auf dem eigenen, freigeschalteten Gerät beim eigenen Profil.
+        // ========================================================================
+        const INBOX = (function () {
+            const CAP = 50;                    // max. Einträge je Liste (DOM schlank halten)
+            let _obs = [];                     // letzte Beobachtungsliste (für Re-Render)
+            let _wired = false;
+            function userKey() { return String(USER_ID || '').toLowerCase(); }
+            function baseKey() { return 'inat_inbox_base_v1_' + userKey(); }
+            function isActive() {
+                try {
+                    return typeof isOwnerDevice === 'function' && isOwnerDevice()
+                        && String(USER_ID).toLowerCase() === String(DEFAULT_USER).toLowerCase();
+                } catch (e) { return false; }
+            }
+            function loadBase() { try { return JSON.parse(localStorage.getItem(baseKey())) || null; } catch (e) { return null; } }
+            function saveBase(map) { try { localStorage.setItem(baseKey(), JSON.stringify(map)); } catch (e) {} }
+            function snapshot(list) { const m = {}; for (const o of list) m[o.id] = [o.quality, o.identCount || 0, o.commentsCount || 0]; return m; }
+            function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+            // Diffs gegen die zuletzt bestätigte Basis berechnen
+            function computeDiffs(list) {
+                const base = loadBase();
+                const downgrades = [], activity = [];
+                if (base) {
+                    for (const o of list) {
+                        const p = base[o.id]; if (!p) continue;
+                        if (p[0] === 'research' && o.quality !== 'research') downgrades.push(o);
+                        const dId = (o.identCount || 0) - (p[1] || 0);
+                        const dCo = (o.commentsCount || 0) - (p[2] || 0);
+                        if (dId > 0 || dCo > 0) activity.push({ o, dId: Math.max(0, dId), dCo: Math.max(0, dCo) });
+                    }
+                }
+                return { base, downgrades, activity, firstRun: !base };
+            }
+
+            function itemHTML(o, tags) {
+                const img = o.image ? `<img class="ib-thumb" loading="lazy" src="${esc(o.image)}" alt="">` : `<span class="ib-thumb"></span>`;
+                const date = o.date ? new Date(o.date).toLocaleDateString('de-DE') : '';
+                const line = [esc(o.place || ''), date].filter(Boolean).join(' · ');
+                const tagHTML = (tags || []).map(t => `<span class="ib-tag ${t.cls}">${esc(t.txt)}</span>`).join('');
+                return `<a class="ib-item" href="${esc(o.url)}" target="_blank" rel="noopener">
+                    ${img}
+                    <span class="ib-meta">
+                        <span class="ib-name">${esc(o.name || 'Unbekannt')}</span>
+                        ${o.scientific ? `<span class="ib-sci">${esc(o.scientific)}</span>` : ''}
+                        <span class="ib-line">${tagHTML}${esc(line)}</span>
+                    </span>
+                </a>`;
+            }
+
+            function listBlock(items, mapTags, emptyTxt, moreHref) {
+                if (!items.length) return `<div class="ib-empty">${esc(emptyTxt)}</div>`;
+                let html = items.slice(0, CAP).map(x => itemHTML(x.o || x, mapTags ? mapTags(x) : null)).join('');
+                if (items.length > CAP) {
+                    const rest = items.length - CAP;
+                    html += `<a class="ib-more" href="${esc(moreHref || '#')}" target="_blank" rel="noopener">… und ${rest} weitere auf iNaturalist ansehen →</a>`;
+                }
+                return html;
+            }
+
+            function render(list) {
+                const body = document.getElementById('inboxBody'); if (!body) return;
+                const { downgrades, activity, firstRun } = computeDiffs(list);
+                // Fast-FQ: NUR die, die ich selbst bestätigen kann (ein Fremder hat die Art vorgeschlagen)
+                const oneAway = list.filter(o => o.youCanConfirm);
+
+                const user = encodeURIComponent(String(USER_ID || ''));
+                const needsIdHref = `https://www.inaturalist.org/observations?user_id=${user}&quality_grade=needs_id`;
+                const inboxCount = downgrades.length + activity.length;
+
+                // Badge
+                const badge = document.getElementById('inboxBadge');
+                if (badge) { badge.textContent = inboxCount > 99 ? '99+' : String(inboxCount); badge.classList.toggle('show', inboxCount > 0); }
+
+                const sec = (title, cls, cnt, inner, open) =>
+                    `<details class="ib-sec" ${open ? 'open' : ''}><summary>${title}
+                        <span class="ib-cnt ${cls}">${cnt > 99 ? '99+' : cnt}</span>
+                        <span class="ib-chev">▶</span></summary><div class="ib-seclist">${inner}</div></details>`;
+
+                // --- Inbox-Sektion: Downgrades + neue Aktivität ---
+                let inboxInner = '';
+                if (firstRun) {
+                    inboxInner += `<div class="ib-empty">Startpunkt gesetzt. Ab jetzt zeige ich hier Herabstufungen und neue Einordnungen/Kommentare seit deinem letzten Besuch.</div>`;
+                }
+                inboxInner += `<div class="ib-sub">⬇️ Nicht mehr FQ (seit letztem Besuch)</div>`;
+                inboxInner += listBlock(downgrades, () => [{ cls: 'down', txt: 'runtergestuft' }], 'Nichts herabgestuft – alles stabil.');
+                inboxInner += `<div class="ib-sub">💬 Neue Einordnungen & Kommentare</div>`;
+                inboxInner += listBlock(activity, (x) => {
+                    const t = [];
+                    if (x.dId) t.push({ cls: 'you', txt: '+' + x.dId + ' Einordnung' });
+                    if (x.dCo) t.push({ cls: 'down', txt: '+' + x.dCo + ' Kommentar' });
+                    return t;
+                }, 'Keine neue Aktivität.');
+                if (downgrades.length || activity.length) {
+                    inboxInner += `<div class="ib-actions"><button class="ib-btn" type="button" onclick="INBOX.markAllRead()">✓ Alles als gelesen markieren</button></div>`;
+                }
+
+                // --- Fast-FQ-Sektion: nur selbst bestätigbare ---
+                const faInner = listBlock(oneAway, () => [{ cls: 'you', txt: '✅ du bestätigst → FQ' }], 'Nichts, das du selbst bestätigen kannst.', needsIdHref);
+
+                body.innerHTML =
+                    sec('📨 Inbox', inboxCount ? 'alert' : 'ok', inboxCount, inboxInner, true) +
+                    sec('🎯 Fast FQ – du kannst bestätigen', oneAway.length ? 'warn' : 'ok', oneAway.length, faInner, false);
+
+                // Erststart: Basis still setzen (kein „alles neu"-Schwall)
+                if (firstRun) saveBase(snapshot(list));
+            }
+
+            function refresh(list) {
+                _obs = list || [];
+                const toggle = document.getElementById('inboxToggle');
+                if (!isActive()) { if (toggle) toggle.style.display = 'none'; close(); return; }
+                if (toggle) toggle.style.display = 'flex';
+                try { render(_obs); } catch (e) { console.warn('Postfach-Render fehlgeschlagen:', e); }
+            }
+
+            function open() { const p = document.getElementById('inboxPanel'), s = document.getElementById('inboxScrim'); if (p) { p.classList.add('open'); p.setAttribute('aria-hidden', 'false'); } if (s) s.classList.add('open'); }
+            function close() { const p = document.getElementById('inboxPanel'), s = document.getElementById('inboxScrim'); if (p) { p.classList.remove('open'); p.setAttribute('aria-hidden', 'true'); } if (s) s.classList.remove('open'); }
+            function markAllRead() { saveBase(snapshot(_obs)); render(_obs); }
+
+            function init() {
+                if (!_wired) {
+                    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+                    _wired = true;
+                }
+                const toggle = document.getElementById('inboxToggle');
+                if (toggle) toggle.style.display = isActive() ? 'flex' : 'none';
+            }
+
+            return { init, refresh, open, close, markAllRead };
+        })();
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadTheme();
@@ -10385,6 +10635,7 @@
             try { updateSpeciesModeUI(); } catch (e) {}   // Arten/Unterarten-Umschalter passend markieren
             try { updateMyNameUI(); } catch (e) {}   // Feld "Mein iNaturalist-Name" mit gespeichertem Wert vorbelegen
             try { applyNerdOwnerUI(); } catch (e) {} // Nerd-Reiter nur auf freigeschalteten Geräten zeigen
+            try { INBOX.init(); } catch (e) {}       // Postfach/Inbox-Leiste initialisieren (nur Owner)
             const _wantDemo = new URLSearchParams(location.search).get('demo') === '1';   // teilbarer Demo-Link
             const _wantTrip = new URLSearchParams(location.search).get('trip') || '';     // geteilte Reise ?trip=<id>
             let _showWelcome = false;
