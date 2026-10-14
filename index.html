@@ -4939,14 +4939,15 @@
         }
 
         // Einordnungs-Score laden: zwei günstige Zähl-Abfragen (per_page=0 -> nur total_results).
-        // Es zählen NUR Einordnungen bei FREMDEN Beobachtungen (own_observation=false).
-        //  1) Alle aktuellen Fremd-Einordnungen des Nutzers (Basis, je 1 Pkt)
-        //  2) Fremd-Einordnungen (improving/leading) auf inzwischen research-grade Beobachtungen = FQ-Bonus (je +1 Pkt)
+        // Es zählen NUR Bestimmungen auf ART-Ebene (rank=species) bei FREMDEN Beobachtungen
+        // (own_observation=false) – keine Gattungen, Unterarten o. Ä.
+        //  1) Alle aktuellen Fremd-Art-Bestimmungen des Nutzers (Basis, je 1 Pkt)
+        //  2) Fremd-Art-Bestimmungen (improving/leading) auf inzwischen research-grade Beobachtungen = FQ-Bonus (je +1 Pkt)
         async function fetchIdentStats() {
             const user = USER_ID;
             // Für denselben Nutzer nicht doppelt laden/parallel anstoßen
             if (identStats.user === user && (identStats.loaded || identStats.pending)) return;
-            const cacheKey = 'inat_ident_stats_v2_' + user.toLowerCase();
+            const cacheKey = 'inat_ident_stats_v3_' + user.toLowerCase();
             // Zwischenstand aus Cache sofort anwenden (vermeidet Flackern/0 beim Neuladen)
             if (identStats.user !== user) {
                 let cached = null;
@@ -4957,7 +4958,7 @@
             } else {
                 identStats.pending = true;
             }
-            const base = `${API_BASE}/identifications?user_id=${encodeURIComponent(user)}&current=true&own_observation=false&per_page=0`;
+            const base = `${API_BASE}/identifications?user_id=${encodeURIComponent(user)}&current=true&own_observation=false&rank=species&per_page=0`;
             try {
                 const [all, fq] = await Promise.all([
                     inatFetch(base).then(r => r.json()),
@@ -6791,8 +6792,8 @@
                 badgeCardHTML('Kalendertage', m.days.size, LADDERS.kalender, { names: RANK_NAMES.kalender, icon: OVERVIEW_ICON.kalender, max: 366, unit: ' Tage', calToggle: true, reached: reachedDistinct(firstObsList, o => (o.date && o.date.length >= 10) ? o.date.slice(5, 10) : null, LADDERS.kalender) }),
                 badgeCardHTML('Bester Tag', m.bioblitz, LADDERS.bioblitz, { names: RANK_NAMES.bioblitz, icon: OVERVIEW_ICON.bioblitz, suffix: '<small> Arten</small>', unit: ' Arten', reached: reachedMax(research, LADDERS.bioblitz) }),
                 badgeCardHTML('Einordnungen', identStats.score, LADDERS.einordnungen, { names: RANK_NAMES.einordnungen, icon: OVERVIEW_ICON.einordnungen, unit: ' Pkt', note: identStats.loaded
-                    ? `Nur Einordnungen bei anderen · 1 Pkt je Einordnung, 2 Pkt bei Forschungsqualität<br>${identStats.total.toLocaleString('de-DE')} Einordnungen · ${identStats.fqBonus.toLocaleString('de-DE')}× FQ-Bonus`
-                    : 'lädt … · nur Einordnungen bei anderen, 1 Pkt / 2 Pkt bei Forschungsqualität' })
+                    ? `Nur Art-Bestimmungen bei anderen · 1 Pkt je Bestimmung, 2 Pkt bei Forschungsqualität<br>${identStats.total.toLocaleString('de-DE')} Art-Bestimmungen · ${identStats.fqBonus.toLocaleString('de-DE')}× FQ-Bonus`
+                    : 'lädt … · nur Art-Bestimmungen bei anderen, 1 Pkt / 2 Pkt bei Forschungsqualität' })
             ].join('');
 
             groupsEl.innerHTML = Object.entries(taxaConfig).map(([key, cfg]) => {
