@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     let sent = 0, removed = 0;
     const errors = [];
     for (const [endpoint, sub] of Object.entries(map)) {
-      try { await webpush.sendNotification(sub, payload); sent++; }
+      try { await webpush.sendNotification(sub, payload, { urgency: 'high', TTL: 86400 }); sent++; }
       catch (err) {
         const code = err && err.statusCode;
         if (code === 404 || code === 410) { await redis.hdel('subs', endpoint); removed++; }

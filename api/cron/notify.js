@@ -32,7 +32,7 @@ async function sendToAll(redis, payload) {
   const map = (await redis.hgetall('subs')) || {};
   let pushed = 0;
   for (const [endpoint, sub] of Object.entries(map)) {
-    try { await webpush.sendNotification(sub, JSON.stringify(payload)); pushed++; }
+    try { await webpush.sendNotification(sub, JSON.stringify(payload), { urgency: 'high', TTL: 86400 }); pushed++; }
     catch (err) { if (err && (err.statusCode === 404 || err.statusCode === 410)) await redis.hdel('subs', endpoint); }
   }
   return pushed;
