@@ -4940,8 +4940,6 @@
         //  1) Alle aktuellen Fremd-Einordnungen des Nutzers (Basis, je 1 Pkt)
         //  2) Fremd-Einordnungen (improving/leading) auf inzwischen research-grade Beobachtungen = FQ-Bonus (je +1 Pkt)
         async function fetchIdentStats() {
-            // Vorerst nur für den Eigentümer (owner-only); öffentliche Besucher sehen das Badge nicht.
-            if (typeof isOwnerDevice !== 'function' || !isOwnerDevice()) return;
             const user = USER_ID;
             // Für denselben Nutzer nicht doppelt laden/parallel anstoßen
             if (identStats.user === user && (identStats.loaded || identStats.pending)) return;
@@ -6789,9 +6787,9 @@
                 badgeCardHTML('Kontinente', m.continents.size, LADDERS.kontinente, { names: RANK_NAMES.kontinente, icon: OVERVIEW_ICON.kontinente, max: 7, reached: reachedDistinct(research, o => COUNTRY_META[o.country]?.[1] || null, LADDERS.kontinente) }),
                 badgeCardHTML('Kalendertage', m.days.size, LADDERS.kalender, { names: RANK_NAMES.kalender, icon: OVERVIEW_ICON.kalender, max: 366, unit: ' Tage', calToggle: true, reached: reachedDistinct(firstObsList, o => (o.date && o.date.length >= 10) ? o.date.slice(5, 10) : null, LADDERS.kalender) }),
                 badgeCardHTML('Bester Tag', m.bioblitz, LADDERS.bioblitz, { names: RANK_NAMES.bioblitz, icon: OVERVIEW_ICON.bioblitz, suffix: '<small> Arten</small>', unit: ' Arten', reached: reachedMax(research, LADDERS.bioblitz) }),
-                (typeof isOwnerDevice === 'function' && isOwnerDevice() ? badgeCardHTML('Einordnungen', identStats.score, LADDERS.einordnungen, { names: RANK_NAMES.einordnungen, icon: OVERVIEW_ICON.einordnungen, unit: ' Pkt', note: identStats.loaded
+                badgeCardHTML('Einordnungen', identStats.score, LADDERS.einordnungen, { names: RANK_NAMES.einordnungen, icon: OVERVIEW_ICON.einordnungen, unit: ' Pkt', note: identStats.loaded
                     ? `Nur Einordnungen bei anderen · 1 Pkt je Einordnung, 2 Pkt bei Forschungsqualität<br>${identStats.total.toLocaleString('de-DE')} Einordnungen · ${identStats.fqBonus.toLocaleString('de-DE')}× FQ-Bonus`
-                    : 'lädt … · nur Einordnungen bei anderen, 1 Pkt / 2 Pkt bei Forschungsqualität' }) : '')
+                    : 'lädt … · nur Einordnungen bei anderen, 1 Pkt / 2 Pkt bei Forschungsqualität' })
             ].join('');
 
             groupsEl.innerHTML = Object.entries(taxaConfig).map(([key, cfg]) => {
@@ -8253,7 +8251,7 @@
             };
             add('total','Arten gesamt',OVERVIEW_ICON.total,m.totalSpecies,LADDERS.total,RANK_NAMES.total);
             add('rarity','Seltenheits-Score',OVERVIEW_ICON.rarity,rarityScoreTotal(),LADDERS.rarity,RANK_NAMES.rarity);
-            if (identStats.loaded && typeof isOwnerDevice === 'function' && isOwnerDevice()) add('einordnungen','Einordnungen',OVERVIEW_ICON.einordnungen,identStats.score,LADDERS.einordnungen,RANK_NAMES.einordnungen);
+            if (identStats.loaded) add('einordnungen','Einordnungen',OVERVIEW_ICON.einordnungen,identStats.score,LADDERS.einordnungen,RANK_NAMES.einordnungen);
             add('laender','Länder',OVERVIEW_ICON.laender,m.countries.size,LADDERS.laender,RANK_NAMES.laender);
             add('kontinente','Kontinente',OVERVIEW_ICON.kontinente,m.continents.size,LADDERS.kontinente,RANK_NAMES.kontinente);
             add('kalender','Kalendertage',OVERVIEW_ICON.kalender,m.days.size,LADDERS.kalender,RANK_NAMES.kalender);
