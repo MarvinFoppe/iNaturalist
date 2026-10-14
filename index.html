@@ -4252,6 +4252,10 @@
 
         // State
         let allObservations = [];
+        // Einordnungs-Score (Bestimmungen, die der Nutzer bei Beobachtungen macht).
+        // total = alle aktuellen Einordnungen (je 1 Pkt); fqBonus = Einordnungen (improving/leading),
+        // die eine Beobachtung auf Forschungsqualität gebracht haben (je +1 Pkt). score = total + fqBonus.
+        let identStats = { user: null, total: 0, fqBonus: 0, score: 0, loaded: false, pending: false };
         let filteredObservations = [];
         let demoMode = false;          // Beispiel-Ansicht ("Beispielseite" im Willkommens-Fenster)
         let DEMO_DATA = null;          // geladener Schnappschuss (demo-data.json)
@@ -4931,6 +4935,46 @@
             }
         }
 
+        // Einordnungs-Score laden: zwei günstige Zähl-Abfragen (per_page=0 -> nur total_results).
+        // Es zählen NUR Einordnungen bei FREMDEN Beobachtungen (own_observation=false).
+        //  1) Alle aktuellen Fremd-Einordnungen des Nutzers (Basis, je 1 Pkt)
+        //  2) Fremd-Einordnungen (improving/leading) auf inzwischen research-grade Beobachtungen = FQ-Bonus (je +1 Pkt)
+        async function fetchIdentStats() {
+            // Vorerst nur für den Eigentümer (owner-only); öffentliche Besucher sehen das Badge nicht.
+            if (typeof isOwnerDevice !== 'function' || !isOwnerDevice()) return;
+            const user = USER_ID;
+            // Für denselben Nutzer nicht doppelt laden/parallel anstoßen
+            if (identStats.user === user && (identStats.loaded || identStats.pending)) return;
+            const cacheKey = 'inat_ident_stats_v2_' + user.toLowerCase();
+            // Zwischenstand aus Cache sofort anwenden (vermeidet Flackern/0 beim Neuladen)
+            if (identStats.user !== user) {
+                let cached = null;
+                try { cached = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch (e) {}
+                identStats = cached && typeof cached.score === 'number'
+                    ? { user, total: cached.total || 0, fqBonus: cached.fqBonus || 0, score: cached.score || 0, loaded: true, pending: true }
+                    : { user, total: 0, fqBonus: 0, score: 0, loaded: false, pending: true };
+            } else {
+                identStats.pending = true;
+            }
+            const base = `${API_BASE}/identifications?user_id=${encodeURIComponent(user)}&current=true&own_observation=false&per_page=0`;
+            try {
+                const [all, fq] = await Promise.all([
+                    inatFetch(base).then(r => r.json()),
+                    inatFetch(base + '&category=improving,leading&quality_grade=research').then(r => r.json())
+                ]);
+                // Nur übernehmen, wenn zwischenzeitlich nicht der Nutzer gewechselt wurde
+                if (USER_ID !== user) return;
+                const total = all.total_results || 0;
+                const fqBonus = fq.total_results || 0;
+                identStats = { user, total, fqBonus, score: total + fqBonus, loaded: true, pending: false };
+                try { localStorage.setItem(cacheKey, JSON.stringify({ total, fqBonus, score: total + fqBonus })); } catch (e) {}
+                renderBadges();
+            } catch (e) {
+                console.warn('Einordnungs-Score konnte nicht geladen werden:', e);
+                if (identStats.user === user) identStats.pending = false;
+            }
+        }
+
         // Gemeinsame Nachverarbeitung nach jeder Datenaktualisierung
         function afterObservationsUpdated() {
             if (demoMode) return;   // Beispiel-Ansicht aktiv -> kein Überschreiben durch Hintergrund-Load
@@ -4956,6 +5000,7 @@
             saveToCache(allObservations);
             enrichCountriesFromPlaces();  // Länder im Hintergrund präzisieren
             fetchRgSpeciesCount();        // autoritative RG-Artenzahl (iNat-Profilwert) nachladen
+            fetchIdentStats();            // Einordnungs-Score (Prüfling → Letzte Instanz) nachladen
             maybeShowSpeciesRewards();    // neue RG-Arten seit letztem Besuch belohnen
             maybeShowRankRewards();       // neue Badge-Ränge seit letztem Besuch feiern
             try { INBOX.refresh(allObservations); } catch (e) { console.warn('Postfach-Refresh fehlgeschlagen:', e); }
@@ -6552,6 +6597,7 @@
             kalender:       ['Auftakt', 'Wochenlauf', 'Monatslauf', 'Jahreszeit', 'Halbjahr', 'Fast rund', 'Ewiger Kalender'],
             bioblitz:       ['Auftakt', 'Guter Tag', 'Sammeltag', 'Bioblitz', 'Glückstag', 'Traumtag', 'Sternstunde'],
             rarity:         ['Fährtenleser', 'Aufspürer', 'Raritätenjäger', 'Schatzsucher', 'Raritätenkenner', 'Raritätenmeister', 'Legendensammler'],
+            einordnungen:   ['Prüfling', 'Sichter', 'Prüfer', 'Gutachter', 'Richter', 'Instanz', 'Letzte Instanz'],
             'Aves':           ['Ei', 'Küken', 'Nestling', 'Ästling', 'Flügge', 'Vogel', 'Schwarm'],
             'Mammalia':       ['Säugling', 'Welpe', 'Jungtier', 'Halbstark', 'Ausgewachsen', 'Leittier', 'Rudel'],
             'Reptilia':       ['Gelege', 'Schlüpfling', 'Jungtier', 'Häuter', 'Schuppenträger', 'Sonnenkönig', 'Drache'],
@@ -6569,7 +6615,7 @@
             'Animalia':       ['Ei', 'Larve', 'Jungtier', 'Krabbler', 'Wirbelloses', 'Gruppe', 'Kolonie']
         };
         // Icons der Sammel-Ränge (Gruppen nutzen ihr taxaConfig-Icon)
-        const OVERVIEW_ICON = { total: '🐾', laender: '🌍', kontinente: '🗺️', kalender: '📅', bioblitz: '☀️', rarity: '💎' };
+        const OVERVIEW_ICON = { total: '🐾', laender: '🌍', kontinente: '🗺️', kalender: '📅', bioblitz: '☀️', rarity: '💎', einordnungen: '🔍' };
 
         // Schwellen je Kategorie
         const LADDERS = {
@@ -6581,6 +6627,8 @@
         };
         // Seltenheits-Score-Leiter = Arten-Leiter × 5 (immer daran gekoppelt)
         LADDERS.rarity = LADDERS.total.map(x => x * 5);   // [500, 2500, 5000, 12500, 25000, 50000, 100000]
+        // Einordnungs-Score-Leiter = Arten-Leiter ÷ 2 (immer daran gekoppelt)
+        LADDERS.einordnungen = LADDERS.total.map(x => x / 2);   // [50, 250, 500, 1250, 2500, 5000, 10000]
         // Gruppen-Ladders (Staffelung nach weltweiter Artenzahl)
         const GROUP_LADDER_A  = [10, 25, 50, 100, 250, 500, 1000];        // artenarm (<15k): Vögel, Säuger, Reptilien, Amphibien
         const GROUP_LADDER_BC = [25, 100, 500, 1000, 2500, 5000, 10000];  // alle übrigen
@@ -6708,6 +6756,7 @@
                     <div class="bcard-value">${displayVal}${opts.suffix || ''}</div>
                     <div class="bcard-bar"><div class="bcard-bar-fill" style="width:${Math.round(r.progress * 100)}%"></div></div>
                     <div class="bcard-next">${nextText}</div>
+                    ${opts.note ? `<div class="bcard-note" style="font-size:.72em;color:var(--text-muted);margin-top:4px;line-height:1.35">${opts.note}</div>` : ''}
                     <div class="bcard-pips">${pips}</div>
                     ${opts.mapToggle ? `<button class="bcard-maptoggle" onclick="event.stopPropagation(); toggleCountryMap()">🗺️ Weltkarte ein-/ausblenden</button>` : ''}
                     ${opts.calToggle ? `<button class="bcard-maptoggle" onclick="event.stopPropagation(); toggleCalendar()">📅 Fehlende Tage anzeigen</button>` : ''}
@@ -6723,6 +6772,7 @@
             if (!overview || !groupsEl) return;
 
             const m = computeBadgeMetrics();
+            fetchIdentStats();   // Einordnungs-Score bei Bedarf nachladen (re-rendert, wenn fertig)
             const research = allObservations.filter(o => o.quality === 'research');
             // Erst-Sichtungs-Beobachtung je Art (früheste RG-Beob.) – für die Kalendertage-Stufen:
             // ein Tag wird nur gutgeschrieben, wenn an ihm eine neue Art entdeckt wurde.
@@ -6738,7 +6788,10 @@
                 badgeCardHTML('Länder', m.countries.size, LADDERS.laender, { names: RANK_NAMES.laender, icon: OVERVIEW_ICON.laender, mapToggle: true, reached: reachedDistinct(research, o => o.country, LADDERS.laender) }),
                 badgeCardHTML('Kontinente', m.continents.size, LADDERS.kontinente, { names: RANK_NAMES.kontinente, icon: OVERVIEW_ICON.kontinente, max: 7, reached: reachedDistinct(research, o => COUNTRY_META[o.country]?.[1] || null, LADDERS.kontinente) }),
                 badgeCardHTML('Kalendertage', m.days.size, LADDERS.kalender, { names: RANK_NAMES.kalender, icon: OVERVIEW_ICON.kalender, max: 366, unit: ' Tage', calToggle: true, reached: reachedDistinct(firstObsList, o => (o.date && o.date.length >= 10) ? o.date.slice(5, 10) : null, LADDERS.kalender) }),
-                badgeCardHTML('Bester Tag', m.bioblitz, LADDERS.bioblitz, { names: RANK_NAMES.bioblitz, icon: OVERVIEW_ICON.bioblitz, suffix: '<small> Arten</small>', unit: ' Arten', reached: reachedMax(research, LADDERS.bioblitz) })
+                badgeCardHTML('Bester Tag', m.bioblitz, LADDERS.bioblitz, { names: RANK_NAMES.bioblitz, icon: OVERVIEW_ICON.bioblitz, suffix: '<small> Arten</small>', unit: ' Arten', reached: reachedMax(research, LADDERS.bioblitz) }),
+                (typeof isOwnerDevice === 'function' && isOwnerDevice() ? badgeCardHTML('Einordnungen', identStats.score, LADDERS.einordnungen, { names: RANK_NAMES.einordnungen, icon: OVERVIEW_ICON.einordnungen, unit: ' Pkt', note: identStats.loaded
+                    ? `Nur Einordnungen bei anderen · 1 Pkt je Einordnung, 2 Pkt bei Forschungsqualität<br>${identStats.total.toLocaleString('de-DE')} Einordnungen · ${identStats.fqBonus.toLocaleString('de-DE')}× FQ-Bonus`
+                    : 'lädt … · nur Einordnungen bei anderen, 1 Pkt / 2 Pkt bei Forschungsqualität' }) : '')
             ].join('');
 
             groupsEl.innerHTML = Object.entries(taxaConfig).map(([key, cfg]) => {
@@ -8200,6 +8253,7 @@
             };
             add('total','Arten gesamt',OVERVIEW_ICON.total,m.totalSpecies,LADDERS.total,RANK_NAMES.total);
             add('rarity','Seltenheits-Score',OVERVIEW_ICON.rarity,rarityScoreTotal(),LADDERS.rarity,RANK_NAMES.rarity);
+            if (identStats.loaded && typeof isOwnerDevice === 'function' && isOwnerDevice()) add('einordnungen','Einordnungen',OVERVIEW_ICON.einordnungen,identStats.score,LADDERS.einordnungen,RANK_NAMES.einordnungen);
             add('laender','Länder',OVERVIEW_ICON.laender,m.countries.size,LADDERS.laender,RANK_NAMES.laender);
             add('kontinente','Kontinente',OVERVIEW_ICON.kontinente,m.continents.size,LADDERS.kontinente,RANK_NAMES.kontinente);
             add('kalender','Kalendertage',OVERVIEW_ICON.kalender,m.days.size,LADDERS.kalender,RANK_NAMES.kalender);
