@@ -10814,7 +10814,8 @@
             let btns = '';
             if (st === 'off') btns += '<button id="ppEnable" class="refresh-btn" style="width:100%;margin-top:4px">🔔 Push aktivieren</button>';
             if (st === 'on') {
-                btns += '<button id="ppTest" class="refresh-btn" style="width:100%;margin-top:4px">📨 Test-Push senden</button>';
+                btns += '<button id="ppTest" class="refresh-btn" style="width:100%;margin-top:4px">📨 Test-Push senden (über Server)</button>';
+                btns += '<button id="ppLocal" class="refresh-btn" style="width:100%;margin-top:8px">📍 Lokaler Test (ohne Server)</button>';
                 btns += '<button id="ppDisable" class="refresh-btn" style="width:100%;margin-top:8px;background:transparent;border:1px solid rgba(255,255,255,.3)">Push abschalten</button>';
             }
             panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
@@ -10829,6 +10830,18 @@
             const msg = (t, ok) => { const el = document.getElementById('ppMsg'); if (el) { el.textContent = t; el.style.color = ok === false ? '#f3a' : '#9fd38a'; } };
             const enBtn = document.getElementById('ppEnable');
             if (enBtn) enBtn.onclick = async () => { msg('aktiviere …'); const ok = await enablePush(); if (ok) { close(); togglePushPanel(); } else msg('Aktivieren fehlgeschlagen.', false); };
+            const localBtn = document.getElementById('ppLocal');
+            if (localBtn) localBtn.onclick = async () => {
+                msg('löse lokale Benachrichtigung aus …');
+                try {
+                    const reg = await navigator.serviceWorker.ready;
+                    await reg.showNotification('🌿 Lokaler Test', {
+                        body: 'Wenn du das siehst, sind Benachrichtigungen erlaubt – dann liegt es nur an der Push-Zustellung.',
+                        icon: './icon-192.png', badge: './icon-192.png', vibrate: [40, 30, 40]
+                    });
+                    msg('Ausgelöst. Siehst du die Benachrichtigung? Falls NEIN → Android/Chrome blockt sie (Einstellungen prüfen).');
+                } catch (e) { msg('Lokaler Test fehlgeschlagen: ' + e.message, false); }
+            };
             const disBtn = document.getElementById('ppDisable');
             if (disBtn) disBtn.onclick = async () => { await disablePush(); close(); togglePushPanel(); };
             const testBtn = document.getElementById('ppTest');
