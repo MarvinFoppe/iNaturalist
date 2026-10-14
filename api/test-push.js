@@ -1,13 +1,18 @@
 // Test-Push an alle abonnierten Geräte (zum Verifizieren der Push-Kette).
 import webpush from 'web-push';
 import { getRedis } from './_redis.js';
+import { isOwner } from './_auth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  if (req.method === 'OPTIONS') { res.status(204).end(); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'method not allowed' }); return; }
-  // Secret wie im Cron per Authorization-Header (Bearer) – nicht mehr als Query-Param.
+  // Erlaubt: Cron-Secret (Bearer) ODER gültiges Owner-Token (für den Test-Knopf im Gerät).
   const auth = req.headers.authorization || '';
-  if (process.env.CRON_SECRET && auth !== `Bearer ${process.env.CRON_SECRET}`) { res.status(401).json({ error: 'unauthorized' }); return; }
+  const secretOk = process.env.CRON_SECRET && auth === `Bearer ${process.env.CRON_SECRET}`;
+  if (!secretOk && !isOwner(req)) { res.status(401).json({ error: 'unauthorized' }); return; }
   if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) { res.status(500).json({ error: 'vapid missing' }); return; }
   try {
     webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:m.foppe@more-fire.com', process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);

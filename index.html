@@ -2979,6 +2979,9 @@
             <button id="installBtn" class="refresh-btn" onclick="installApp()" style="display:none;" title="Diese Seite als App installieren">
                 📲 App installieren
             </button>
+            <button id="pushBtn" class="refresh-btn" onclick="togglePushPanel()" style="display:none;" title="Push-Benachrichtigungen">
+                🔔 Push
+            </button>
         </div>
     </div>
 
@@ -10720,7 +10723,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')
-                    .then(() => initPushUI())
+                    .then(() => { initPushUI(); refreshPushButton(); })
                     .catch(err => console.warn('Service Worker Registrierung fehlgeschlagen:', err));
             });
         }
@@ -10746,8 +10749,100 @@
                 const r = await fetch('api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sub) });
                 if (!r.ok) throw new Error('subscribe ' + r.status);
                 localStorage.setItem('inat_push_on', '1');
+                localStorage.removeItem('inat_push_dismissed');   // wieder aktiv -> Auto-Leiste darf künftig wieder erscheinen
+                refreshPushButton();
                 return true;
             } catch (e) { console.warn('Push aktivieren fehlgeschlagen:', e); alert('Push konnte nicht aktiviert werden: ' + e.message); return false; }
+        }
+
+        // Push wieder abschalten: Abo im Browser kündigen (tote Abos räumt der Server beim nächsten Senden ab).
+        async function disablePush() {
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                const sub = await reg.pushManager.getSubscription();
+                if (sub) await sub.unsubscribe();
+                localStorage.removeItem('inat_push_on');
+                localStorage.setItem('inat_push_dismissed', '1');   // nicht sofort wieder von selbst nachfragen
+                refreshPushButton();
+                return true;
+            } catch (e) { console.warn('Push abschalten fehlgeschlagen:', e); return false; }
+        }
+
+        // Aktuellen Push-Zustand ermitteln (für Button/Panel).
+        //  'unsupported' | 'no-backend' | 'hidden' | 'denied' | 'on' | 'off'
+        async function pushState() {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'unsupported';
+            try { await backendProbe; } catch (e) {}
+            if (!BACKEND_READY) return 'no-backend';
+            if (typeof isOwnerDevice !== 'function' || !isOwnerDevice()) return 'hidden';
+            if (String(USER_ID).toLowerCase() !== DEFAULT_USER.toLowerCase()) return 'hidden';
+            if (Notification.permission === 'denied') return 'denied';
+            try { const reg = await navigator.serviceWorker.ready; if (await reg.pushManager.getSubscription()) return 'on'; } catch (e) {}
+            return 'off';
+        }
+
+        // Button in der Kopfleiste an den Zustand anpassen (nur Owner sieht ihn überhaupt).
+        async function refreshPushButton() {
+            const btn = document.getElementById('pushBtn'); if (!btn) return;
+            const st = await pushState();
+            if (st === 'unsupported' || st === 'no-backend' || st === 'hidden') { btn.style.display = 'none'; return; }
+            btn.style.display = '';
+            const map = {
+                on:     { txt: '🔔 Push an',       title: 'Push ist aktiv – tippen zum Verwalten/Testen' },
+                off:    { txt: '🔕 Push aus',       title: 'Push aktivieren' },
+                denied: { txt: '🔔 Push blockiert', title: 'In den Browser-/Seiteneinstellungen entsperren' }
+            };
+            const m = map[st] || map.off;
+            btn.textContent = m.txt;
+            btn.title = m.title;
+            btn.dataset.state = st;
+        }
+
+        // Kleines Panel zum Verwalten (an-/abschalten + Test senden + klarer Status).
+        async function togglePushPanel() {
+            const existing = document.getElementById('pushPanel');
+            if (existing) { existing.remove(); return; }
+            const st = await pushState();
+            const panel = document.createElement('div');
+            panel.id = 'pushPanel';
+            panel.style.cssText = 'position:fixed;right:12px;top:64px;z-index:11600;max-width:320px;padding:16px;border-radius:14px;background:rgba(20,30,20,.98);color:#eafbe0;box-shadow:0 10px 36px rgba(0,0,0,.55);font-size:14px;line-height:1.5';
+            const statusText = {
+                on: '✅ Push ist <b>aktiv</b> auf diesem Gerät.',
+                off: '🔕 Push ist <b>aus</b>. Aktivieren, um bei neuen Arten & Freundes-Uploads benachrichtigt zu werden.',
+                denied: '⛔ Benachrichtigungen sind im Browser <b>blockiert</b>. Entsperre sie in den Seiteneinstellungen (Schloss-Symbol → Benachrichtigungen → Zulassen) und lade neu.'
+            }[st] || '';
+            let btns = '';
+            if (st === 'off') btns += '<button id="ppEnable" class="refresh-btn" style="width:100%;margin-top:4px">🔔 Push aktivieren</button>';
+            if (st === 'on') {
+                btns += '<button id="ppTest" class="refresh-btn" style="width:100%;margin-top:4px">📨 Test-Push senden</button>';
+                btns += '<button id="ppDisable" class="refresh-btn" style="width:100%;margin-top:8px;background:transparent;border:1px solid rgba(255,255,255,.3)">Push abschalten</button>';
+            }
+            panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
+                    <b>🔔 Benachrichtigungen</b>
+                    <button id="ppClose" style="background:none;border:0;color:#cdd6c8;font-size:20px;line-height:1;cursor:pointer">×</button>
+                </div>
+                <div style="color:#cdd6c8;margin-bottom:10px">${statusText}</div>${btns}
+                <div id="ppMsg" style="margin-top:10px;color:#9fd38a;min-height:1em"></div>`;
+            document.body.appendChild(panel);
+            const close = () => panel.remove();
+            document.getElementById('ppClose').onclick = close;
+            const msg = (t, ok) => { const el = document.getElementById('ppMsg'); if (el) { el.textContent = t; el.style.color = ok === false ? '#f3a' : '#9fd38a'; } };
+            const enBtn = document.getElementById('ppEnable');
+            if (enBtn) enBtn.onclick = async () => { msg('aktiviere …'); const ok = await enablePush(); if (ok) { close(); togglePushPanel(); } else msg('Aktivieren fehlgeschlagen.', false); };
+            const disBtn = document.getElementById('ppDisable');
+            if (disBtn) disBtn.onclick = async () => { await disablePush(); close(); togglePushPanel(); };
+            const testBtn = document.getElementById('ppTest');
+            if (testBtn) testBtn.onclick = async () => {
+                msg('sende Test …');
+                const token = localStorage.getItem('inat_owner_token');
+                if (!token) { msg('Kein Owner-Token auf diesem Gerät – bitte einmal als Owner freischalten.', false); return; }
+                try {
+                    const r = await fetch('api/test-push', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+                    const j = await r.json().catch(() => ({}));
+                    if (!r.ok) { msg('Fehler: ' + (j.error || r.status), false); return; }
+                    msg(`Gesendet an ${j.sent}/${j.subscribers} Gerät(e). Sollte gleich erscheinen.`);
+                } catch (e) { msg('Netzwerkfehler: ' + e.message, false); }
+            };
         }
         async function initPushUI() {
             try {
