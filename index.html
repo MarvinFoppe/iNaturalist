@@ -3632,6 +3632,8 @@
             #tab-nearby .rarity-rare-card.nb-selected{outline:2px solid var(--accent);outline-offset:1px}
             #tab-nearby .nb-inat-link{position:absolute;bottom:8px;right:8px;z-index:12;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:.78em}
             #tab-nearby .nb-inat-link:hover{background:var(--accent);color:var(--on-accent)}
+            #tab-nearby .rarity-rare-card.nb-have{opacity:.82}
+            #tab-nearby .nb-have-badge{position:absolute;top:8px;right:8px;z-index:12;background:rgba(20,30,20,.78);color:#8ee06a;font-size:.68em;font-weight:700;padding:3px 8px;border-radius:999px;backdrop-filter:blur(4px)}
         </style>
         <div class="section">
             <h2 class="section-title">📍 In meiner Nähe</h2>
@@ -3645,6 +3647,14 @@
                 <div class="nb-radius">
                     <label>Umkreis: <strong id="nbRadiusVal">10 km</strong></label>
                     <input type="range" id="nbRadius" min="1" max="50" step="1" value="10" oninput="setNearbyRadius(this.value)">
+                </div>
+                <div class="nb-owned">
+                    <label>Anzeigen</label>
+                    <div class="seg" id="nbShowSeg">
+                        <button class="seg-btn active" data-v="missing" onclick="setNearbyShowMode('missing')">Noch fehlende</button>
+                        <button class="seg-btn" data-v="owned" onclick="setNearbyShowMode('owned')">Schon gesehen</button>
+                        <button class="seg-btn" data-v="all" onclick="setNearbyShowMode('all')">Alle</button>
+                    </div>
                 </div>
                 <div class="nb-owned">
                     <label>„Schon gefunden" zählt</label>
@@ -10613,6 +10623,21 @@
                 // Fast-FQ: NUR die, die ich selbst bestätigen kann (ein Fremder hat die Art vorgeschlagen)
                 const oneAway = list.filter(o => o.youCanConfirm);
 
+                // Bekannte Art, noch kein FQ: needs_id-Beobachtungen, deren Art ich anderswo
+                // bereits in Forschungsqualität bestätigt habe (Unterarten auf die Art gerollt).
+                const spKey = o => (o.rankLevel != null && o.rankLevel < 10 && o.minSpeciesId) ? o.minSpeciesId : o.taxonId;
+                const rgSpecies = new Set();
+                for (const o of list) {
+                    if (o.quality !== 'research') continue;
+                    if (!(o.rankLevel == null || o.rankLevel <= 10)) continue;   // nur Art-Ebene
+                    const k = spKey(o); if (k != null) rgSpecies.add(k);
+                }
+                const knownNeedsId = list.filter(o => {
+                    if (o.quality !== 'needs_id') return false;
+                    const k = spKey(o);
+                    return k != null && rgSpecies.has(k);
+                }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
                 const user = encodeURIComponent(String(USER_ID || ''));
                 const needsIdHref = `https://www.inaturalist.org/observations?user_id=${user}&quality_grade=needs_id`;
                 const inboxCount = downgrades.length + activity.length;
@@ -10647,9 +10672,13 @@
                 // --- Fast-FQ-Sektion: nur selbst bestätigbare ---
                 const faInner = listBlock(oneAway, () => [{ cls: 'you', txt: '✅ du bestätigst → FQ' }], 'Nichts, das du selbst bestätigen kannst.', needsIdHref);
 
+                // --- Bekannte-Art-Sektion: Art kennst du schon, Beobachtung aber noch kein FQ ---
+                const knownInner = listBlock(knownNeedsId, () => [{ cls: 'you', txt: 'Art kennst du' }], 'Nichts Offenes – alle bekannten Arten sind bestätigt.', needsIdHref);
+
                 body.innerHTML =
                     sec('📨 Inbox', inboxCount ? 'alert' : 'ok', inboxCount, inboxInner, true) +
-                    sec('🎯 Fast FQ – du kannst bestätigen', oneAway.length ? 'warn' : 'ok', oneAway.length, faInner, false);
+                    sec('🎯 Fast FQ – du kannst bestätigen', oneAway.length ? 'warn' : 'ok', oneAway.length, faInner, false) +
+                    sec('🌱 Bekannte Art – noch kein FQ', knownNeedsId.length ? 'warn' : 'ok', knownNeedsId.length, knownInner, false);
 
                 // Erststart: Basis still setzen (kein „alles neu"-Schwall)
                 if (firstRun) saveBase(snapshot(list));
@@ -10934,6 +10963,7 @@
         let nearbyLat = 50.9375, nearbyLon = 6.9603;   // Fallback: Köln
         let nearbyRadius = 10;                          // km
         let nearbyOwnedMode = 'all';                    // 'all' | 'fq' (welche eigenen Arten abgezogen werden)
+        let nearbyShowMode = 'missing';                 // 'missing' | 'owned' | 'all' (welche Arten angezeigt werden)
         let nearbySelectedTaxa = [];                    // Gruppen-Filter
         let nearbyPool = [];                            // Arten im Umkreis (FQ)
         let nearbyLoading = false;
@@ -11009,6 +11039,12 @@
             if (nearbyPool.length) renderNearbyResults();
         }
 
+        function setNearbyShowMode(m) {
+            nearbyShowMode = m;
+            document.querySelectorAll('#nbShowSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === m));
+            if (nearbyPool.length) renderNearbyResults();
+        }
+
         function toggleNearbyTaxa(g) {
             const i = nearbySelectedTaxa.indexOf(g);
             if (i >= 0) nearbySelectedTaxa.splice(i, 1); else nearbySelectedTaxa.push(g);
@@ -11032,13 +11068,16 @@
             });
         }
 
-        // Set der eigenen Arten (taxonId), je nach Modus alle oder nur Forschungsqualität
+        // Set der eigenen Arten (taxonId), je nach Modus alle oder nur Forschungsqualität.
+        // Unterarten/Varietäten werden zusätzlich auf ihre Art gerollt (min_species_taxon_id),
+        // damit z. B. die Haus-Stadttaube als "Taube entdeckt" zählt (die Umkreis-Liste liefert Arten).
         function nearbyOwnedSet() {
             const s = new Set();
             for (const o of (allObservations || [])) {
                 if (o.taxonId == null) continue;
                 if (nearbyOwnedMode === 'fq' && o.quality !== 'research') continue;
                 s.add(o.taxonId);
+                if (o.minSpeciesId != null) s.add(o.minSpeciesId);   // Unterart -> Art
             }
             return s;
         }
@@ -11107,8 +11146,9 @@
             const t = rwIconicType(x.group);
             const level = nearbyLevelOf(x);
             const rareCls = level >= 9 ? ' rrc-legendary' : level >= 7 ? ' rrc-rare' : '';
-            return `<div class="rarity-rare-card${rareCls}" data-tid="${x.id}" onclick="nearbySelectSpecies(${x.id})" style="--type:${t.c}; cursor:pointer" title="Fundpunkte auf der Karte anzeigen">
+            return `<div class="rarity-rare-card${rareCls}${x._owned ? ' nb-have' : ''}" data-tid="${x.id}" onclick="nearbySelectSpecies(${x.id})" style="--type:${t.c}; cursor:pointer" title="Fundpunkte auf der Karte anzeigen">
                 ${level ? `<span class="rarity-badge lvl-${level}" style="position:absolute; top:8px; left:8px;">★ ${level}</span>` : ''}
+                ${x._owned ? `<span class="nb-have-badge">✓ schon gesehen</span>` : ''}
                 <span class="rrc-type" style="background:${t.c}">${t.emoji}</span>
                 <a class="nb-inat-link" href="${x.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Auf iNaturalist ansehen">↗</a>
                 ${x.image ? `<img src="${x.image}" alt="${x.name}" loading="lazy" onerror="this.style.display='none'">` : `<div class="rrc-noimg">${t.emoji}</div>`}
@@ -11124,8 +11164,12 @@
             const resEl = document.getElementById('nbResults');
             const metaEl = document.getElementById('nbMeta');
             const owned = nearbyOwnedSet();
-            let list = nearbyPool.filter(x => !owned.has(x.id));   // nur noch fehlende Arten
-            renderNearbyTaxaFilter(list);                          // Gruppen-Chips aus der Rohliste (vor Gruppen-/Seltenheitsfilter)
+            // Jede Art mit Besitz-Status markieren; dann je nach Anzeige-Modus filtern
+            let list = nearbyPool.map(x => ({ ...x, _owned: owned.has(x.id) }));
+            if (nearbyShowMode === 'missing') list = list.filter(x => !x._owned);
+            else if (nearbyShowMode === 'owned') list = list.filter(x => x._owned);
+            // 'all' -> alle behalten
+            renderNearbyTaxaFilter(list);                          // Gruppen-Chips aus der (modusgefilterten) Liste
             if (nearbySelectedTaxa.length) list = list.filter(x => nearbySelectedTaxa.includes(x.group));
             if (nearbySelectedLevels.size) list = list.filter(x => nearbySelectedLevels.has(nearbyLevelOf(x)));
             list.sort((a, b) => b.count - a.count);
@@ -11133,13 +11177,19 @@
 
             if (metaEl) {
                 const lvlTxt = nearbySelectedLevels.size ? ` · Seltenheit ${[...nearbySelectedLevels].sort((a, b) => a - b).map(n => '★' + n).join(', ')}` : '';
-                metaEl.textContent = `${list.length.toLocaleString('de-DE')} noch fehlende Art(en) im Umkreis ${nearbyRadius} km${lvlTxt} · gezählt werden FQ-Beobachtungen`;
+                const noun = nearbyShowMode === 'owned' ? 'schon gesehene Art(en)' : nearbyShowMode === 'all' ? 'Art(en)' : 'noch fehlende Art(en)';
+                metaEl.textContent = `${list.length.toLocaleString('de-DE')} ${noun} im Umkreis ${nearbyRadius} km${lvlTxt} · gezählt werden FQ-Beobachtungen`;
             }
 
             if (!list.length) {
-                const msg = nearbySelectedLevels.size
-                    ? `<div class="nb-empty"><div class="nb-empty-emoji">🔍</div><div class="nb-empty-title">Keine fehlenden Arten in dieser Seltenheit.</div><div class="nb-empty-sub">Wähle andere Stufen oder vergrößere den Umkreis.</div></div>`
-                    : `<div class="nb-empty"><div class="nb-empty-emoji">🔍</div><div class="nb-empty-title">Du hast alle Arten in dieser Region gefunden.</div><div class="nb-empty-sub">Bist du die erste Person, die etwas Neues entdeckt?</div></div>`;
+                let msg;
+                if (nearbySelectedLevels.size) {
+                    msg = `<div class="nb-empty"><div class="nb-empty-emoji">🔍</div><div class="nb-empty-title">Keine Arten in dieser Seltenheit.</div><div class="nb-empty-sub">Wähle andere Stufen oder vergrößere den Umkreis.</div></div>`;
+                } else if (nearbyShowMode === 'owned') {
+                    msg = `<div class="nb-empty"><div class="nb-empty-emoji">🧭</div><div class="nb-empty-title">Hier hast du noch keine Art gesehen.</div><div class="nb-empty-sub">Wechsle auf „Noch fehlende", um zu sehen, was es hier gibt.</div></div>`;
+                } else {
+                    msg = `<div class="nb-empty"><div class="nb-empty-emoji">🔍</div><div class="nb-empty-title">Du hast alle Arten in dieser Region gefunden.</div><div class="nb-empty-sub">Bist du die erste Person, die etwas Neues entdeckt?</div></div>`;
+                }
                 resEl.innerHTML = msg;
                 return;
             }
@@ -11241,6 +11291,7 @@
             initNearbyMap();
             setTimeout(() => { if (nearbyMap) { nearbyMap.invalidateSize(); nearbyMap.setView([nearbyLat, nearbyLon], nearbyZoomForRadius(nearbyRadius)); } }, 160);
             document.querySelectorAll('#nbOwnedSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === nearbyOwnedMode));
+            document.querySelectorAll('#nbShowSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === nearbyShowMode));
             const rad = document.getElementById('nbRadius'); if (rad) rad.value = nearbyRadius;
             const rv = document.getElementById('nbRadiusVal'); if (rv) rv.textContent = nearbyRadius + ' km';
             updateNearbyLevelUI();
@@ -11682,12 +11733,14 @@
             if (d) return d;
             return String(a.created || '').localeCompare(String(b.created || '')) || String(a.id).localeCompare(String(b.id));
         }
+        // Neueste zuerst (wie in der Übersicht) – für die Reise-Galerie beim Scrollen
+        function tripChronoDesc(a, b) { return tripChrono(b, a); }
         function tripDisplayObs() {
             let obs = tripTaxaFiltered();
             if (tripSpeciesDrill != null) {   // eine Art aufgeklappt -> alle ihre Beobachtungen (chronologisch)
                 return obs.filter(o => tripSpeciesKey(o) === tripSpeciesDrill).sort(tripChrono);
             }
-            if (tripViewMode === 'observations') return obs;
+            if (tripViewMode === 'observations') return [...obs].sort(tripChronoDesc);  // neueste zuerst (wie Übersicht)
             // Arten-basierte Modi: Vorauswahl je Modus, dann pro Art eine Karte (bevorzugt mit Bild)
             let pool = obs;
             if (tripViewMode === 'fq') {
@@ -11702,7 +11755,7 @@
                 const ex = byKey.get(k);
                 if (!ex || (!ex.image && o.image)) byKey.set(k, o);
             }
-            return [...byKey.values()].sort(tripChrono);
+            return [...byKey.values()].sort(tripChronoDesc);  // neueste Art zuerst (wie Übersicht)
         }
         function tripRenderTaxaGrid() {
             const grid = document.getElementById('tripTaxaGrid'); if (!grid) return;
