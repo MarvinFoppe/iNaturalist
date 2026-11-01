@@ -3862,9 +3862,16 @@
             #tab-reisen .trsa-dots{display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap}
             #tab-reisen .trsa-dot{width:8px;height:8px;border-radius:50%;background:rgba(233,200,120,.3);cursor:pointer;transition:.12s}
             #tab-reisen .trsa-dot.on{background:var(--gold-hi);transform:scale(1.3)}
-            #tab-reisen .trsa-daypill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;padding:6px 11px;border-radius:18px;background:var(--gold);color:#3a2c00;font-weight:700;cursor:pointer;margin-bottom:12px}
             #tab-reisen .trsa-empty{text-align:center;color:var(--ink-soft);padding:40px 20px;font-family:var(--pserif)}
+            /* Kompakte Taxonomie-Gruppen (ganz oben) */
+            #tab-reisen .taxa-grid-mini{grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px}
+            #tab-reisen .taxa-grid-mini .taxa-card{padding:7px 5px;border-radius:9px}
+            #tab-reisen .taxa-grid-mini .taxa-icon{font-size:1.35em;margin-bottom:2px}
+            #tab-reisen .taxa-grid-mini .taxa-name{font-size:.68em;line-height:1.1}
+            #tab-reisen .taxa-grid-mini .taxa-count{font-size:.92em}
+            #tab-reisen .taxa-grid-mini .taxa-card:hover,#tab-reisen .taxa-grid-mini .taxa-card.active{transform:translateY(-2px)}
             @media(max-width:620px){
+                #tab-reisen .taxa-grid-mini{grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
                 #tab-reisen .trsa-grid{grid-template-columns:repeat(3,1fr)}
                 #tab-reisen .trsa-page{padding:16px 14px 26px}
                 #tab-reisen .trday-grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
@@ -3901,6 +3908,16 @@
                 </div>
                 <h3 id="tripDetailTitle"></h3>
                 <div class="tr-detail-meta" id="tripDetailMeta"></div>
+                <details class="section sec-collapse" open id="tripTaxaWrap" style="margin-bottom:10px">
+                    <summary class="sec-summary"><svg class="icon"><use href="#icon-butterfly"/></svg> Taxonomische Gruppen <span class="sec-chevron">▼</span></summary>
+                    <div id="tripTaxaGrid" class="taxa-grid taxa-grid-mini"></div>
+                </details>
+                <div class="view-mode-toggle" id="tripViewToggle">
+                    <button class="view-mode-btn active" id="tripViewObs" onclick="tripSetViewMode('observations')">📷 Beobachtungen <span class="view-mode-count" id="tripCntObs">0</span></button>
+                    <button class="view-mode-btn" id="tripViewSpecies" onclick="tripSetViewMode('species')">🦋 Arten <span class="view-mode-count" id="tripCntSpecies">0</span></button>
+                    <button class="view-mode-btn" id="tripViewFq" onclick="tripSetViewMode('fq')">🔬 Arten (FQ) <span class="view-mode-count" id="tripCntFq">0</span></button>
+                    <button class="view-mode-btn" id="tripViewNew" onclick="tripSetViewMode('new')">✨ Neu in FQ <span class="view-mode-count" id="tripCntNew">0</span></button>
+                </div>
                 <div id="tripMap"></div>
                 <details class="section sec-collapse" open id="trdayWrap" style="margin-bottom:14px">
                     <summary class="sec-summary">📅 Statistik pro Tag <span class="sec-chevron">▼</span></summary>
@@ -3910,16 +3927,6 @@
                 <h3 class="trsa-title">📖 Reise-Sammelalbum</h3>
                 <div class="trsa" id="trsaAlbum">
                     <div id="trsaStage"></div>
-                </div>
-                <details class="section sec-collapse" open id="tripTaxaWrap" style="margin-bottom:14px">
-                    <summary class="sec-summary"><svg class="icon"><use href="#icon-butterfly"/></svg> Taxonomische Gruppen <span class="sec-chevron">▼</span></summary>
-                    <div id="tripTaxaGrid" class="taxa-grid"></div>
-                </details>
-                <div class="view-mode-toggle" id="tripViewToggle">
-                    <button class="view-mode-btn active" id="tripViewObs" onclick="tripSetViewMode('observations')">📷 Beobachtungen <span class="view-mode-count" id="tripCntObs">0</span></button>
-                    <button class="view-mode-btn" id="tripViewSpecies" onclick="tripSetViewMode('species')">🦋 Arten <span class="view-mode-count" id="tripCntSpecies">0</span></button>
-                    <button class="view-mode-btn" id="tripViewFq" onclick="tripSetViewMode('fq')">🔬 Arten (FQ) <span class="view-mode-count" id="tripCntFq">0</span></button>
-                    <button class="view-mode-btn" id="tripViewNew" onclick="tripSetViewMode('new')">✨ Neu in FQ <span class="view-mode-count" id="tripCntNew">0</span></button>
                 </div>
                 <div id="tripHiddenBar" class="tr-hidden-bar" style="display:none"></div>
                 <div id="tripObsList"></div>
@@ -11811,7 +11818,7 @@
             tripFilterTaxa = new Set();          // Filter je Reise zurücksetzen
             tripViewMode = 'observations';
             tripSpeciesDrill = null;
-            trsa.albumDay = null; trsa.page = 0; trsa.bookOpen = false;   // Sammelalbum je Reise zurücksetzen
+            trsa.page = 0; trsa.bookOpen = false; trsa._curDate = null;   // Sammelalbum je Reise zurücksetzen
             tripEditable = tripIsOwnProfile() && loadTrips().some(x => x.id === id);   // nur eigene Reisen bearbeitbar
             const running = !trip.to;
             document.getElementById('tripDetailTitle').innerHTML = trEsc(trip.name) + (running ? ' <span class="tr-live">● läuft noch</span>' : '');
@@ -12084,9 +12091,10 @@
         //  observations | species | fq | new. Artenzahlen auf taxonomischer
         //  Artenbasis (Unterart -> Art gerollt, nur Art-Rang).
         // ============================================================
-        const trsa = { albumDay: null, page: 0, bookOpen: false };
+        const trsa = { page: 0, bookOpen: false, _curDate: null };
         const TRSA_PER_PAGE = 12;
         const TRSA_WD = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+        const TRSA_WD_LONG = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
         const TRSA_MODE_NAME = { observations: 'Beobachtungen', species: 'Arten', fq: 'FQ-Arten', new: 'Neu in FQ' };
 
         function trsaKey(o) { if (o && o.rankLevel != null && o.rankLevel < 10 && o.minSpeciesId) return o.minSpeciesId; return o.taxonId || o.scientific || o.name; }
@@ -12166,8 +12174,8 @@
                 if (tripViewMode === 'observations') { heroLbl = 'Beob.'; sub = `${d.sp} Arten${d.neu ? ` · <span class="neu">${d.neu}✨</span>` : ''}`; }
                 else if (tripViewMode === 'new') { heroLbl = 'neu ✨'; sub = `${d.n} Beob.`; }
                 else { heroLbl = 'Arten'; sub = `${d.n} Beob.${d.neu ? ` · <span class="neu">${d.neu}✨</span>` : ''}`; }
-                const sel = trsa.albumDay === d.date ? ' sel' : '';
-                return `<div class="trday${sel}" onclick="trsaToggleDay('${d.date}')" title="Im Album nur diesen Tag zeigen">
+                const sel = trsa._curDate === d.date ? ' sel' : '';
+                return `<div class="trday${sel}" data-date="${d.date}" onclick="trsaJumpToDay('${d.date}')" title="Im Album zu diesem Tag blättern">
                     ${top}
                     <div class="trday-hero"><b>${hero}</b><span>${heroLbl}</span></div>
                     <div class="trday-sub">${sub}</div>
@@ -12176,25 +12184,31 @@
                 </div>`;
             }).join('');
         }
-        function trsaToggleDay(date) {
-            trsa.albumDay = (trsa.albumDay === date) ? null : date;
-            trsa.page = 0;
-            if (trsa.albumDay) trsa.bookOpen = true;
-            trsaRenderDays(); trsaRenderAlbum();
+        // Im Buch zu einem Tag blättern (Kachel-Klick)
+        function trsaJumpToDay(date) {
+            trsa.bookOpen = true;
+            const pages = trsaDayPages();
+            let idx = pages.findIndex(p => p.date === date);
+            trsa.page = idx < 0 ? 0 : idx;
+            trsaRenderAlbum(); trsaRenderDays();
             const st = document.getElementById('trsaStage'); if (st) st.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+        // Tages-Kacheln: aktuelle Buchseite hervorheben
+        function trsaMarkDays() {
+            document.querySelectorAll('#trdayGrid .trday').forEach(el => el.classList.toggle('sel', el.dataset.date === trsa._curDate));
+        }
 
-        // ---------- Sammelalbum ----------
+        // ---------- Sammelalbum (Tag für Tag) ----------
         function trsaAlbumPool() {
             let obs = trsaFilterObs(tripCurrentObs);
             if (tripFilterTaxa && tripFilterTaxa.size) obs = obs.filter(o => o.taxon && tripFilterTaxa.has(o.taxon));
-            if (trsa.albumDay) obs = obs.filter(o => o.date === trsa.albumDay);
             return obs;
         }
+        // Karten mit zugehörigem Tag (obs = Beobachtungsdatum, Arten = früheste Sichtung auf der Reise)
         function trsaAlbumCards() {
             const pool = trsaAlbumPool();
             if (tripViewMode === 'observations') {
-                return pool.slice().sort((a, b) => a.date < b.date ? -1 : (a.date > b.date ? 1 : 0)).map(o => ({ o, count: 1, isNew: trsaIsNew(o) }));
+                return pool.slice().sort((a, b) => a.date < b.date ? -1 : (a.date > b.date ? 1 : 0)).map(o => ({ o, day: o.date, count: 1, isNew: trsaIsNew(o) }));
             }
             const by = new Map();
             for (const o of pool) {
@@ -12206,7 +12220,23 @@
                 if (!e.o.image && o.image) e.o = o;
                 if (o.date < e.firstDate) e.firstDate = o.date;
             }
-            return [...by.values()].sort((a, b) => a.firstDate < b.firstDate ? -1 : (a.firstDate > b.firstDate ? 1 : 0)).map(e => ({ o: e.o, count: e.count, isNew: trsaIsNew(e.o) }));
+            return [...by.values()].sort((a, b) => a.firstDate < b.firstDate ? -1 : (a.firstDate > b.firstDate ? 1 : 0)).map(e => ({ o: e.o, day: e.firstDate, count: e.count, isNew: trsaIsNew(e.o) }));
+        }
+        // Seiten: nach Tag gruppiert, jeder Tag beginnt auf neuer Seite (bei >12 Karten mehrere Seiten pro Tag)
+        function trsaDayPages() {
+            const cards = trsaAlbumCards();
+            const map = new Map();
+            for (const c of cards) { if (!map.has(c.day)) map.set(c.day, []); map.get(c.day).push(c); }
+            const days = [...map.keys()].sort();
+            const pages = [];
+            for (const d of days) {
+                const dc = map.get(d);
+                const parts = Math.ceil(dc.length / TRSA_PER_PAGE) || 1;
+                for (let i = 0; i < dc.length; i += TRSA_PER_PAGE) {
+                    pages.push({ date: d, cards: dc.slice(i, i + TRSA_PER_PAGE), part: parts > 1 ? (i / TRSA_PER_PAGE + 1) : 0, parts });
+                }
+            }
+            return pages;
         }
         function trsaCoverHtml() {
             const trip = resolveTrip(tripCurrentId); if (!trip) return '';
@@ -12226,42 +12256,45 @@
         function trsaRenderAlbum() {
             const stage = document.getElementById('trsaStage'); if (!stage) return;
             const trip = resolveTrip(tripCurrentId);
-            if (!trip) { stage.innerHTML = ''; return; }
-            if (!trsa.bookOpen) { stage.innerHTML = trsaCoverHtml(); return; }
+            if (!trip) { stage.innerHTML = ''; trsa._curDate = null; return; }
+            if (!trsa.bookOpen) { stage.innerHTML = trsaCoverHtml(); trsa._curDate = null; trsaMarkDays(); return; }
 
-            const cards = trsaAlbumCards();
-            const pages = Math.max(1, Math.ceil(cards.length / TRSA_PER_PAGE));
-            if (trsa.page >= pages) trsa.page = pages - 1;
-            if (trsa.page < 0) trsa.page = 0;
-            const start = trsa.page * TRSA_PER_PAGE;
-            const slice = cards.slice(start, start + TRSA_PER_PAGE);
-
-            let inner;
-            if (!cards.length) inner = `<div class="trsa-empty">Keine Karten für diese Auswahl.</div>`;
-            else {
-                let g = slice.map((c, i) => trsaCardHtml(c, start + i + 1)).join('');
-                for (let i = slice.length; i < TRSA_PER_PAGE; i++) g += `<div class="trsa-slot">◇</div>`;
-                inner = `<div class="trsa-grid">${g}</div>`;
+            const pages = trsaDayPages();
+            if (!pages.length) {
+                trsa._curDate = null;
+                stage.innerHTML = `<div class="trsa-frame"><div class="trsa-page"><div class="trsa-empty">Keine Karten für diese Auswahl.</div></div></div><button class="trsa-close" onclick="trsaCloseBook()">📕 Buch schließen</button>`;
+                trsaMarkDays(); return;
             }
-            let dots = ''; for (let i = 0; i < pages; i++) dots += `<div class="trsa-dot ${i === trsa.page ? 'on' : ''}" onclick="trsaGoto(${i})"></div>`;
-            const dayPill = trsa.albumDay ? `<div class="trsa-daypill" onclick="trsaToggleDay('${trsa.albumDay}')">📅 ${fmtTripDate(trsa.albumDay)} ✕</div>` : '';
+            if (trsa.page >= pages.length) trsa.page = pages.length - 1;
+            if (trsa.page < 0) trsa.page = 0;
+            const pg = pages[trsa.page];
+            trsa._curDate = pg.date;
+
+            const dayNum = tripDaySpan(trip.from, pg.date);                       // Tag 1, 2, … ab Reisestart
+            const wd = TRSA_WD_LONG[new Date(pg.date + 'T00:00:00').getDay()];
+            const partLbl = pg.parts > 1 ? ` · Teil ${pg.part}/${pg.parts}` : '';
+            let before = 0; for (let i = 0; i < trsa.page; i++) before += pages[i].cards.length;  // fortlaufende Kartennummer
+
+            let g = pg.cards.map((c, i) => trsaCardHtml(c, before + i + 1)).join('');
+            for (let i = pg.cards.length; i < TRSA_PER_PAGE; i++) g += `<div class="trsa-slot">◇</div>`;
+            let dots = ''; for (let i = 0; i < pages.length; i++) dots += `<div class="trsa-dot ${i === trsa.page ? 'on' : ''}" onclick="trsaGoto(${i})" title="${fmtTripDate(pages[i].date)}"></div>`;
 
             stage.innerHTML = `
-              ${dayPill}
               <div class="trsa-frame">
                 <div class="trsa-page">
-                  <div class="trsa-pagehead"><span class="t">${trEsc(trip.name || 'Reise')}</span><span class="s">${cards.length} ${cards.length === 1 ? 'Karte' : 'Karten'} · ${TRSA_MODE_NAME[tripViewMode]}</span></div>
-                  ${inner}
-                  <div class="trsa-pfoot">${fmtTripDate(trip.from)} – ${trip.to ? fmtTripDate(trip.to) : 'heute'}</div>
+                  <div class="trsa-pagehead"><span class="t">Tag ${dayNum} · ${wd}${partLbl}</span><span class="s">${fmtTripDate(pg.date)} · ${pg.cards.length} ${pg.cards.length === 1 ? 'Karte' : 'Karten'}</span></div>
+                  <div class="trsa-grid">${g}</div>
+                  <div class="trsa-pfoot">${trEsc(trip.name || 'Reise')} · ${TRSA_MODE_NAME[tripViewMode]}</div>
                 </div>
               </div>
               <div class="trsa-nav">
                 <button ${trsa.page === 0 ? 'disabled' : ''} onclick="trsaGoto(${trsa.page - 1})">‹ zurück</button>
-                <span class="pg">Seite ${trsa.page + 1} / ${pages}</span>
-                <button ${trsa.page >= pages - 1 ? 'disabled' : ''} onclick="trsaGoto(${trsa.page + 1})">weiter ›</button>
+                <span class="pg">Seite ${trsa.page + 1} / ${pages.length}</span>
+                <button ${trsa.page >= pages.length - 1 ? 'disabled' : ''} onclick="trsaGoto(${trsa.page + 1})">weiter ›</button>
               </div>
               <div class="trsa-dots">${dots}</div>
               <button class="trsa-close" onclick="trsaCloseBook()">📕 Buch schließen</button>`;
+            trsaMarkDays();
         }
         function trsaCardHtml(c, no) {
             const o = c.o, t = rwIconicType(o.taxon);
@@ -12271,11 +12304,11 @@
             const img = o.image ? `<img src="${o.image}" alt="${trEsc(o.name)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="noimg">${t.emoji}</div>`;
             return `<div class="trsa-card${shiny}" style="--type:${t.c}" onclick="trsaOpenCard('${o.id}')">
                 <div class="ph"><span class="no">#${no}</span><span class="type" style="background:${t.c}">${t.emoji}</span>${img}${multi}${newb}</div>
-                <div class="meta"><div class="nm">${trEsc(o.name)}</div>${o.scientific ? `<div class="sci">${trEsc(o.scientific)}</div>` : ''}<div class="dt">${fmtTripDate(o.date)}${o.quality === 'research' ? ' · 🔬 FQ' : ''}</div></div>
+                <div class="meta"><div class="nm">${trEsc(o.name)}</div>${o.scientific ? `<div class="sci">${trEsc(o.scientific)}</div>` : ''}<div class="dt">${fmtTripDate(c.day || o.date)}${o.quality === 'research' ? ' · 🔬 FQ' : ''}</div></div>
             </div>`;
         }
         function trsaOpenBook() { trsa.bookOpen = true; trsa.page = 0; trsaRenderAlbum(); const st = document.getElementById('trsaStage'); if (st) st.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-        function trsaCloseBook() { trsa.bookOpen = false; trsa.albumDay = null; trsaRenderDays(); trsaRenderAlbum(); const st = document.getElementById('trsaStage'); if (st) st.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        function trsaCloseBook() { trsa.bookOpen = false; trsaRenderAlbum(); trsaRenderDays(); const st = document.getElementById('trsaStage'); if (st) st.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         function trsaGoto(p) { trsa.page = p; trsaRenderAlbum(); const st = document.getElementById('trsaStage'); if (st) st.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
         // Karte angetippt -> Fundort auf der Reisekarte hervorheben (bestehende Logik)
         function trsaOpenCard(id) { travelSelectObs(id); }
