@@ -3781,6 +3781,94 @@
             #tab-reisen .tr-nav-label{color:#eafbe0;font-size:.85em;font-variant-numeric:tabular-nums;min-width:52px;text-align:center}
             .tr-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:rgba(20,30,20,.96);color:#eafbe0;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.5);font-size:14px;z-index:13000;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
             .tr-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+            /* ===== Tages-Statistik ===== */
+            #tab-reisen .trsum{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+            #tab-reisen .trsumcard{flex:1 1 86px;background:var(--bg-light);border:1px solid var(--border);border-radius:9px;padding:8px 11px}
+            #tab-reisen .trsumcard b{display:block;font-size:18px;font-weight:800;line-height:1.1;color:var(--text-primary)}
+            #tab-reisen .trsumcard span{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.03em}
+            #tab-reisen .trsumcard small{color:var(--text-muted);font-weight:400}
+            #tab-reisen .trday-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:7px}
+            #tab-reisen .trday{display:flex;flex-direction:column;gap:5px;min-height:112px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;transition:.1s}
+            #tab-reisen .trday:hover{border-color:var(--accent);transform:translateY(-2px)}
+            #tab-reisen .trday.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+            #tab-reisen .trday.empty{opacity:.42;cursor:default;min-height:0}
+            #tab-reisen .trday.empty:hover{transform:none;border-color:var(--border)}
+            #tab-reisen .trday-top{display:flex;align-items:baseline;justify-content:space-between;gap:4px}
+            #tab-reisen .trday-top .dd{font-weight:700;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--text-primary)}
+            #tab-reisen .trday-top .dn{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em}
+            #tab-reisen .trday-dw{font-size:10px;color:var(--text-secondary);margin-top:-4px}
+            #tab-reisen .trday-hero{display:flex;align-items:baseline;gap:4px}
+            #tab-reisen .trday-hero b{font-size:21px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--text-primary)}
+            #tab-reisen .trday-hero span{font-size:10px;color:var(--text-secondary)}
+            #tab-reisen .trday-sub{font-size:10.5px;color:var(--text-secondary);font-variant-numeric:tabular-nums}
+            #tab-reisen .trday-sub .neu{color:var(--gold,#f0cf63);font-weight:700}
+            #tab-reisen .trday-taxa{display:flex;gap:1px;font-size:12.5px;line-height:1}
+            #tab-reisen .trday-bar{height:4px;background:var(--bg-light);border-radius:4px;overflow:hidden;margin-top:auto}
+            #tab-reisen .trday-bar>i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),#7ad39a)}
+            #tab-reisen .trday-empty-label{font-size:10px;color:var(--text-muted)}
+
+            /* ===== Reise-Sammelalbum (Leder/Gold/Papier wie das Sammelbuch) ===== */
+            #tab-reisen .trsa{--lea:#3a2817;--lea-hi:#6d4e2c;--lea-lo:#22150a;--lea-edge:#4a3420;
+                --gold:#c9a24a;--gold-hi:#eccd7f;--paper:#f4ecd6;--paper2:#ece0c4;--paper-edge:#d7c69e;
+                --ink:#3a3327;--ink-soft:#655843;--ink-mute:#8d7d5f;--pline2:rgba(96,72,38,.40);
+                --pserif:'Playfair Display',Georgia,serif;--pscript:'Snell Roundhand','Apple Chancery','Brush Script MT',cursive;--pmono:ui-monospace,'SF Mono',Menlo,monospace}
+            #tab-reisen .trsa-title{font-family:var(--pserif,serif);margin:26px 0 12px;color:var(--text-primary)}
+            #tab-reisen .trsa-cover{position:relative;cursor:pointer;width:min(300px,78vw);aspect-ratio:.72;margin:4px auto 0;border-radius:5px 10px 10px 5px;transition:transform .15s,box-shadow .2s;
+                background:repeating-linear-gradient(93deg,rgba(255,240,210,.045) 0 2px,transparent 2px 6px),radial-gradient(135% 120% at 32% 10%,var(--lea-hi),var(--lea) 46%,var(--lea-lo));
+                box-shadow:3px 0 0 #f1e8d2,5px 0 0 #eae0c8,7px 1px 0 #e2d6ba,9px 1px 0 #d9cba9,11px 2px 0 #cfbf96,13px 2px 0 #c4b184,15px 3px 0 #b8a475,18px 10px 30px rgba(0,0,0,.6)}
+            #tab-reisen .trsa-cover:hover{transform:translateY(-3px)}
+            #tab-reisen .trsa-cover::before{content:"";position:absolute;left:0;top:0;bottom:0;width:20px;border-radius:5px 0 0 5px;background:linear-gradient(90deg,var(--lea-lo),rgba(0,0,0,.12) 62%,transparent);box-shadow:inset -6px 0 9px rgba(0,0,0,.45)}
+            #tab-reisen .trsa-cover::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 55px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,230,190,.15)}
+            #tab-reisen .trsa-cface{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:22px 20px 22px 34px;text-align:center}
+            #tab-reisen .trsa-cface .med{width:33%;aspect-ratio:1;border-radius:18px;padding:9px;background:linear-gradient(160deg,var(--lea-edge),var(--lea-lo));box-shadow:inset 0 2px 4px rgba(255,230,190,.22),inset 0 -5px 10px rgba(0,0,0,.55),0 8px 18px rgba(0,0,0,.45)}
+            #tab-reisen .trsa-cface .med img{width:100%;height:100%;border-radius:11px;display:block;filter:grayscale(1) sepia(1) saturate(2.7) hue-rotate(-6deg) brightness(1.08) contrast(1.06)}
+            #tab-reisen .trsa-cface .eyebrow{font-family:var(--pserif);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-hi);opacity:.85}
+            #tab-reisen .trsa-cface .tn{font-family:var(--pscript);font-size:30px;line-height:1.05;color:var(--paper);text-shadow:0 1px 2px rgba(0,0,0,.6)}
+            #tab-reisen .trsa-cface .rng{font-family:var(--pmono);font-size:10.5px;letter-spacing:.08em;color:var(--gold-hi);opacity:.78}
+            #tab-reisen .trsa-cface .cnt{font-family:var(--pserif);font-size:13px;color:var(--gold-hi);border-top:1px solid rgba(233,200,120,.25);padding-top:9px;margin-top:2px}
+            #tab-reisen .trsa-cface .open{font-family:var(--pmono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-hi);opacity:.6;margin-top:2px}
+            #tab-reisen .trsa-frame{max-width:680px;margin:0 auto;border-radius:12px;padding:13px;box-shadow:0 24px 60px rgba(0,0,0,.6);background:radial-gradient(130% 120% at 25% 8%,var(--lea-hi),var(--lea) 48%,var(--lea-lo))}
+            #tab-reisen .trsa-page{position:relative;border-radius:4px;padding:18px 20px 30px;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.45);
+                background:radial-gradient(70% 55% at 20% 12%,rgba(150,118,66,.07),transparent 55%),radial-gradient(60% 50% at 85% 90%,rgba(120,88,46,.09),transparent 55%),linear-gradient(var(--paper),var(--paper2))}
+            #tab-reisen .trsa-pagehead{display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--pline2);padding-bottom:8px;margin-bottom:14px}
+            #tab-reisen .trsa-pagehead .t{font-family:var(--pserif);font-size:17px;color:var(--ink)}
+            #tab-reisen .trsa-pagehead .s{font-family:var(--pmono);font-size:10px;letter-spacing:.1em;color:var(--ink-mute);text-transform:uppercase}
+            #tab-reisen .trsa-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+            #tab-reisen .trsa-pfoot{text-align:center;font-family:var(--pmono);font-size:10px;letter-spacing:.14em;color:var(--ink-mute);margin-top:14px}
+            #tab-reisen .trsa-card{position:relative;border-radius:9px;overflow:hidden;cursor:pointer;--type:#7a7f8a;background:#12151b;border:1px solid var(--type);display:flex;flex-direction:column;transition:transform .14s,box-shadow .18s;box-shadow:0 3px 9px rgba(50,34,14,.4)}
+            #tab-reisen .trsa-card:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 10px 22px rgba(40,26,10,.55);z-index:2}
+            #tab-reisen .trsa-card .ph{position:relative;aspect-ratio:1/1;background:#1a1e26;overflow:hidden}
+            #tab-reisen .trsa-card .ph img{width:100%;height:100%;object-fit:cover;display:block}
+            #tab-reisen .trsa-card .noimg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:34px}
+            #tab-reisen .trsa-card .type{position:absolute;top:5px;right:5px;width:21px;height:21px;border-radius:50%;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,.55);box-shadow:0 2px 5px rgba(0,0,0,.5)}
+            #tab-reisen .trsa-card .no{position:absolute;top:5px;left:5px;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.6);color:#fff;font-variant-numeric:tabular-nums}
+            #tab-reisen .trsa-card .multi{position:absolute;bottom:5px;right:5px;font-size:10px;font-weight:800;padding:1px 6px;border-radius:999px;background:var(--gold);color:#3a2c00;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+            #tab-reisen .trsa-card .meta{padding:5px 7px 7px;background:#12151b}
+            #tab-reisen .trsa-card .nm{font-size:11px;font-weight:700;color:#e7ebf2;line-height:1.12;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:25px}
+            #tab-reisen .trsa-card .sci{font-size:9px;font-style:italic;color:#93a0b4;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            #tab-reisen .trsa-card .dt{font-size:9px;color:#6b7686;margin-top:2px}
+            #tab-reisen .trsa-card.shiny{border-color:var(--gold-hi);box-shadow:0 3px 9px rgba(50,34,14,.4),0 0 14px rgba(240,207,99,.5)}
+            #tab-reisen .trsa-card.shiny::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.5;background:linear-gradient(130deg,transparent 30%,rgba(255,255,255,.5) 45%,transparent 60%)}
+            #tab-reisen .trsa-card .newbadge{position:absolute;bottom:5px;left:5px;font-size:8.5px;font-weight:800;padding:1px 6px;border-radius:999px;background:var(--gold-hi);color:#3a2c00;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+            #tab-reisen .trsa-slot{border-radius:9px;border:1.5px dashed var(--pline2);background:rgba(120,90,40,.05);aspect-ratio:1/1.3;display:flex;align-items:center;justify-content:center;color:var(--pline2);font-size:22px;box-shadow:inset 0 2px 7px rgba(120,90,40,.12)}
+            #tab-reisen .trsa-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+            #tab-reisen .trsa-nav button{cursor:pointer;font:inherit;font-size:13px;border:1px solid rgba(233,200,120,.35);background:rgba(40,26,14,.6);color:var(--gold-hi);border-radius:999px;padding:8px 15px}
+            #tab-reisen .trsa-nav button:hover:not(:disabled){background:rgba(60,40,18,.8)}
+            #tab-reisen .trsa-nav button:disabled{opacity:.4;cursor:default}
+            #tab-reisen .trsa-nav .pg{font-family:var(--pmono);font-size:11.5px;color:var(--paper);min-width:120px;text-align:center;opacity:.85}
+            #tab-reisen .trsa-close{display:block;margin:12px auto 0;cursor:pointer;font:inherit;font-size:12.5px;color:var(--text-secondary);background:transparent;border:1px solid var(--border);border-radius:999px;padding:6px 15px}
+            #tab-reisen .trsa-close:hover{color:var(--text-primary);border-color:var(--gold)}
+            #tab-reisen .trsa-dots{display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+            #tab-reisen .trsa-dot{width:8px;height:8px;border-radius:50%;background:rgba(233,200,120,.3);cursor:pointer;transition:.12s}
+            #tab-reisen .trsa-dot.on{background:var(--gold-hi);transform:scale(1.3)}
+            #tab-reisen .trsa-daypill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;padding:6px 11px;border-radius:18px;background:var(--gold);color:#3a2c00;font-weight:700;cursor:pointer;margin-bottom:12px}
+            #tab-reisen .trsa-empty{text-align:center;color:var(--ink-soft);padding:40px 20px;font-family:var(--pserif)}
+            @media(max-width:620px){
+                #tab-reisen .trsa-grid{grid-template-columns:repeat(3,1fr)}
+                #tab-reisen .trsa-page{padding:16px 14px 26px}
+                #tab-reisen .trday-grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+            }
         </style>
         <div class="section">
             <h2 class="section-title">🧳 Reisen</h2>
@@ -3814,6 +3902,15 @@
                 <h3 id="tripDetailTitle"></h3>
                 <div class="tr-detail-meta" id="tripDetailMeta"></div>
                 <div id="tripMap"></div>
+                <details class="section sec-collapse" open id="trdayWrap" style="margin-bottom:14px">
+                    <summary class="sec-summary">📅 Statistik pro Tag <span class="sec-chevron">▼</span></summary>
+                    <div class="trsum" id="trdaySummary"></div>
+                    <div class="trday-grid" id="trdayGrid"></div>
+                </details>
+                <h3 class="trsa-title">📖 Reise-Sammelalbum</h3>
+                <div class="trsa" id="trsaAlbum">
+                    <div id="trsaStage"></div>
+                </div>
                 <details class="section sec-collapse" open id="tripTaxaWrap" style="margin-bottom:14px">
                     <summary class="sec-summary"><svg class="icon"><use href="#icon-butterfly"/></svg> Taxonomische Gruppen <span class="sec-chevron">▼</span></summary>
                     <div id="tripTaxaGrid" class="taxa-grid"></div>
@@ -11714,6 +11811,7 @@
             tripFilterTaxa = new Set();          // Filter je Reise zurücksetzen
             tripViewMode = 'observations';
             tripSpeciesDrill = null;
+            trsa.albumDay = null; trsa.page = 0; trsa.bookOpen = false;   // Sammelalbum je Reise zurücksetzen
             tripEditable = tripIsOwnProfile() && loadTrips().some(x => x.id === id);   // nur eigene Reisen bearbeitbar
             const running = !trip.to;
             document.getElementById('tripDetailTitle').innerHTML = trEsc(trip.name) + (running ? ' <span class="tr-live">● läuft noch</span>' : '');
@@ -11861,6 +11959,8 @@
             renderTripObsList(disp);
             drawTripMarkers(disp);
             if (tripSpeciesDrill != null) tripNavShow(disp); else tripNavHide();
+            // Tages-Statistik & Sammelalbum mit demselben Filter (tripViewMode) aktualisieren
+            try { trsaRenderDays(); trsaRenderAlbum(); } catch (e) {}
         }
         function tripToggleTaxa(key) {
             if (tripFilterTaxa.has(key)) tripFilterTaxa.delete(key); else tripFilterTaxa.add(key);
@@ -11977,6 +12077,209 @@
             tripRefreshView();
             setTimeout(() => fitTripMap(tripDisplayObs()), 60);
         }
+
+        // ============================================================
+        //  Reise: Tages-Statistik & Sammelalbum
+        //  Nutzt denselben Filter wie der View-Umschalter (tripViewMode):
+        //  observations | species | fq | new. Artenzahlen auf taxonomischer
+        //  Artenbasis (Unterart -> Art gerollt, nur Art-Rang).
+        // ============================================================
+        const trsa = { albumDay: null, page: 0, bookOpen: false };
+        const TRSA_PER_PAGE = 12;
+        const TRSA_WD = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+        const TRSA_MODE_NAME = { observations: 'Beobachtungen', species: 'Arten', fq: 'FQ-Arten', new: 'Neu in FQ' };
+
+        function trsaKey(o) { if (o && o.rankLevel != null && o.rankLevel < 10 && o.minSpeciesId) return o.minSpeciesId; return o.taxonId || o.scientific || o.name; }
+        function trsaIsSp(o) { return o.rankLevel == null || o.rankLevel <= 10; }            // Art oder feiner
+        function trsaCountSpecies(list) { const s = new Set(); for (const o of list) if (trsaIsSp(o)) s.add(trsaKey(o)); return s.size; }
+
+        // Allererste Forschungsqualitäts-Sichtung je Art (über ALLE Daten) – für „neu in FQ"
+        let TRSA_FQ_FIRST = null, TRSA_FQ_FIRST_N = -1;
+        function trsaFirstFQ() {
+            if (TRSA_FQ_FIRST && TRSA_FQ_FIRST_N === allObservations.length) return TRSA_FQ_FIRST;
+            const m = {};
+            for (const o of allObservations) { if (o.quality !== 'research' || !trsaIsSp(o) || !o.date) continue; const k = trsaKey(o); if (k == null) continue; if (!m[k] || o.date < m[k]) m[k] = o.date; }
+            TRSA_FQ_FIRST = m; TRSA_FQ_FIRST_N = allObservations.length; return m;
+        }
+        function trsaIsNew(o) {
+            const trip = resolveTrip(tripCurrentId); if (!trip) return false;
+            const d = trsaFirstFQ()[trsaKey(o)];
+            return d != null && d >= trip.from && d <= (trip.to || '9999-12-31');
+        }
+        // Reise-Beobachtungen nach aktuellem View-Filter
+        function trsaFilterObs(list) {
+            if (tripViewMode === 'fq') return list.filter(o => o.quality === 'research' && trsaIsSp(o));
+            if (tripViewMode === 'new') return list.filter(o => o.quality === 'research' && trsaIsSp(o) && trsaIsNew(o));
+            if (tripViewMode === 'species') return list.filter(o => trsaIsSp(o));
+            return list;  // observations
+        }
+
+        // ---------- Tages-Statistik ----------
+        function trsaShort(d) { const p = d.split('-'); return `${p[2]}.${p[1]}.`; }
+        function trsaWeekday(d) { return TRSA_WD[new Date(d + 'T00:00:00').getDay()]; }
+        function trsaAddDays(d, n) { const x = new Date(d + 'T00:00:00'); x.setDate(x.getDate() + n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; }
+
+        function trsaRenderDays() {
+            const grid = document.getElementById('trdayGrid'); if (!grid) return;
+            const trip = resolveTrip(tripCurrentId); if (!trip) { grid.innerHTML = ''; return; }
+            const to = trip.to || tripTodayStr();
+            const base = trsaFilterObs(tripCurrentObs);
+            const fqFirst = trsaFirstFQ();
+            const byDay = {};
+            for (const o of base) { if (!o.date) continue; (byDay[o.date] || (byDay[o.date] = [])).push(o); }
+            const span = tripDaySpan(trip.from, to);
+            let dayList;
+            if (span <= 45) { dayList = []; for (let i = 0; i < span; i++) dayList.push(trsaAddDays(trip.from, i)); }
+            else dayList = Object.keys(byDay).sort();
+
+            const perDay = dayList.map((date, idx) => {
+                const list = byDay[date] || [];
+                const spl = list.filter(trsaIsSp);
+                const sp = new Set(spl.map(trsaKey)).size;
+                let neu = 0; const seen = new Set();
+                for (const o of spl) { const k = trsaKey(o); if (seen.has(k)) continue; seen.add(k); if (fqFirst[k] === date) neu++; }
+                const taxa = {}; for (const o of list) taxa[o.taxon] = (taxa[o.taxon] || 0) + 1;
+                return { date, idx, n: list.length, sp, neu, taxa };
+            });
+            const heroOf = d => tripViewMode === 'observations' ? d.n : d.sp;
+            const maxH = Math.max(1, ...perDay.map(heroOf));
+
+            const totalObs = base.length, totalSp = trsaCountSpecies(base);
+            const newKeys = new Set(); for (const o of tripCurrentObs) { if (o.quality === 'research' && trsaIsSp(o) && trsaIsNew(o)) newKeys.add(trsaKey(o)); }
+            let activeDays = 0, bestDay = null, bestH = -1;
+            for (const d of perDay) { const h = heroOf(d); if (h > 0) activeDays++; if (h > bestH) { bestH = h; bestDay = d.date; } }
+            const sum = document.getElementById('trdaySummary');
+            if (sum) sum.innerHTML = [
+                `<div class="trsumcard"><b>${totalObs}</b><span>Beobachtungen</span></div>`,
+                `<div class="trsumcard"><b>${totalSp}</b><span>Arten <small>Art-Basis</small></span></div>`,
+                `<div class="trsumcard"><b style="color:var(--gold,#f0cf63)">${newKeys.size}</b><span>neu in FQ ✨</span></div>`,
+                `<div class="trsumcard"><b>${activeDays}<small> / ${span}</small></b><span>aktive Tage</span></div>`,
+                `<div class="trsumcard"><b>${bestH > 0 ? bestH : 0}</b><span>bester Tag <small>${bestH > 0 ? fmtTripDate(bestDay) : '–'}</small></span></div>`
+            ].join('');
+
+            grid.innerHTML = perDay.map(d => {
+                const top = `<div class="trday-top"><span class="dd">${trsaShort(d.date)}</span><span class="dn">T${d.idx + 1}</span></div><div class="trday-dw">${trsaWeekday(d.date)}</div>`;
+                const hero = heroOf(d);
+                if (hero === 0) return `<div class="trday empty">${top}<div class="trday-empty-label">–</div></div>`;
+                const taxaIcons = Object.entries(d.taxa).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k]) => { const t = rwIconicType(k); return `<span title="${trEsc(t.de)}">${t.emoji}</span>`; }).join('');
+                let heroLbl, sub;
+                if (tripViewMode === 'observations') { heroLbl = 'Beob.'; sub = `${d.sp} Arten${d.neu ? ` · <span class="neu">${d.neu}✨</span>` : ''}`; }
+                else if (tripViewMode === 'new') { heroLbl = 'neu ✨'; sub = `${d.n} Beob.`; }
+                else { heroLbl = 'Arten'; sub = `${d.n} Beob.${d.neu ? ` · <span class="neu">${d.neu}✨</span>` : ''}`; }
+                const sel = trsa.albumDay === d.date ? ' sel' : '';
+                return `<div class="trday${sel}" onclick="trsaToggleDay('${d.date}')" title="Im Album nur diesen Tag zeigen">
+                    ${top}
+                    <div class="trday-hero"><b>${hero}</b><span>${heroLbl}</span></div>
+                    <div class="trday-sub">${sub}</div>
+                    <div class="trday-taxa">${taxaIcons}</div>
+                    <div class="trday-bar"><i style="width:${Math.round(hero / maxH * 100)}%"></i></div>
+                </div>`;
+            }).join('');
+        }
+        function trsaToggleDay(date) {
+            trsa.albumDay = (trsa.albumDay === date) ? null : date;
+            trsa.page = 0;
+            if (trsa.albumDay) trsa.bookOpen = true;
+            trsaRenderDays(); trsaRenderAlbum();
+            const st = document.getElementById('trsaStage'); if (st) st.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // ---------- Sammelalbum ----------
+        function trsaAlbumPool() {
+            let obs = trsaFilterObs(tripCurrentObs);
+            if (tripFilterTaxa && tripFilterTaxa.size) obs = obs.filter(o => o.taxon && tripFilterTaxa.has(o.taxon));
+            if (trsa.albumDay) obs = obs.filter(o => o.date === trsa.albumDay);
+            return obs;
+        }
+        function trsaAlbumCards() {
+            const pool = trsaAlbumPool();
+            if (tripViewMode === 'observations') {
+                return pool.slice().sort((a, b) => a.date < b.date ? -1 : (a.date > b.date ? 1 : 0)).map(o => ({ o, count: 1, isNew: trsaIsNew(o) }));
+            }
+            const by = new Map();
+            for (const o of pool) {
+                if (!trsaIsSp(o)) continue;
+                const k = trsaKey(o); if (k == null) continue;
+                let e = by.get(k);
+                if (!e) { e = { o, count: 0, firstDate: o.date }; by.set(k, e); }
+                e.count++;
+                if (!e.o.image && o.image) e.o = o;
+                if (o.date < e.firstDate) e.firstDate = o.date;
+            }
+            return [...by.values()].sort((a, b) => a.firstDate < b.firstDate ? -1 : (a.firstDate > b.firstDate ? 1 : 0)).map(e => ({ o: e.o, count: e.count, isNew: trsaIsNew(e.o) }));
+        }
+        function trsaCoverHtml() {
+            const trip = resolveTrip(tripCurrentId); if (!trip) return '';
+            const span = tripDaySpan(trip.from, trip.to || tripTodayStr());
+            const nSp = trsaCountSpecies(tripCurrentObs);
+            return `<div class="trsa-cover" onclick="trsaOpenBook()" title="Album aufschlagen">
+                <div class="trsa-cface">
+                    <div class="med"><img src="apple-touch-icon.png" alt=""></div>
+                    <div class="eyebrow">Reise-Sammelalbum</div>
+                    <div class="tn">${trEsc(trip.name || 'Reise')}</div>
+                    <div class="rng">${fmtTripDate(trip.from)} – ${trip.to ? fmtTripDate(trip.to) : 'heute'} · ${span} ${span === 1 ? 'Tag' : 'Tage'}</div>
+                    <div class="cnt">${nSp} ${nSp === 1 ? 'Art' : 'Arten'} gesammelt</div>
+                    <div class="open">Aufschlagen ›</div>
+                </div>
+            </div>`;
+        }
+        function trsaRenderAlbum() {
+            const stage = document.getElementById('trsaStage'); if (!stage) return;
+            const trip = resolveTrip(tripCurrentId);
+            if (!trip) { stage.innerHTML = ''; return; }
+            if (!trsa.bookOpen) { stage.innerHTML = trsaCoverHtml(); return; }
+
+            const cards = trsaAlbumCards();
+            const pages = Math.max(1, Math.ceil(cards.length / TRSA_PER_PAGE));
+            if (trsa.page >= pages) trsa.page = pages - 1;
+            if (trsa.page < 0) trsa.page = 0;
+            const start = trsa.page * TRSA_PER_PAGE;
+            const slice = cards.slice(start, start + TRSA_PER_PAGE);
+
+            let inner;
+            if (!cards.length) inner = `<div class="trsa-empty">Keine Karten für diese Auswahl.</div>`;
+            else {
+                let g = slice.map((c, i) => trsaCardHtml(c, start + i + 1)).join('');
+                for (let i = slice.length; i < TRSA_PER_PAGE; i++) g += `<div class="trsa-slot">◇</div>`;
+                inner = `<div class="trsa-grid">${g}</div>`;
+            }
+            let dots = ''; for (let i = 0; i < pages; i++) dots += `<div class="trsa-dot ${i === trsa.page ? 'on' : ''}" onclick="trsaGoto(${i})"></div>`;
+            const dayPill = trsa.albumDay ? `<div class="trsa-daypill" onclick="trsaToggleDay('${trsa.albumDay}')">📅 ${fmtTripDate(trsa.albumDay)} ✕</div>` : '';
+
+            stage.innerHTML = `
+              ${dayPill}
+              <div class="trsa-frame">
+                <div class="trsa-page">
+                  <div class="trsa-pagehead"><span class="t">${trEsc(trip.name || 'Reise')}</span><span class="s">${cards.length} ${cards.length === 1 ? 'Karte' : 'Karten'} · ${TRSA_MODE_NAME[tripViewMode]}</span></div>
+                  ${inner}
+                  <div class="trsa-pfoot">${fmtTripDate(trip.from)} – ${trip.to ? fmtTripDate(trip.to) : 'heute'}</div>
+                </div>
+              </div>
+              <div class="trsa-nav">
+                <button ${trsa.page === 0 ? 'disabled' : ''} onclick="trsaGoto(${trsa.page - 1})">‹ zurück</button>
+                <span class="pg">Seite ${trsa.page + 1} / ${pages}</span>
+                <button ${trsa.page >= pages - 1 ? 'disabled' : ''} onclick="trsaGoto(${trsa.page + 1})">weiter ›</button>
+              </div>
+              <div class="trsa-dots">${dots}</div>
+              <button class="trsa-close" onclick="trsaCloseBook()">📕 Buch schließen</button>`;
+        }
+        function trsaCardHtml(c, no) {
+            const o = c.o, t = rwIconicType(o.taxon);
+            const multi = (tripViewMode !== 'observations' && c.count > 1) ? `<span class="multi">${c.count}×</span>` : '';
+            const shiny = c.isNew ? ' shiny' : '';
+            const newb = c.isNew ? `<span class="newbadge">NEU ✨</span>` : '';
+            const img = o.image ? `<img src="${o.image}" alt="${trEsc(o.name)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="noimg">${t.emoji}</div>`;
+            return `<div class="trsa-card${shiny}" style="--type:${t.c}" onclick="trsaOpenCard('${o.id}')">
+                <div class="ph"><span class="no">#${no}</span><span class="type" style="background:${t.c}">${t.emoji}</span>${img}${multi}${newb}</div>
+                <div class="meta"><div class="nm">${trEsc(o.name)}</div>${o.scientific ? `<div class="sci">${trEsc(o.scientific)}</div>` : ''}<div class="dt">${fmtTripDate(o.date)}${o.quality === 'research' ? ' · 🔬 FQ' : ''}</div></div>
+            </div>`;
+        }
+        function trsaOpenBook() { trsa.bookOpen = true; trsa.page = 0; trsaRenderAlbum(); const st = document.getElementById('trsaStage'); if (st) st.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        function trsaCloseBook() { trsa.bookOpen = false; trsa.albumDay = null; trsaRenderDays(); trsaRenderAlbum(); const st = document.getElementById('trsaStage'); if (st) st.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        function trsaGoto(p) { trsa.page = p; trsaRenderAlbum(); const st = document.getElementById('trsaStage'); if (st) st.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        // Karte angetippt -> Fundort auf der Reisekarte hervorheben (bestehende Logik)
+        function trsaOpenCard(id) { travelSelectObs(id); }
+
         // Karte angeklickt -> Punkt auf der Leaflet-Karte hervorheben & Popup öffnen
         function travelSelectObs(id, opts) {
             opts = opts || {};
