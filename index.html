@@ -3046,6 +3046,25 @@
       .ib-btn:hover{color:var(--text-primary);border-color:var(--accent);}
       .ib-filterbar{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-secondary);padding:2px 4px 8px;}
       .ib-filterbar input{accent-color:var(--accent);}
+      .ib-filter>summary .ib-fdot{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--accent);
+        display:none;flex:none;}
+      .ib-filter.active>summary .ib-fdot{display:inline-block;}
+      .ib-filter>summary .ib-chev{margin-left:8px;}
+      .ib-daterow{display:flex;gap:8px;margin:2px 2px 10px;}
+      .ib-datefield{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+      .ib-datefield label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);}
+      .ib-datefield input{background:var(--bg-light);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);
+        font-size:12px;padding:6px 8px;color-scheme:dark;width:100%;}
+      .ib-datefield input:focus{outline:none;border-color:var(--accent);}
+      .ib-chips{display:flex;flex-wrap:wrap;gap:6px;margin:2px;}
+      .ib-chip{display:inline-flex;align-items:center;gap:5px;background:var(--bg-light);border:1px solid var(--border);
+        border-radius:999px;padding:4px 10px;font-size:12px;color:var(--text-secondary);cursor:pointer;user-select:none;}
+      .ib-chip:hover{border-color:var(--accent);}
+      .ib-chip.active{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
+      .ib-chip .ib-chip-cnt{font-size:10px;font-weight:800;opacity:.75;}
+      .ib-reset{display:block;width:100%;background:none;border:none;color:var(--text-muted);font-size:11px;
+        font-weight:600;cursor:pointer;padding:8px 0 2px;text-align:center;}
+      .ib-reset:hover{color:var(--accent);text-decoration:underline;}
       @media(max-width:600px){ .inbox-toggle .it-label{display:none;} .inbox-toggle{padding:12px 8px;} }
     </style>
     <button id="inboxToggle" class="inbox-toggle" type="button" onclick="INBOX.open()"
@@ -3654,13 +3673,6 @@
                         <button class="seg-btn active" data-v="missing" onclick="setNearbyShowMode('missing')">Noch fehlende</button>
                         <button class="seg-btn" data-v="owned" onclick="setNearbyShowMode('owned')">Schon gesehen</button>
                         <button class="seg-btn" data-v="all" onclick="setNearbyShowMode('all')">Alle</button>
-                    </div>
-                </div>
-                <div class="nb-owned">
-                    <label>„Schon gefunden" zählt</label>
-                    <div class="seg" id="nbOwnedSeg">
-                        <button class="seg-btn active" data-v="all" onclick="setNearbyOwnedMode('all')">Alle Beobachtungen</button>
-                        <button class="seg-btn" data-v="fq" onclick="setNearbyOwnedMode('fq')">Nur FQ</button>
                     </div>
                 </div>
                 <div class="nb-owned">
@@ -10563,6 +10575,20 @@
             const CAP = 50;                    // max. Einträge je Liste (DOM schlank halten)
             let _obs = [];                     // letzte Beobachtungsliste (für Re-Render)
             let _wired = false;
+            // Anzeige-Filter (nur Session, nicht persistiert): Datumsbereich + Taxa-Gruppen.
+            // Wirken auf alle Sektionen; das Badge zählt weiter die ungefilterten „neuen" Einträge.
+            let fFrom = '', fTo = '';
+            let fTaxa = new Set();
+            function filterActive() { return !!(fFrom || fTo || fTaxa.size); }
+            // Prüft eine Beobachtung gegen den aktiven Filter (Datum via o.date YYYY-MM-DD, Gruppe via o.taxon)
+            function passFilter(o) {
+                if (!o) return false;
+                const d = o.date || '';
+                if (fFrom && (!d || d < fFrom)) return false;
+                if (fTo && (!d || d > fTo)) return false;
+                if (fTaxa.size && !fTaxa.has(o.taxon)) return false;
+                return true;
+            }
             function userKey() { return String(USER_ID || '').toLowerCase(); }
             function baseKey() { return 'inat_inbox_base_v1_' + userKey(); }
             function isActive() {
@@ -10640,11 +10666,45 @@
 
                 const user = encodeURIComponent(String(USER_ID || ''));
                 const needsIdHref = `https://www.inaturalist.org/observations?user_id=${user}&quality_grade=needs_id`;
-                const inboxCount = downgrades.length + activity.length;
+                const inboxCount = downgrades.length + activity.length;   // ungefiltert = Badge-Zahl
 
-                // Badge
+                // Badge zeigt immer die ungefilterten „neuen" Einträge, damit ein aktiver Filter
+                // nichts verschluckt.
                 const badge = document.getElementById('inboxBadge');
                 if (badge) { badge.textContent = inboxCount > 99 ? '99+' : String(inboxCount); badge.classList.toggle('show', inboxCount > 0); }
+
+                // --- Filter-Optionen aus den tatsächlich vorhandenen Einträgen bauen ---
+                // Kandidaten-Pool (dedupe je id) über alle vier Sektionen → Taxa-Chips mit Anzahl.
+                const poolMap = new Map();
+                for (const o of downgrades) poolMap.set(o.id, o);
+                for (const x of activity) poolMap.set(x.o.id, x.o);
+                for (const o of oneAway) poolMap.set(o.id, o);
+                for (const o of knownNeedsId) poolMap.set(o.id, o);
+                // Taxa-Anzahl respektiert den Datumsfilter (nicht die Taxa-Auswahl selbst → Facetten bleiben wählbar)
+                const inDate = o => { const d = o.date || ''; if (fFrom && (!d || d < fFrom)) return false; if (fTo && (!d || d > fTo)) return false; return true; };
+                const taxaCounts = {};
+                for (const o of poolMap.values()) { if (!o.taxon || !inDate(o)) continue; taxaCounts[o.taxon] = (taxaCounts[o.taxon] || 0) + 1; }
+                const taxaKeys = Object.keys(taxaCounts).sort((a, b) => taxaCounts[b] - taxaCounts[a]);
+                const chipHTML = taxaKeys.map(k => {
+                    const cfg = taxaConfig[k] || (typeof rwIconicType === 'function' ? { icon: rwIconicType(k).emoji, name: rwIconicType(k).de } : { icon: '🔹', name: k });
+                    return `<span class="ib-chip ${fTaxa.has(k) ? 'active' : ''}" onclick="INBOX.toggleTaxa('${esc(k)}')"><span>${cfg.icon || '🔹'}</span><span>${esc(cfg.name || k)}</span><span class="ib-chip-cnt">${taxaCounts[k]}</span></span>`;
+                }).join('');
+                const filterInner =
+                    `<div class="ib-daterow">
+                        <span class="ib-datefield"><label>Von</label><input type="date" value="${esc(fFrom)}" onchange="INBOX.setDate('from',this.value)"></span>
+                        <span class="ib-datefield"><label>Bis</label><input type="date" value="${esc(fTo)}" onchange="INBOX.setDate('to',this.value)"></span>
+                    </div>
+                    <div class="ib-chips">${chipHTML || '<span class="ib-empty">Keine Arten im Postfach.</span>'}</div>
+                    ${filterActive() ? `<button class="ib-reset" type="button" onclick="INBOX.resetFilter()">✕ Filter zurücksetzen</button>` : ''}`;
+                const filterBlock = `<details class="ib-sec ib-filter ${filterActive() ? 'active' : ''}" ${filterActive() ? 'open' : ''}><summary>🔎 Filter
+                        <span class="ib-fdot"></span><span class="ib-chev">▶</span></summary><div class="ib-seclist">${filterInner}</div></details>`;
+
+                // --- Filter auf die Anzeige-Listen anwenden (Badge bleibt ungefiltert) ---
+                const dDown = downgrades.filter(passFilter);
+                const dAct = activity.filter(x => passFilter(x.o));
+                const dOne = oneAway.filter(passFilter);
+                const dKnown = knownNeedsId.filter(passFilter);
+                const noHit = 'Keine Treffer für den Filter.';
 
                 const sec = (title, cls, cnt, inner, open) =>
                     `<details class="ib-sec" ${open ? 'open' : ''}><summary>${title}
@@ -10657,28 +10717,30 @@
                     inboxInner += `<div class="ib-empty">Startpunkt gesetzt. Ab jetzt zeige ich hier Herabstufungen und neue Einordnungen/Kommentare seit deinem letzten Besuch.</div>`;
                 }
                 inboxInner += `<div class="ib-sub">⬇️ Nicht mehr FQ (seit letztem Besuch)</div>`;
-                inboxInner += listBlock(downgrades, () => [{ cls: 'down', txt: 'runtergestuft' }], 'Nichts herabgestuft – alles stabil.');
+                inboxInner += listBlock(dDown, () => [{ cls: 'down', txt: 'runtergestuft' }], filterActive() ? noHit : 'Nichts herabgestuft – alles stabil.');
                 inboxInner += `<div class="ib-sub">💬 Neue Einordnungen & Kommentare</div>`;
-                inboxInner += listBlock(activity, (x) => {
+                inboxInner += listBlock(dAct, (x) => {
                     const t = [];
                     if (x.dId) t.push({ cls: 'you', txt: '+' + x.dId + ' Einordnung' });
                     if (x.dCo) t.push({ cls: 'down', txt: '+' + x.dCo + ' Kommentar' });
                     return t;
-                }, 'Keine neue Aktivität.');
+                }, filterActive() ? noHit : 'Keine neue Aktivität.');
                 if (downgrades.length || activity.length) {
                     inboxInner += `<div class="ib-actions"><button class="ib-btn" type="button" onclick="INBOX.markAllRead()">✓ Alles als gelesen markieren</button></div>`;
                 }
 
                 // --- Fast-FQ-Sektion: nur selbst bestätigbare ---
-                const faInner = listBlock(oneAway, () => [{ cls: 'you', txt: '✅ du bestätigst → FQ' }], 'Nichts, das du selbst bestätigen kannst.', needsIdHref);
+                const faInner = listBlock(dOne, () => [{ cls: 'you', txt: '✅ du bestätigst → FQ' }], filterActive() ? noHit : 'Nichts, das du selbst bestätigen kannst.', needsIdHref);
 
                 // --- Bekannte-Art-Sektion: Art kennst du schon, Beobachtung aber noch kein FQ ---
-                const knownInner = listBlock(knownNeedsId, () => [{ cls: 'you', txt: 'Art kennst du' }], 'Nichts Offenes – alle bekannten Arten sind bestätigt.', needsIdHref);
+                const knownInner = listBlock(dKnown, () => [{ cls: 'you', txt: 'Art kennst du' }], filterActive() ? noHit : 'Nichts Offenes – alle bekannten Arten sind bestätigt.', needsIdHref);
 
+                const shownInbox = dDown.length + dAct.length;
                 body.innerHTML =
-                    sec('📨 Inbox', inboxCount ? 'alert' : 'ok', inboxCount, inboxInner, true) +
-                    sec('🎯 Fast FQ – du kannst bestätigen', oneAway.length ? 'warn' : 'ok', oneAway.length, faInner, false) +
-                    sec('🌱 Bekannte Art – noch kein FQ', knownNeedsId.length ? 'warn' : 'ok', knownNeedsId.length, knownInner, false);
+                    filterBlock +
+                    sec('📨 Inbox', shownInbox ? 'alert' : 'ok', shownInbox, inboxInner, true) +
+                    sec('🎯 Fast FQ – du kannst bestätigen', dOne.length ? 'warn' : 'ok', dOne.length, faInner, false) +
+                    sec('🌱 Bekannte Art – noch kein FQ', dKnown.length ? 'warn' : 'ok', dKnown.length, knownInner, false);
 
                 // Erststart: Basis still setzen (kein „alles neu"-Schwall)
                 if (firstRun) saveBase(snapshot(list));
@@ -10696,6 +10758,11 @@
             function close() { const p = document.getElementById('inboxPanel'), s = document.getElementById('inboxScrim'); if (p) { p.classList.remove('open'); p.setAttribute('aria-hidden', 'true'); } if (s) s.classList.remove('open'); }
             function markAllRead() { saveBase(snapshot(_obs)); render(_obs); }
 
+            // --- Anzeige-Filter (Datumsbereich + Taxa) ---
+            function setDate(which, val) { if (which === 'from') fFrom = val || ''; else fTo = val || ''; render(_obs); }
+            function toggleTaxa(key) { if (fTaxa.has(key)) fTaxa.delete(key); else fTaxa.add(key); render(_obs); }
+            function resetFilter() { fFrom = ''; fTo = ''; fTaxa.clear(); render(_obs); }
+
             function init() {
                 if (!_wired) {
                     document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
@@ -10705,7 +10772,7 @@
                 if (toggle) toggle.style.display = isActive() ? 'flex' : 'none';
             }
 
-            return { init, refresh, open, close, markAllRead };
+            return { init, refresh, open, close, markAllRead, setDate, toggleTaxa, resetFilter };
         })();
 
         // Initialize
@@ -10962,7 +11029,6 @@
         let nearbySpeciesLayer = null, nearbySelectedTid = null;   // Fundpunkte der angeklickten Art
         let nearbyLat = 50.9375, nearbyLon = 6.9603;   // Fallback: Köln
         let nearbyRadius = 10;                          // km
-        let nearbyOwnedMode = 'all';                    // 'all' | 'fq' (welche eigenen Arten abgezogen werden)
         let nearbyShowMode = 'missing';                 // 'missing' | 'owned' | 'all' (welche Arten angezeigt werden)
         let nearbySelectedTaxa = [];                    // Gruppen-Filter
         let nearbyPool = [];                            // Arten im Umkreis (FQ)
@@ -11033,12 +11099,6 @@
             );
         }
 
-        function setNearbyOwnedMode(m) {
-            nearbyOwnedMode = m;
-            document.querySelectorAll('#nbOwnedSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === m));
-            if (nearbyPool.length) renderNearbyResults();
-        }
-
         function setNearbyShowMode(m) {
             nearbyShowMode = m;
             document.querySelectorAll('#nbShowSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === m));
@@ -11072,10 +11132,12 @@
         // Unterarten/Varietäten werden zusätzlich auf ihre Art gerollt (min_species_taxon_id),
         // damit z. B. die Haus-Stadttaube als "Taube entdeckt" zählt (die Umkreis-Liste liefert Arten).
         function nearbyOwnedSet() {
+            // "Schon gesehen" zählt NUR Forschungsqualität – sonst gilt eine Art als entdeckt,
+            // obwohl ihre Bestimmung noch unbestätigt ist.
             const s = new Set();
             for (const o of (allObservations || [])) {
                 if (o.taxonId == null) continue;
-                if (nearbyOwnedMode === 'fq' && o.quality !== 'research') continue;
+                if (o.quality !== 'research') continue;
                 s.add(o.taxonId);
                 if (o.minSpeciesId != null) s.add(o.minSpeciesId);   // Unterart -> Art
             }
@@ -11290,7 +11352,6 @@
             if (!document.getElementById('tab-nearby')) return;
             initNearbyMap();
             setTimeout(() => { if (nearbyMap) { nearbyMap.invalidateSize(); nearbyMap.setView([nearbyLat, nearbyLon], nearbyZoomForRadius(nearbyRadius)); } }, 160);
-            document.querySelectorAll('#nbOwnedSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === nearbyOwnedMode));
             document.querySelectorAll('#nbShowSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === nearbyShowMode));
             const rad = document.getElementById('nbRadius'); if (rad) rad.value = nearbyRadius;
             const rv = document.getElementById('nbRadiusVal'); if (rv) rv.textContent = nearbyRadius + ' km';
