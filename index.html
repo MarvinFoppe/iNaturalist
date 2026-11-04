@@ -3840,8 +3840,10 @@
             #tab-reisen .trsa-card{position:relative;min-width:0;border-radius:9px;overflow:hidden;cursor:pointer;--type:#7a7f8a;background:#12151b;border:1px solid var(--type);display:flex;flex-direction:column;transition:transform .14s,box-shadow .18s;box-shadow:0 3px 9px rgba(50,34,14,.4)}
             #tab-reisen .trsa-card:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 10px 22px rgba(40,26,10,.55);z-index:2}
             #tab-reisen .trsa-card .ph{position:relative;aspect-ratio:1/1;background:#1a1e26;overflow:hidden}
-            #tab-reisen .trsa-card .ph img{width:100%;height:100%;object-fit:contain;display:block}
-            #tab-reisen .trsa-card .noimg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:34px}
+            #tab-reisen .trsa-card .ph::before{content:"";position:absolute;inset:0;background-image:var(--img);background-size:cover;background-position:center;filter:blur(16px) brightness(.5) saturate(1.1);transform:scale(1.2);z-index:0}
+            #tab-reisen .trsa-card .ph img{position:relative;z-index:1;width:100%;height:100%;object-fit:contain;display:block}
+            #tab-reisen .trsa-card .noimg{position:relative;z-index:1;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:34px}
+            #tab-reisen .trsa-card .no,#tab-reisen .trsa-card .type,#tab-reisen .trsa-card .multi,#tab-reisen .trsa-card .newbadge{z-index:2}
             #tab-reisen .trsa-card .type{position:absolute;top:5px;right:5px;width:21px;height:21px;border-radius:50%;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,.55);box-shadow:0 2px 5px rgba(0,0,0,.5)}
             #tab-reisen .trsa-card .no{position:absolute;top:5px;left:5px;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.6);color:#fff;font-variant-numeric:tabular-nums}
             #tab-reisen .trsa-card .multi{position:absolute;bottom:5px;right:5px;font-size:10px;font-weight:800;padding:1px 6px;border-radius:999px;background:var(--gold);color:#3a2c00;box-shadow:0 2px 6px rgba(0,0,0,.4)}
@@ -12301,8 +12303,9 @@
             const shiny = c.isNew ? ' shiny' : '';
             const newb = c.isNew ? `<span class="newbadge">NEU ✨</span>` : '';
             const img = o.image ? `<img src="${o.image}" alt="${trEsc(o.name)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="noimg">${t.emoji}</div>`;
+            const phStyle = o.image ? ` style="--img:url('${o.image}')"` : '';
             return `<div class="trsa-card${shiny}" style="--type:${t.c}" onclick="trsaOpenCard('${o.id}')">
-                <div class="ph"><span class="no">#${no}</span><span class="type" style="background:${t.c}">${t.emoji}</span>${img}${multi}${newb}</div>
+                <div class="ph"${phStyle}><span class="no">#${no}</span><span class="type" style="background:${t.c}">${t.emoji}</span>${img}${multi}${newb}</div>
                 <div class="meta"><div class="nm">${trEsc(o.name)}</div>${o.scientific ? `<div class="sci">${trEsc(o.scientific)}</div>` : ''}<div class="dt">${fmtTripDate(c.day || o.date)}${o.quality === 'research' ? ' · 🔬 FQ' : ''}</div></div>
             </div>`;
         }
