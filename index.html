@@ -3814,7 +3814,7 @@
                 --ink:#3a3327;--ink-soft:#655843;--ink-mute:#8d7d5f;--pline2:rgba(96,72,38,.40);
                 --pserif:'Playfair Display',Georgia,serif;--pscript:'Snell Roundhand','Apple Chancery','Brush Script MT',cursive;--pmono:ui-monospace,'SF Mono',Menlo,monospace}
             #tab-reisen .trsa-title{font-family:var(--pserif,serif);margin:26px 0 12px;color:var(--text-primary)}
-            #tab-reisen .trsa-cover{position:relative;cursor:pointer;width:min(300px,78vw);aspect-ratio:.72;margin:4px auto 0;border-radius:5px 10px 10px 5px;transition:transform .15s,box-shadow .2s;
+            #tab-reisen .trsa-cover{position:relative;cursor:pointer;width:min(100%,680px);height:min(74svh,720px);margin:6px auto 0;border-radius:5px 10px 10px 5px;transition:transform .15s,box-shadow .2s;
                 background:repeating-linear-gradient(93deg,rgba(255,240,210,.045) 0 2px,transparent 2px 6px),radial-gradient(135% 120% at 32% 10%,var(--lea-hi),var(--lea) 46%,var(--lea-lo));
                 box-shadow:3px 0 0 #f1e8d2,5px 0 0 #eae0c8,7px 1px 0 #e2d6ba,9px 1px 0 #d9cba9,11px 2px 0 #cfbf96,13px 2px 0 #c4b184,15px 3px 0 #b8a475,18px 10px 30px rgba(0,0,0,.6)}
             #tab-reisen .trsa-cover:hover{transform:translateY(-3px)}
@@ -3824,17 +3824,18 @@
             #tab-reisen .trsa-cface .med{width:33%;aspect-ratio:1;border-radius:18px;padding:9px;background:linear-gradient(160deg,var(--lea-edge),var(--lea-lo));box-shadow:inset 0 2px 4px rgba(255,230,190,.22),inset 0 -5px 10px rgba(0,0,0,.55),0 8px 18px rgba(0,0,0,.45)}
             #tab-reisen .trsa-cface .med img{width:100%;height:100%;border-radius:11px;display:block;filter:grayscale(1) sepia(1) saturate(2.7) hue-rotate(-6deg) brightness(1.08) contrast(1.06)}
             #tab-reisen .trsa-cface .eyebrow{font-family:var(--pserif);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-hi);opacity:.85}
-            #tab-reisen .trsa-cface .tn{font-family:var(--pscript);font-size:30px;line-height:1.05;color:var(--paper);text-shadow:0 1px 2px rgba(0,0,0,.6)}
+            #tab-reisen .trsa-cface .tn{font-family:var(--pscript);font-size:clamp(30px,4.6vw,46px);line-height:1.05;color:var(--paper);text-shadow:0 1px 2px rgba(0,0,0,.6)}
             #tab-reisen .trsa-cface .rng{font-family:var(--pmono);font-size:10.5px;letter-spacing:.08em;color:var(--gold-hi);opacity:.78}
             #tab-reisen .trsa-cface .cnt{font-family:var(--pserif);font-size:13px;color:var(--gold-hi);border-top:1px solid rgba(233,200,120,.25);padding-top:9px;margin-top:2px}
             #tab-reisen .trsa-cface .open{font-family:var(--pmono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-hi);opacity:.6;margin-top:2px}
             #tab-reisen .trsa-frame{max-width:680px;margin:0 auto;border-radius:12px;padding:13px;box-shadow:0 24px 60px rgba(0,0,0,.6);background:radial-gradient(130% 120% at 25% 8%,var(--lea-hi),var(--lea) 48%,var(--lea-lo))}
-            #tab-reisen .trsa-page{position:relative;border-radius:4px;padding:18px 20px 30px;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.45);
+            #tab-reisen .trsa-page{position:relative;border-radius:4px;padding:18px 20px 24px;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.45);
+                display:flex;flex-direction:column;min-height:min(58svh,560px);max-height:min(74svh,760px);
                 background:radial-gradient(70% 55% at 20% 12%,rgba(150,118,66,.07),transparent 55%),radial-gradient(60% 50% at 85% 90%,rgba(120,88,46,.09),transparent 55%),linear-gradient(var(--paper),var(--paper2))}
             #tab-reisen .trsa-pagehead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 10px;border-bottom:2px solid var(--pline2);padding-bottom:8px;margin-bottom:14px}
             #tab-reisen .trsa-pagehead .t{font-family:var(--pserif);font-size:17px;color:var(--ink)}
             #tab-reisen .trsa-pagehead .s{font-family:var(--pmono);font-size:10px;letter-spacing:.1em;color:var(--ink-mute);text-transform:uppercase}
-            #tab-reisen .trsa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;min-width:0}
+            #tab-reisen .trsa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;min-width:0;flex:1 1 auto;min-height:0;overflow:auto;align-content:start}
             #tab-reisen .trsa-pfoot{text-align:center;font-family:var(--pmono);font-size:10px;letter-spacing:.14em;color:var(--ink-mute);margin-top:14px}
             #tab-reisen .trsa-card{position:relative;min-width:0;border-radius:9px;overflow:hidden;cursor:pointer;--type:#7a7f8a;background:#12151b;border:1px solid var(--type);display:flex;flex-direction:column;transition:transform .14s,box-shadow .18s;box-shadow:0 3px 9px rgba(50,34,14,.4)}
             #tab-reisen .trsa-card:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 10px 22px rgba(40,26,10,.55);z-index:2}
