@@ -3087,6 +3087,7 @@
         <button class="main-tab" id="tabBtnBadges" role="tab" aria-controls="tab-badges" aria-selected="false" onclick="switchMainTab('badges')">🏅 Badges</button>
         <button class="main-tab" id="tabBtnRarity" role="tab" aria-controls="tab-rarity" aria-selected="false" onclick="switchMainTab('rarity')">⭐ Seltenheit</button>
         <button class="main-tab" id="tabBtnNearby" role="tab" aria-controls="tab-nearby" aria-selected="false" onclick="switchMainTab('nearby')">📍 In meiner Nähe</button>
+        <button class="main-tab" id="tabBtnLands" role="tab" aria-controls="tab-lands" aria-selected="false" onclick="switchMainTab('lands')" style="display:none">🗺️ Länder</button>
         <button class="main-tab" id="tabBtnFriends" role="tab" aria-controls="tab-friends" aria-selected="false" onclick="switchMainTab('friends')">👥 Freunde</button>
         <button class="main-tab" id="tabBtnReisen" role="tab" aria-controls="tab-reisen" aria-selected="false" onclick="switchMainTab('reisen')" style="display:none">🧳 Reisen</button>
         <button class="main-tab" id="tabBtnNerd" role="tab" aria-controls="tab-nerd" aria-selected="false" onclick="switchMainTab('nerd')" style="display:none">🔬 Nerd</button>
@@ -3703,6 +3704,86 @@
             <div id="nbResults" class="nb-results"><div class="nb-status">Wähle Standort &amp; Umkreis und tippe auf „🔎 Umgebung prüfen".</div></div>
         </div>
     </div><!-- /tab-nearby -->
+
+    <div id="tab-lands" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnLands">
+        <style>
+            #tab-lands .lc-intro{color:var(--text-secondary);margin-bottom:16px;max-width:860px}
+            #tab-lands .lc-pick{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:14px}
+            #tab-lands .lc-search{position:relative;flex:1;min-width:240px;max-width:420px}
+            #tab-lands .lc-search > label{display:block;font-size:.8em;color:var(--text-secondary);margin-bottom:6px}
+            #tab-lands .lc-search input{width:100%;background:var(--bg-light);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-family:inherit;font-size:.95em;padding:11px 13px;outline:none}
+            #tab-lands .lc-search input:focus{border-color:var(--accent)}
+            #tab-lands .lc-ac{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;z-index:30;max-height:300px;overflow:auto;box-shadow:0 8px 22px var(--shadow);display:none}
+            #tab-lands .lc-ac.open{display:block}
+            #tab-lands .lc-ac-item{padding:10px 13px;cursor:pointer;font-size:.9em;color:var(--text-primary);display:flex;justify-content:space-between;gap:10px;align-items:center}
+            #tab-lands .lc-ac-item:hover{background:var(--bg-light)}
+            #tab-lands .lc-ac-item .lc-ac-sub{color:var(--text-muted);font-size:.8em}
+            #tab-lands .lc-mine{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+            #tab-lands .lc-mine-lbl{width:100%;font-size:.8em;color:var(--text-secondary);margin-bottom:2px}
+            #tab-lands .lc-chip{background:var(--bg-light);border:1px solid var(--border);color:var(--text-primary);border-radius:999px;padding:7px 13px;cursor:pointer;font-size:.85em;font-family:inherit}
+            #tab-lands .lc-chip:hover{border-color:var(--accent)}
+            #tab-lands .lc-chip.active{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
+            #tab-lands .lc-thresh{display:flex;flex-direction:column;gap:6px;min-width:260px;flex:1;max-width:360px}
+            #tab-lands .lc-thresh > label{font-size:.8em;color:var(--text-secondary)}
+            #tab-lands .lc-thresh input[type=range]{width:100%;accent-color:var(--accent)}
+            #tab-lands .lc-thresh .lc-th-hint{font-size:.76em;color:var(--text-muted)}
+            #tab-lands .lc-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:4px 0 18px}
+            @media(max-width:560px){#tab-lands .lc-stats{grid-template-columns:1fr}}
+            #tab-lands .lc-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;cursor:pointer;transition:border-color .15s,transform .15s;position:relative;overflow:hidden}
+            #tab-lands .lc-stat:hover{transform:translateY(-2px)}
+            #tab-lands .lc-stat.active{border-color:var(--accent)}
+            #tab-lands .lc-stat .lc-st-head{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+            #tab-lands .lc-stat .lc-st-emoji{font-size:1.3em}
+            #tab-lands .lc-stat .lc-st-name{font-weight:600;color:var(--text-primary)}
+            #tab-lands .lc-stat .lc-st-pct{font-size:2.1em;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+            #tab-lands .lc-stat .lc-st-frac{color:var(--text-secondary);font-size:.9em;margin-top:4px}
+            #tab-lands .lc-stat .lc-st-bar{height:7px;border-radius:999px;background:var(--bg-light);margin-top:12px;overflow:hidden}
+            #tab-lands .lc-stat .lc-st-fill{height:100%;border-radius:999px;transition:width .3s ease}
+            #tab-lands .lc-show{display:flex;gap:0;margin-bottom:14px}
+            #tab-lands .lc-meta{color:var(--text-muted);font-size:.85em;margin-bottom:12px}
+            #tab-lands .lc-status{color:var(--text-muted);padding:30px;text-align:center}
+            #tab-lands .rarity-rare-card.lc-missing{opacity:.5}
+            #tab-lands .rarity-rare-card.lc-missing img{filter:grayscale(1)}
+            #tab-lands .rarity-rare-card.lc-missing .rr-name{color:var(--text-secondary)}
+            #tab-lands .lc-have-badge{position:absolute;top:8px;right:8px;z-index:12;background:rgba(20,30,20,.78);color:#8ee06a;font-size:.68em;font-weight:700;padding:3px 8px;border-radius:999px;backdrop-filter:blur(4px)}
+            #tab-lands .lc-miss-badge{position:absolute;top:8px;right:8px;z-index:12;background:rgba(40,40,40,.7);color:#cfcfcf;font-size:.68em;font-weight:700;padding:3px 8px;border-radius:999px}
+            #tab-lands .lc-empty{text-align:center;padding:50px 20px}
+            #tab-lands .lc-empty-emoji{font-size:3em;margin-bottom:12px}
+            #tab-lands .lc-empty-title{font-family:'Playfair Display',serif;color:var(--accent);font-size:1.3em;margin-bottom:6px}
+            #tab-lands .lc-empty-sub{color:var(--text-secondary)}
+        </style>
+        <div class="section">
+            <h2 class="section-title">🗺️ Länder-Vollständigkeit</h2>
+            <p class="lc-intro">Wie viel Prozent der Vögel und Säugetiere eines Landes hast du schon gesehen? Grundlage
+                sind alle Arten, die dort in <strong>Forschungsqualität</strong> beobachtet wurden. Mit dem Regler blendest du
+                seltene Ausreißer aus (Mindestzahl an Beobachtungen im Land) – so zählen nur realistisch auffindbare Arten.
+                Noch fehlende Arten erscheinen <em>ausgegraut</em> als Sammelkarten.</p>
+            <div class="lc-pick">
+                <div class="lc-search">
+                    <label>Land auswählen</label>
+                    <input type="text" id="lcSearch" placeholder="Land suchen … z. B. Deutschland, Kenia, Peru" autocomplete="off"
+                        oninput="lcOnSearchInput(this.value)" onfocus="lcOnSearchInput(this.value)">
+                    <div class="lc-ac" id="lcAutocomplete"></div>
+                </div>
+                <div class="lc-thresh">
+                    <label>Mindestzahl Beobachtungen im Land: <strong id="lcThreshVal">≥ 50</strong></label>
+                    <input type="range" id="lcThresh" min="5" max="500" step="5" value="50" oninput="lcSetThreshold(this.value)">
+                    <span class="lc-th-hint">Niedrig = alle Arten (auch Irrgäste) · Hoch = nur häufige, gut auffindbare Arten</span>
+                </div>
+            </div>
+            <div class="lc-mine" id="lcMine"></div>
+            <div id="lcStats" class="lc-stats" style="display:none"></div>
+            <div class="lc-show" id="lcShowSeg" style="display:none">
+                <div class="seg">
+                    <button class="seg-btn active" data-v="all" onclick="lcSetShowMode('all')">Alle</button>
+                    <button class="seg-btn" data-v="missing" onclick="lcSetShowMode('missing')">Noch fehlende</button>
+                    <button class="seg-btn" data-v="owned" onclick="lcSetShowMode('owned')">Schon gesehen</button>
+                </div>
+            </div>
+            <div id="lcMeta" class="lc-meta"></div>
+            <div id="lcResults"><div class="lc-status">Wähle ein Land, um deinen Fortschritt zu sehen.</div></div>
+        </div>
+    </div><!-- /tab-lands -->
 
     <div id="tab-reisen" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnReisen">
         <style>
@@ -8992,6 +9073,7 @@
             if (name === 'badges' && countryMap) setTimeout(() => countryMap.invalidateSize(), 60);
             if (name === 'rarity') renderRarityDashboard();
             if (name === 'nearby') renderNearby();
+            if (name === 'lands') renderLands();
             if (name === 'reisen') renderReisen();
             if (name === 'friends') renderFriendsTab();
             if (name === 'nerd') renderNerdTab();
@@ -9272,6 +9354,8 @@
         function applyNerdOwnerUI(){
             const btn = document.getElementById('tabBtnNerd');
             if(btn) btn.style.display = isOwnerDevice() ? '' : 'none';
+            const lands = document.getElementById('tabBtnLands');   // Länder-Reiter nur auf Owner-Geräten
+            if(lands) lands.style.display = isOwnerDevice() ? '' : 'none';
             const trip = document.getElementById('tabBtnReisen');   // Reisen-Reiter für alle Accounts sichtbar
             if(trip) trip.style.display = '';
         }
@@ -11463,6 +11547,286 @@
             const rv = document.getElementById('nbRadiusVal'); if (rv) rv.textContent = nearbyRadius + ' km';
             updateNearbyLevelUI();
             updateNearbyMeta();
+        }
+
+        // ============================================================
+        // ===== LÄNDER-COUNTER: % der Arten je Land gesehen ==========
+        // ============================================================
+        const LC_GROUPS = [
+            { key: 'birds',   taxonId: 3,     iconic: 'Aves' },
+            { key: 'mammals', taxonId: 40151, iconic: 'Mammalia' }
+        ];
+        const LC_CACHE_KEY = 'inat_landcounter_v2';
+        const LC_CACHE_TTL = 1000 * 60 * 60 * 24 * 30;   // 30 Tage
+        const LC_CACHE_MAX = 8;                           // max. gecachte (Land×Gruppe)-Einträge
+
+        let lcPlace = null;              // { id, name }
+        let lcThreshold = (() => { const v = +localStorage.getItem('inat_lc_thresh'); return v >= 5 ? v : 50; })();
+        let lcGroup = 'birds';           // aktuell angezeigte Gruppe im Karten-Grid
+        let lcShowMode = 'all';          // all | missing | owned
+        let lcPool = { birds: null, mammals: null };   // je Gruppe: [{id,name,sci,image,count}]
+        let lcLoading = false;
+        let lcSearchTimer = null;
+        let lcInited = false;
+
+        function lcLoadCache() { try { return JSON.parse(localStorage.getItem(LC_CACHE_KEY)) || {}; } catch (e) { return {}; } }
+        function lcSaveCache(map) { try { localStorage.setItem(LC_CACHE_KEY, JSON.stringify(map)); } catch (e) {} }
+        function lcCacheKey(placeId, groupKey) { return placeId + '_' + groupKey; }
+
+        function lcGetCached(placeId, groupKey) {
+            const c = lcLoadCache()[lcCacheKey(placeId, groupKey)];
+            if (!c || (nowStamp() - c.ts) > LC_CACHE_TTL) return null;
+            return c.rows;
+        }
+        function lcPutCached(placeId, groupKey, rows) {
+            const map = lcLoadCache();
+            map[lcCacheKey(placeId, groupKey)] = { ts: nowStamp(), rows };
+            // Auf die LC_CACHE_MAX neuesten Einträge kürzen
+            const keys = Object.keys(map);
+            if (keys.length > LC_CACHE_MAX) {
+                keys.sort((a, b) => (map[a].ts || 0) - (map[b].ts || 0));
+                keys.slice(0, keys.length - LC_CACHE_MAX).forEach(k => delete map[k]);
+            }
+            lcSaveCache(map);
+        }
+        // Date.now() gekapselt – funktioniert auch, falls global anders gelöst
+        function nowStamp() { try { return Date.now(); } catch (e) { return 0; } }
+
+        // "Meine Länder" aus den eigenen Beobachtungen + Places-Cache (Name -> place_id, admin_level 0)
+        function lcMyCountries() {
+            const placeCache = loadPlacesCache();        // id -> { lvl, country }
+            const nameToId = {};
+            for (const [id, v] of Object.entries(placeCache)) {
+                if (v && v.lvl === 0 && v.country) nameToId[v.country] = +id;
+            }
+            const counts = {};
+            for (const o of (allObservations || [])) {
+                if (o.country) counts[o.country] = (counts[o.country] || 0) + 1;
+            }
+            return Object.keys(counts)
+                .filter(name => nameToId[name])
+                .sort((a, b) => counts[b] - counts[a])
+                .slice(0, 12)
+                .map(name => ({ id: nameToId[name], name }));
+        }
+
+        function lcRenderMine() {
+            const el = document.getElementById('lcMine'); if (!el) return;
+            const mine = lcMyCountries();
+            if (!mine.length) { el.innerHTML = ''; return; }
+            el.innerHTML = `<div class="lc-mine-lbl">Deine Länder</div>` + mine.map(c =>
+                `<button class="lc-chip ${lcPlace && lcPlace.id === c.id ? 'active' : ''}" onclick="lcPickPlace(${c.id}, ${JSON.stringify(c.name).replace(/"/g, '&quot;')})">${c.name}</button>`
+            ).join('');
+        }
+
+        // Statische deutsche Länderliste (offline aus Intl.DisplayNames generiert): {de, en}
+        // Die iNat-Autocomplete ist englisch indexiert – deshalb wird deutsch lokal gesucht
+        // und die place_id beim Auswählen live über den englischen Namen aufgelöst.
+        const LC_COUNTRIES = /*countries*/[{"de":"Ascension","en":"Ascension Island"},{"de":"Andorra","en":"Andorra"},{"de":"Vereinigte Arabische Emirate","en":"United Arab Emirates"},{"de":"Afghanistan","en":"Afghanistan"},{"de":"Antigua und Barbuda","en":"Antigua & Barbuda"},{"de":"Anguilla","en":"Anguilla"},{"de":"Albanien","en":"Albania"},{"de":"Armenien","en":"Armenia"},{"de":"Curaçao","en":"Curaçao"},{"de":"Angola","en":"Angola"},{"de":"Antarktis","en":"Antarctica"},{"de":"Argentinien","en":"Argentina"},{"de":"Amerikanisch-Samoa","en":"American Samoa"},{"de":"Österreich","en":"Austria"},{"de":"Australien","en":"Australia"},{"de":"Aruba","en":"Aruba"},{"de":"Ålandinseln","en":"Åland Islands"},{"de":"Aserbaidschan","en":"Azerbaijan"},{"de":"Bosnien und Herzegowina","en":"Bosnia & Herzegovina"},{"de":"Barbados","en":"Barbados"},{"de":"Bangladesch","en":"Bangladesh"},{"de":"Belgien","en":"Belgium"},{"de":"Burkina Faso","en":"Burkina Faso"},{"de":"Bulgarien","en":"Bulgaria"},{"de":"Bahrain","en":"Bahrain"},{"de":"Burundi","en":"Burundi"},{"de":"Benin","en":"Benin"},{"de":"St. Barthélemy","en":"St. Barthélemy"},{"de":"Bermuda","en":"Bermuda"},{"de":"Brunei Darussalam","en":"Brunei"},{"de":"Bolivien","en":"Bolivia"},{"de":"Karibische Niederlande","en":"Caribbean Netherlands"},{"de":"Brasilien","en":"Brazil"},{"de":"Bahamas","en":"Bahamas"},{"de":"Bhutan","en":"Bhutan"},{"de":"Myanmar","en":"Myanmar (Burma)"},{"de":"Bouvetinsel","en":"Bouvet Island"},{"de":"Botsuana","en":"Botswana"},{"de":"Belarus","en":"Belarus"},{"de":"Belize","en":"Belize"},{"de":"Kanada","en":"Canada"},{"de":"Kokosinseln","en":"Cocos (Keeling) Islands"},{"de":"Kongo-Kinshasa","en":"Congo - Kinshasa"},{"de":"Zentralafrikanische Republik","en":"Central African Republic"},{"de":"Kongo-Brazzaville","en":"Congo - Brazzaville"},{"de":"Schweiz","en":"Switzerland"},{"de":"Côte d’Ivoire","en":"Côte d’Ivoire"},{"de":"Cookinseln","en":"Cook Islands"},{"de":"Chile","en":"Chile"},{"de":"Kamerun","en":"Cameroon"},{"de":"China","en":"China"},{"de":"Kolumbien","en":"Colombia"},{"de":"Clipperton-Insel","en":"Clipperton Island"},{"de":"Sark","en":"Sark"},{"de":"Costa Rica","en":"Costa Rica"},{"de":"Serbien","en":"Serbia"},{"de":"Kuba","en":"Cuba"},{"de":"Cabo Verde","en":"Cape Verde"},{"de":"Curaçao","en":"Curaçao"},{"de":"Weihnachtsinsel","en":"Christmas Island"},{"de":"Zypern","en":"Cyprus"},{"de":"Tschechien","en":"Czechia"},{"de":"Deutschland","en":"Germany"},{"de":"Deutschland","en":"Germany"},{"de":"Diego Garcia","en":"Diego Garcia"},{"de":"Dschibuti","en":"Djibouti"},{"de":"Dänemark","en":"Denmark"},{"de":"Dominica","en":"Dominica"},{"de":"Dominikanische Republik","en":"Dominican Republic"},{"de":"Benin","en":"Benin"},{"de":"Algerien","en":"Algeria"},{"de":"Ceuta und Melilla","en":"Ceuta & Melilla"},{"de":"Ecuador","en":"Ecuador"},{"de":"Estland","en":"Estonia"},{"de":"Ägypten","en":"Egypt"},{"de":"Westsahara","en":"Western Sahara"},{"de":"Eritrea","en":"Eritrea"},{"de":"Spanien","en":"Spain"},{"de":"Äthiopien","en":"Ethiopia"},{"de":"Finnland","en":"Finland"},{"de":"Fidschi","en":"Fiji"},{"de":"Falklandinseln","en":"Falkland Islands"},{"de":"Mikronesien","en":"Micronesia"},{"de":"Färöer","en":"Faroe Islands"},{"de":"Frankreich","en":"France"},{"de":"Frankreich","en":"France"},{"de":"Gabun","en":"Gabon"},{"de":"Vereinigtes Königreich","en":"United Kingdom"},{"de":"Grenada","en":"Grenada"},{"de":"Georgien","en":"Georgia"},{"de":"Französisch-Guayana","en":"French Guiana"},{"de":"Guernsey","en":"Guernsey"},{"de":"Ghana","en":"Ghana"},{"de":"Gibraltar","en":"Gibraltar"},{"de":"Grönland","en":"Greenland"},{"de":"Gambia","en":"Gambia"},{"de":"Guinea","en":"Guinea"},{"de":"Guadeloupe","en":"Guadeloupe"},{"de":"Äquatorialguinea","en":"Equatorial Guinea"},{"de":"Griechenland","en":"Greece"},{"de":"Südgeorgien und die Südlichen Sandwichinseln","en":"South Georgia & South Sandwich Islands"},{"de":"Guatemala","en":"Guatemala"},{"de":"Guam","en":"Guam"},{"de":"Guinea-Bissau","en":"Guinea-Bissau"},{"de":"Guyana","en":"Guyana"},{"de":"Sonderverwaltungsregion Hongkong","en":"Hong Kong SAR China"},{"de":"Heard und McDonaldinseln","en":"Heard & McDonald Islands"},{"de":"Honduras","en":"Honduras"},{"de":"Kroatien","en":"Croatia"},{"de":"Haiti","en":"Haiti"},{"de":"Ungarn","en":"Hungary"},{"de":"Burkina Faso","en":"Burkina Faso"},{"de":"Kanarische Inseln","en":"Canary Islands"},{"de":"Indonesien","en":"Indonesia"},{"de":"Irland","en":"Ireland"},{"de":"Israel","en":"Israel"},{"de":"Isle of Man","en":"Isle of Man"},{"de":"Indien","en":"India"},{"de":"Britisches Territorium im Indischen Ozean","en":"British Indian Ocean Territory"},{"de":"Irak","en":"Iraq"},{"de":"Iran","en":"Iran"},{"de":"Island","en":"Iceland"},{"de":"Italien","en":"Italy"},{"de":"Jersey","en":"Jersey"},{"de":"Jamaika","en":"Jamaica"},{"de":"Jordanien","en":"Jordan"},{"de":"Japan","en":"Japan"},{"de":"Kenia","en":"Kenya"},{"de":"Kirgisistan","en":"Kyrgyzstan"},{"de":"Kambodscha","en":"Cambodia"},{"de":"Kiribati","en":"Kiribati"},{"de":"Komoren","en":"Comoros"},{"de":"St. Kitts und Nevis","en":"St. Kitts & Nevis"},{"de":"Nordkorea","en":"North Korea"},{"de":"Südkorea","en":"South Korea"},{"de":"Kuwait","en":"Kuwait"},{"de":"Kaimaninseln","en":"Cayman Islands"},{"de":"Kasachstan","en":"Kazakhstan"},{"de":"Laos","en":"Laos"},{"de":"Libanon","en":"Lebanon"},{"de":"St. Lucia","en":"St. Lucia"},{"de":"Liechtenstein","en":"Liechtenstein"},{"de":"Sri Lanka","en":"Sri Lanka"},{"de":"Liberia","en":"Liberia"},{"de":"Lesotho","en":"Lesotho"},{"de":"Litauen","en":"Lithuania"},{"de":"Luxemburg","en":"Luxembourg"},{"de":"Lettland","en":"Latvia"},{"de":"Libyen","en":"Libya"},{"de":"Marokko","en":"Morocco"},{"de":"Monaco","en":"Monaco"},{"de":"Republik Moldau","en":"Moldova"},{"de":"Montenegro","en":"Montenegro"},{"de":"St. Martin","en":"St. Martin"},{"de":"Madagaskar","en":"Madagascar"},{"de":"Marshallinseln","en":"Marshall Islands"},{"de":"Nordmazedonien","en":"North Macedonia"},{"de":"Mali","en":"Mali"},{"de":"Myanmar","en":"Myanmar (Burma)"},{"de":"Mongolei","en":"Mongolia"},{"de":"Sonderverwaltungsregion Macau","en":"Macao SAR China"},{"de":"Nördliche Marianen","en":"Northern Mariana Islands"},{"de":"Martinique","en":"Martinique"},{"de":"Mauretanien","en":"Mauritania"},{"de":"Montserrat","en":"Montserrat"},{"de":"Malta","en":"Malta"},{"de":"Mauritius","en":"Mauritius"},{"de":"Malediven","en":"Maldives"},{"de":"Malawi","en":"Malawi"},{"de":"Mexiko","en":"Mexico"},{"de":"Malaysia","en":"Malaysia"},{"de":"Mosambik","en":"Mozambique"},{"de":"Namibia","en":"Namibia"},{"de":"Neukaledonien","en":"New Caledonia"},{"de":"Niger","en":"Niger"},{"de":"Norfolkinsel","en":"Norfolk Island"},{"de":"Nigeria","en":"Nigeria"},{"de":"Vanuatu","en":"Vanuatu"},{"de":"Nicaragua","en":"Nicaragua"},{"de":"Niederlande","en":"Netherlands"},{"de":"Norwegen","en":"Norway"},{"de":"Nepal","en":"Nepal"},{"de":"Nauru","en":"Nauru"},{"de":"Niue","en":"Niue"},{"de":"Neuseeland","en":"New Zealand"},{"de":"Oman","en":"Oman"},{"de":"Panama","en":"Panama"},{"de":"Peru","en":"Peru"},{"de":"Französisch-Polynesien","en":"French Polynesia"},{"de":"Papua-Neuguinea","en":"Papua New Guinea"},{"de":"Philippinen","en":"Philippines"},{"de":"Pakistan","en":"Pakistan"},{"de":"Polen","en":"Poland"},{"de":"St. Pierre und Miquelon","en":"St. Pierre & Miquelon"},{"de":"Pitcairninseln","en":"Pitcairn Islands"},{"de":"Puerto Rico","en":"Puerto Rico"},{"de":"Palästinensische Autonomiegebiete","en":"Palestinian Territories"},{"de":"Portugal","en":"Portugal"},{"de":"Palau","en":"Palau"},{"de":"Paraguay","en":"Paraguay"},{"de":"Katar","en":"Qatar"},{"de":"Réunion","en":"Réunion"},{"de":"Simbabwe","en":"Zimbabwe"},{"de":"Rumänien","en":"Romania"},{"de":"Serbien","en":"Serbia"},{"de":"Russland","en":"Russia"},{"de":"Ruanda","en":"Rwanda"},{"de":"Saudi-Arabien","en":"Saudi Arabia"},{"de":"Salomonen","en":"Solomon Islands"},{"de":"Seychellen","en":"Seychelles"},{"de":"Sudan","en":"Sudan"},{"de":"Schweden","en":"Sweden"},{"de":"Singapur","en":"Singapore"},{"de":"St. Helena","en":"St. Helena"},{"de":"Slowenien","en":"Slovenia"},{"de":"Spitzbergen und Jan Mayen","en":"Svalbard & Jan Mayen"},{"de":"Slowakei","en":"Slovakia"},{"de":"Sierra Leone","en":"Sierra Leone"},{"de":"San Marino","en":"San Marino"},{"de":"Senegal","en":"Senegal"},{"de":"Somalia","en":"Somalia"},{"de":"Suriname","en":"Suriname"},{"de":"Südsudan","en":"South Sudan"},{"de":"São Tomé und Príncipe","en":"São Tomé & Príncipe"},{"de":"Russland","en":"Russia"},{"de":"El Salvador","en":"El Salvador"},{"de":"Sint Maarten","en":"Sint Maarten"},{"de":"Syrien","en":"Syria"},{"de":"Eswatini","en":"Eswatini"},{"de":"Tristan da Cunha","en":"Tristan da Cunha"},{"de":"Turks- und Caicosinseln","en":"Turks & Caicos Islands"},{"de":"Tschad","en":"Chad"},{"de":"Französische Süd- und Antarktisgebiete","en":"French Southern Territories"},{"de":"Togo","en":"Togo"},{"de":"Thailand","en":"Thailand"},{"de":"Tadschikistan","en":"Tajikistan"},{"de":"Tokelau","en":"Tokelau"},{"de":"Timor-Leste","en":"Timor-Leste"},{"de":"Turkmenistan","en":"Turkmenistan"},{"de":"Tunesien","en":"Tunisia"},{"de":"Tonga","en":"Tonga"},{"de":"Timor-Leste","en":"Timor-Leste"},{"de":"Türkei","en":"Türkiye"},{"de":"Trinidad und Tobago","en":"Trinidad & Tobago"},{"de":"Tuvalu","en":"Tuvalu"},{"de":"Taiwan","en":"Taiwan"},{"de":"Tansania","en":"Tanzania"},{"de":"Ukraine","en":"Ukraine"},{"de":"Uganda","en":"Uganda"},{"de":"Vereinigtes Königreich","en":"United Kingdom"},{"de":"Amerikanische Überseeinseln","en":"U.S. Outlying Islands"},{"de":"Vereinigte Staaten","en":"United States"},{"de":"Uruguay","en":"Uruguay"},{"de":"Usbekistan","en":"Uzbekistan"},{"de":"Vatikanstadt","en":"Vatican City"},{"de":"St. Vincent und die Grenadinen","en":"St. Vincent & Grenadines"},{"de":"Vietnam","en":"Vietnam"},{"de":"Venezuela","en":"Venezuela"},{"de":"Britische Jungferninseln","en":"British Virgin Islands"},{"de":"Amerikanische Jungferninseln","en":"U.S. Virgin Islands"},{"de":"Vietnam","en":"Vietnam"},{"de":"Vanuatu","en":"Vanuatu"},{"de":"Wallis und Futuna","en":"Wallis & Futuna"},{"de":"Samoa","en":"Samoa"},{"de":"Jemen","en":"Yemen"},{"de":"Jemen","en":"Yemen"},{"de":"Mayotte","en":"Mayotte"},{"de":"Serbien","en":"Serbia"},{"de":"Südafrika","en":"South Africa"},{"de":"Sambia","en":"Zambia"},{"de":"Kongo-Kinshasa","en":"Congo - Kinshasa"},{"de":"Simbabwe","en":"Zimbabwe"},{"de":"Unbekannte Region","en":"Unknown Region"}];
+        function lcNorm(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+
+        // Länder-Autocomplete (lokale Suche in der deutschen Länderliste)
+        function lcOnSearchInput(q) {
+            const ac = document.getElementById('lcAutocomplete');
+            const nq = lcNorm((q || '').trim());
+            if (nq.length < 2) { if (ac) ac.classList.remove('open'); return; }
+            const hits = LC_COUNTRIES
+                .filter(c => lcNorm(c.de).includes(nq) || lcNorm(c.en).includes(nq))
+                .sort((a, b) => {
+                    // Treffer am Wortanfang zuerst
+                    const as = lcNorm(a.de).startsWith(nq) ? 0 : 1, bs = lcNorm(b.de).startsWith(nq) ? 0 : 1;
+                    return as - bs || a.de.localeCompare(b.de, 'de');
+                })
+                .slice(0, 12);
+            if (!ac) return;
+            if (!hits.length) { ac.innerHTML = `<div class="lc-ac-item"><span style="color:var(--text-muted)">Kein Land gefunden</span></div>`; ac.classList.add('open'); return; }
+            ac.innerHTML = hits.map(c =>
+                `<div class="lc-ac-item" onclick="lcSelectCountry(${JSON.stringify(c.en).replace(/"/g, '&quot;')}, ${JSON.stringify(c.de).replace(/"/g, '&quot;')})"><span>${c.de}</span><span class="lc-ac-sub">${c.en}</span></div>`
+            ).join('');
+            ac.classList.add('open');
+        }
+
+        // Land gewählt -> place_id live über englischen Namen holen, dann laden
+        async function lcSelectCountry(enName, deName) {
+            const ac = document.getElementById('lcAutocomplete'); if (ac) ac.classList.remove('open');
+            const inp = document.getElementById('lcSearch'); if (inp) inp.value = deName;
+            const resEl = document.getElementById('lcResults');
+            if (resEl) resEl.innerHTML = `<div class="lc-status">🔎 Suche <strong>${deName}</strong> …</div>`;
+            try {
+                const r = await inatFetch(`${API_BASE}/places/autocomplete?q=${encodeURIComponent(enName)}&per_page=10`);
+                const j = await r.json();
+                const admin0 = (j.results || []).filter(p => p.admin_level === 0);
+                // exakter Namenstreffer bevorzugt, sonst beobachtungsstärkstes Land
+                let pick = admin0.find(p => lcNorm(p.name) === lcNorm(enName))
+                    || admin0.sort((a, b) => (b.observations_count || 0) - (a.observations_count || 0))[0];
+                if (!pick) { if (resEl) resEl.innerHTML = `<div class="lc-status">⚠️ „${deName}" konnte bei iNaturalist nicht gefunden werden.</div>`; return; }
+                lcPickPlace(pick.id, deName);
+            } catch (e) {
+                if (resEl) resEl.innerHTML = `<div class="lc-status">⚠️ Fehler bei der Länder-Suche: ${String(e)}</div>`;
+            }
+        }
+
+        function lcPickPlace(id, name) {
+            lcPlace = { id: +id, name };
+            const ac = document.getElementById('lcAutocomplete'); if (ac) ac.classList.remove('open');
+            const inp = document.getElementById('lcSearch'); if (inp) inp.value = name;
+            lcRenderMine();
+            lcFetch();
+        }
+
+        async function lcFetchGroup(placeId, g) {
+            const cached = lcGetCached(placeId, g.key);
+            if (cached) return cached;
+            const PER = 500, MAX_PAGES = 12;
+            let rows = [], total = Infinity;
+            for (let p = 1; p <= MAX_PAGES; p++) {
+                const url = `${API_BASE}/observations/species_counts?place_id=${placeId}&taxon_id=${g.taxonId}&quality_grade=research&locale=de&per_page=${PER}&page=${p}`;
+                const r = await inatFetch(url);
+                const j = await r.json();
+                total = j.total_results ?? rows.length;
+                for (const row of (j.results || [])) {
+                    if (!row.taxon?.id) continue;
+                    rows.push({
+                        id: row.taxon.id,
+                        name: row.taxon.preferred_common_name || row.taxon.name || 'Unbekannt',
+                        sci: row.taxon.name || '',
+                        image: row.taxon.default_photo?.medium_url || row.taxon.default_photo?.square_url || '',
+                        count: row.count || 0
+                    });
+                }
+                if (rows.length >= total || (j.results || []).length < PER) break;
+            }
+            lcPutCached(placeId, g.key, rows);
+            return rows;
+        }
+
+        async function lcFetch() {
+            if (!lcPlace || lcLoading) return;
+            lcLoading = true;
+            lcPool = { birds: null, mammals: null };
+            const resEl = document.getElementById('lcResults');
+            const statsEl = document.getElementById('lcStats');
+            if (statsEl) statsEl.style.display = 'none';
+            document.getElementById('lcShowSeg').style.display = 'none';
+            document.getElementById('lcMeta').textContent = '';
+            if (resEl) resEl.innerHTML = `<div class="lc-status">🔎 Lade Arten in <strong>${lcPlace.name}</strong> …</div>`;
+            try {
+                for (const g of LC_GROUPS) {
+                    lcPool[g.key] = await lcFetchGroup(lcPlace.id, g);
+                    if (resEl) resEl.innerHTML = `<div class="lc-status">🔎 Lade Arten in <strong>${lcPlace.name}</strong> … ${rwIconicType(g.iconic).de} ✓</div>`;
+                }
+                lcRender();
+            } catch (e) {
+                if (resEl) resEl.innerHTML = `<div class="lc-status">⚠️ Fehler beim Laden: ${String(e)}</div>`;
+            } finally {
+                lcLoading = false;
+            }
+        }
+
+        function lcSetThreshold(v) {
+            lcThreshold = +v;
+            try { localStorage.setItem('inat_lc_thresh', String(lcThreshold)); } catch (e) {}
+            const lbl = document.getElementById('lcThreshVal'); if (lbl) lbl.textContent = '≥ ' + lcThreshold;
+            if (lcPool[lcGroup]) lcRender();
+        }
+
+        function lcSetShowMode(m) {
+            lcShowMode = m;
+            document.querySelectorAll('#lcShowSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.v === m));
+            lcRender();
+        }
+
+        function lcSetGroup(g) {
+            lcGroup = g;
+            lcRender();
+        }
+
+        // Stat-Kachel je Gruppe: Nenner = Arten mit count >= Schwelle; Zähler = davon gesehen
+        function lcGroupStats(groupKey) {
+            const pool = lcPool[groupKey] || [];
+            const owned = nearbyOwnedSet();
+            const eligible = pool.filter(x => x.count >= lcThreshold);
+            const have = eligible.filter(x => owned.has(x.id)).length;
+            const total = eligible.length;
+            const pct = total ? (have / total * 100) : null;
+            return { have, total, pct, eligible, owned };
+        }
+
+        function lcRender() {
+            const statsEl = document.getElementById('lcStats');
+            const resEl = document.getElementById('lcResults');
+            if (!statsEl || !resEl) return;
+
+            // --- Stat-Kacheln ---
+            statsEl.style.display = '';
+            statsEl.innerHTML = LC_GROUPS.map(g => {
+                const t = rwIconicType(g.iconic);
+                const s = lcGroupStats(g.key);
+                const pctTxt = s.pct == null ? '–' : s.pct.toFixed(s.pct < 10 ? 1 : 0).replace('.', ',') + ' %';
+                const w = s.pct == null ? 0 : s.pct;
+                return `<div class="lc-stat ${lcGroup === g.key ? 'active' : ''}" onclick="lcSetGroup('${g.key}')">
+                    <div class="lc-st-head"><span class="lc-st-emoji">${t.emoji}</span><span class="lc-st-name">${t.de}</span></div>
+                    <div class="lc-st-pct" style="color:${t.c}">${pctTxt}</div>
+                    <div class="lc-st-frac">${s.have.toLocaleString('de-DE')} von ${s.total.toLocaleString('de-DE')} Arten</div>
+                    <div class="lc-st-bar"><div class="lc-st-fill" style="width:${w}%;background:${t.c}"></div></div>
+                </div>`;
+            }).join('');
+
+            document.getElementById('lcShowSeg').style.display = '';
+
+            // --- Karten-Grid der aktiven Gruppe ---
+            const g = LC_GROUPS.find(x => x.key === lcGroup);
+            const t = rwIconicType(g.iconic);
+            const s = lcGroupStats(lcGroup);
+            let list = s.eligible.map(x => ({ ...x, _owned: s.owned.has(x.id) }));
+            if (lcShowMode === 'missing') list = list.filter(x => !x._owned);
+            else if (lcShowMode === 'owned') list = list.filter(x => x._owned);
+            // gesehene zuerst, dann nach Häufigkeit
+            list.sort((a, b) => (b._owned - a._owned) || (b.count - a.count));
+
+            const metaEl = document.getElementById('lcMeta');
+            if (metaEl) {
+                const noun = lcShowMode === 'owned' ? 'schon gesehen' : lcShowMode === 'missing' ? 'fehlen noch' : 'insgesamt';
+                metaEl.textContent = `${lcPlace.name} · ${t.de} · ${list.length.toLocaleString('de-DE')} Art(en) ${noun} (≥ ${lcThreshold} FQ-Beobachtungen im Land)`;
+            }
+
+            if (!list.length) {
+                resEl.innerHTML = `<div class="lc-empty"><div class="lc-empty-emoji">🔍</div><div class="lc-empty-title">Keine Arten in dieser Ansicht.</div><div class="lc-empty-sub">Ändere den Regler oder den Filter oben.</div></div>`;
+                return;
+            }
+            resEl.innerHTML = `<div class="rarity-rare-grid">` + list.map(x => lcCardHtml(x, t)).join('') + `</div>`;
+        }
+
+        function lcCardHtml(x, t) {
+            const taxaUrl = `https://www.inaturalist.org/taxa/${x.id}`;
+            return `<a class="rarity-rare-card ${x._owned ? '' : 'lc-missing'}" href="${taxaUrl}" target="_blank" rel="noopener" style="--type:${t.c}">
+                ${x._owned ? `<span class="lc-have-badge">✓ gesehen</span>` : `<span class="lc-miss-badge">fehlt</span>`}
+                <span class="rrc-type" style="background:${t.c}">${t.emoji}</span>
+                ${x.image ? `<img src="${x.image}" alt="${x.name}" loading="lazy" onerror="this.style.display='none'">` : `<div class="rrc-noimg">${t.emoji}</div>`}
+                <div class="rarity-rare-info">
+                    <div class="rr-name">${x.name}</div>
+                    ${x.sci ? `<div class="rr-sci">${x.sci}</div>` : ''}
+                    <div class="rr-meta"><strong>${x.count.toLocaleString('de-DE')}×</strong> FQ im Land</div>
+                </div>
+            </a>`;
+        }
+
+        function renderLands() {
+            if (!document.getElementById('tab-lands')) return;
+            // Schwellen-Regler-Zustand herstellen
+            const sl = document.getElementById('lcThresh'); if (sl) sl.value = lcThreshold;
+            const lbl = document.getElementById('lcThreshVal'); if (lbl) lbl.textContent = '≥ ' + lcThreshold;
+            lcRenderMine();
+            if (!lcInited) {
+                lcInited = true;
+                // Autocomplete schließen, wenn außerhalb geklickt
+                document.addEventListener('click', (e) => {
+                    const box = document.querySelector('#tab-lands .lc-search');
+                    const ac = document.getElementById('lcAutocomplete');
+                    if (ac && box && !box.contains(e.target)) ac.classList.remove('open');
+                });
+            }
+            if (lcPlace && lcPool[lcGroup]) lcRender();
         }
 
         // ============================================================
