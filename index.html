@@ -3088,6 +3088,7 @@
         <button class="main-tab" id="tabBtnRarity" role="tab" aria-controls="tab-rarity" aria-selected="false" onclick="switchMainTab('rarity')">⭐ Seltenheit</button>
         <button class="main-tab" id="tabBtnNearby" role="tab" aria-controls="tab-nearby" aria-selected="false" onclick="switchMainTab('nearby')">📍 In meiner Nähe</button>
         <button class="main-tab" id="tabBtnLands" role="tab" aria-controls="tab-lands" aria-selected="false" onclick="switchMainTab('lands')" style="display:none">🗺️ Länder</button>
+        <button class="main-tab" id="tabBtnGalerie" role="tab" aria-controls="tab-galerie" aria-selected="false" onclick="switchMainTab('galerie')" style="display:none">🖼️ Galerie</button>
         <button class="main-tab" id="tabBtnFriends" role="tab" aria-controls="tab-friends" aria-selected="false" onclick="switchMainTab('friends')">👥 Freunde</button>
         <button class="main-tab" id="tabBtnReisen" role="tab" aria-controls="tab-reisen" aria-selected="false" onclick="switchMainTab('reisen')" style="display:none">🧳 Reisen</button>
         <button class="main-tab" id="tabBtnNerd" role="tab" aria-controls="tab-nerd" aria-selected="false" onclick="switchMainTab('nerd')" style="display:none">🔬 Nerd</button>
@@ -3727,7 +3728,7 @@
             #tab-lands .lc-thresh > label{font-size:.8em;color:var(--text-secondary)}
             #tab-lands .lc-thresh input[type=range]{width:100%;accent-color:var(--accent)}
             #tab-lands .lc-thresh .lc-th-hint{font-size:.76em;color:var(--text-muted)}
-            #tab-lands .lc-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:4px 0 18px}
+            #tab-lands .lc-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:4px 0 18px}
             @media(max-width:560px){#tab-lands .lc-stats{grid-template-columns:1fr}}
             #tab-lands .lc-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;cursor:pointer;transition:border-color .15s,transform .15s;position:relative;overflow:hidden}
             #tab-lands .lc-stat:hover{transform:translateY(-2px)}
@@ -3754,7 +3755,7 @@
         </style>
         <div class="section">
             <h2 class="section-title">🗺️ Länder-Vollständigkeit</h2>
-            <p class="lc-intro">Wie viel Prozent der Vögel und Säugetiere eines Landes hast du schon gesehen? Grundlage
+            <p class="lc-intro">Wie viel Prozent der Vögel, Säugetiere, Reptilien und Amphibien eines Landes – oder weltweit – hast du schon gesehen? Grundlage
                 sind alle Arten, die dort in <strong>Forschungsqualität</strong> beobachtet wurden. Mit dem Regler blendest du
                 seltene Ausreißer aus (Mindestzahl an Beobachtungen im Land) – so zählen nur realistisch auffindbare Arten.
                 Noch fehlende Arten erscheinen <em>ausgegraut</em> als Sammelkarten.</p>
@@ -3784,6 +3785,32 @@
             <div id="lcResults"><div class="lc-status">Wähle ein Land, um deinen Fortschritt zu sehen.</div></div>
         </div>
     </div><!-- /tab-lands -->
+
+    <div id="tab-galerie" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnGalerie">
+        <style>
+            #tab-galerie .gal-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:10px}
+            #tab-galerie .gal-title{font-family:'Playfair Display',serif;color:var(--accent);font-size:1.5em;margin:0}
+            #tab-galerie .gal-sub{color:var(--text-secondary);font-size:.9em;max-width:720px;margin:2px 0 10px}
+            #tab-galerie .gal-meta{color:var(--text-muted);font-size:.84em;margin:0 0 14px}
+            /* Kachel */
+            #tab-galerie .gal-t{position:relative;overflow:hidden;cursor:pointer;background:var(--bg-light);display:block}
+            #tab-galerie .gal-t img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease}
+            #tab-galerie .gal-t:hover img{transform:scale(1.07)}
+            #tab-galerie .gal-cap{position:absolute;left:0;right:0;bottom:0;padding:14px 8px 5px;font-size:.72em;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.78));opacity:0;transition:opacity .18s;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            #tab-galerie .gal-t:hover .gal-cap{opacity:1}
+            /* Quadrate (nahtlose Wand) */
+            #tab-galerie .gal-squares{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:2px}
+            #tab-galerie .gal-squares .gal-t{aspect-ratio:1}
+            #tab-galerie .gal-empty{color:var(--text-muted);text-align:center;padding:60px 20px}
+        </style>
+        <div class="gal-head">
+            <h2 class="gal-title">🖼️ Galerie</h2>
+        </div>
+        <p class="gal-sub">Alle Fotos als eine riesige Leinwand – unsortiert, zufällig gemischt. Tippe auf ein Bild, um die
+            Sammelkarte zu öffnen (mit genau diesem Foto).</p>
+        <div class="gal-meta"><span id="galCount"></span></div>
+        <div id="galStage"><div class="gal-empty">Lade deine Fotos …</div></div>
+    </div><!-- /tab-galerie -->
 
     <div id="tab-reisen" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnReisen">
         <style>
@@ -6491,10 +6518,11 @@
         }
 
         // Detail-Sammelkarte einer Art (gleiche Optik wie das Belohnungs-Popup)
-        function openSpeciesCard(tid) {
+        function openSpeciesCard(tid, imgOverride) {
             let s = rarityAllSpecies.find(x => x.id === tid);
             if (!s) s = nerdBuildCardSpecies(tid);   // Fallback: Art ohne Seltenheits-Level (z.B. aus dem Nerd-Baum)
             if (!s) return;
+            const cardImg = imgOverride || s.image;   // Galerie kann das angeklickte Foto erzwingen
             const ty = rwIconicType(s.group);
             const tier = s.level ? rwRarityTier(s.level) : 2;
             const holder = document.getElementById('speciesCardHolder');
@@ -6513,7 +6541,7 @@
                         <div class="rw-face rw-front rwt${tier}" style="--type:${ty.c}">
                             <div class="rw-ribbon">${rwEsc(RARITY_TIER_NAMES[s.level] || 'Sammelkarte')}</div>
                             <div class="rw-imgwrap">
-                                ${s.image ? `<img class="rw-img" src="${rwEsc(s.image)}" alt="">` : `<div class="rw-img rw-noimg">${ty.emoji}</div>`}
+                                ${cardImg ? `<img class="rw-img" src="${rwEsc(cardImg)}" alt="">` : `<div class="rw-img rw-noimg">${ty.emoji}</div>`}
                                 <div class="rw-holo"></div>
                                 <div class="rw-typebadge" style="background:${ty.c}">${ty.emoji} ${rwEsc(ty.de)}</div>
                                 ${rar}
@@ -9074,6 +9102,7 @@
             if (name === 'rarity') renderRarityDashboard();
             if (name === 'nearby') renderNearby();
             if (name === 'lands') renderLands();
+            if (name === 'galerie') renderGalerie();
             if (name === 'reisen') renderReisen();
             if (name === 'friends') renderFriendsTab();
             if (name === 'nerd') renderNerdTab();
@@ -9356,6 +9385,8 @@
             if(btn) btn.style.display = isOwnerDevice() ? '' : 'none';
             const lands = document.getElementById('tabBtnLands');   // Länder-Reiter nur auf Owner-Geräten
             if(lands) lands.style.display = isOwnerDevice() ? '' : 'none';
+            const gal = document.getElementById('tabBtnGalerie');   // Galerie (Test) nur auf Owner-Geräten
+            if(gal) gal.style.display = isOwnerDevice() ? '' : 'none';
             const trip = document.getElementById('tabBtnReisen');   // Reisen-Reiter für alle Accounts sichtbar
             if(trip) trip.style.display = '';
         }
@@ -11553,9 +11584,14 @@
         // ===== LÄNDER-COUNTER: % der Arten je Land gesehen ==========
         // ============================================================
         const LC_GROUPS = [
-            { key: 'birds',   taxonId: 3,     iconic: 'Aves' },
-            { key: 'mammals', taxonId: 40151, iconic: 'Mammalia' }
+            { key: 'birds',      taxonId: 3,     iconic: 'Aves' },
+            { key: 'mammals',    taxonId: 40151, iconic: 'Mammalia' },
+            { key: 'reptiles',   taxonId: 26036, iconic: 'Reptilia' },
+            { key: 'amphibians', taxonId: 20978, iconic: 'Amphibia' }
         ];
+        const LC_GLOBAL_ID = -1;                 // Sentinel-„Place" für die weltweite Ansicht
+        const LC_RENDER_CAP = 600;               // max. Sammelkarten im Grid (Prozente nutzen weiterhin alle Arten)
+        function lcEmptyPool() { const p = {}; for (const g of LC_GROUPS) p[g.key] = null; return p; }
         const LC_CACHE_KEY = 'inat_landcounter_v2';
         const LC_CACHE_TTL = 1000 * 60 * 60 * 24 * 30;   // 30 Tage
         const LC_CACHE_MAX = 8;                           // max. gecachte (Land×Gruppe)-Einträge
@@ -11564,7 +11600,7 @@
         let lcThreshold = (() => { const v = +localStorage.getItem('inat_lc_thresh'); return v >= 5 ? v : 50; })();
         let lcGroup = 'birds';           // aktuell angezeigte Gruppe im Karten-Grid
         let lcShowMode = 'all';          // all | missing | owned
-        let lcPool = { birds: null, mammals: null };   // je Gruppe: [{id,name,sci,image,count}]
+        let lcPool = lcEmptyPool();   // je Gruppe: [{id,name,sci,image,count}]
         let lcLoading = false;
         let lcSearchTimer = null;
         let lcInited = false;
@@ -11613,8 +11649,8 @@
         function lcRenderMine() {
             const el = document.getElementById('lcMine'); if (!el) return;
             const mine = lcMyCountries();
-            if (!mine.length) { el.innerHTML = ''; return; }
-            el.innerHTML = `<div class="lc-mine-lbl">Deine Länder</div>` + mine.map(c =>
+            const globalChip = `<button class="lc-chip ${lcPlace && lcPlace.id === LC_GLOBAL_ID ? 'active' : ''}" onclick="lcPickPlace(${LC_GLOBAL_ID}, 'Weltweit')">🌍 Weltweit</button>`;
+            el.innerHTML = `<div class="lc-mine-lbl">Schnellauswahl</div>` + globalChip + mine.map(c =>
                 `<button class="lc-chip ${lcPlace && lcPlace.id === c.id ? 'active' : ''}" onclick="lcPickPlace(${c.id}, ${JSON.stringify(c.name).replace(/"/g, '&quot;')})">${c.name}</button>`
             ).join('');
         }
@@ -11677,10 +11713,12 @@
         async function lcFetchGroup(placeId, g) {
             const cached = lcGetCached(placeId, g.key);
             if (cached) return cached;
-            const PER = 500, MAX_PAGES = 12;
+            const isGlobal = placeId === LC_GLOBAL_ID;
+            const PER = 500, MAX_PAGES = isGlobal ? 20 : 12;   // weltweit mehr Seiten (größere Artenpools)
+            const placeParam = isGlobal ? '' : `place_id=${placeId}&`;
             let rows = [], total = Infinity;
             for (let p = 1; p <= MAX_PAGES; p++) {
-                const url = `${API_BASE}/observations/species_counts?place_id=${placeId}&taxon_id=${g.taxonId}&quality_grade=research&locale=de&per_page=${PER}&page=${p}`;
+                const url = `${API_BASE}/observations/species_counts?${placeParam}taxon_id=${g.taxonId}&quality_grade=research&locale=de&per_page=${PER}&page=${p}`;
                 const r = await inatFetch(url);
                 const j = await r.json();
                 total = j.total_results ?? rows.length;
@@ -11703,7 +11741,7 @@
         async function lcFetch() {
             if (!lcPlace || lcLoading) return;
             lcLoading = true;
-            lcPool = { birds: null, mammals: null };
+            lcPool = lcEmptyPool();
             const resEl = document.getElementById('lcResults');
             const statsEl = document.getElementById('lcStats');
             if (statsEl) statsEl.style.display = 'none';
@@ -11784,20 +11822,28 @@
             // gesehene zuerst, dann nach Häufigkeit
             list.sort((a, b) => (b._owned - a._owned) || (b.count - a.count));
 
+            const isGlobal = lcPlace.id === LC_GLOBAL_ID;
+            const scopeWord = isGlobal ? 'weltweit' : 'im Land';
             const metaEl = document.getElementById('lcMeta');
             if (metaEl) {
                 const noun = lcShowMode === 'owned' ? 'schon gesehen' : lcShowMode === 'missing' ? 'fehlen noch' : 'insgesamt';
-                metaEl.textContent = `${lcPlace.name} · ${t.de} · ${list.length.toLocaleString('de-DE')} Art(en) ${noun} (≥ ${lcThreshold} FQ-Beobachtungen im Land)`;
+                metaEl.textContent = `${lcPlace.name} · ${t.de} · ${list.length.toLocaleString('de-DE')} Art(en) ${noun} (≥ ${lcThreshold} FQ-Beobachtungen ${scopeWord})`;
             }
 
             if (!list.length) {
                 resEl.innerHTML = `<div class="lc-empty"><div class="lc-empty-emoji">🔍</div><div class="lc-empty-title">Keine Arten in dieser Ansicht.</div><div class="lc-empty-sub">Ändere den Regler oder den Filter oben.</div></div>`;
                 return;
             }
-            resEl.innerHTML = `<div class="rarity-rare-grid">` + list.map(x => lcCardHtml(x, t)).join('') + `</div>`;
+            const scopeLabel = isGlobal ? 'FQ weltweit' : 'FQ im Land';
+            const shown = list.slice(0, LC_RENDER_CAP);
+            const moreNote = list.length > LC_RENDER_CAP
+                ? `<div class="lc-meta" style="margin-top:14px">… und ${(list.length - LC_RENDER_CAP).toLocaleString('de-DE')} weitere. Nutze den Regler oder „Noch fehlende", um die Liste einzugrenzen.</div>`
+                : '';
+            resEl.innerHTML = `<div class="rarity-rare-grid">` + shown.map(x => lcCardHtml(x, t, scopeLabel)).join('') + `</div>` + moreNote;
         }
 
-        function lcCardHtml(x, t) {
+        function lcCardHtml(x, t, scopeLabel) {
+            scopeLabel = scopeLabel || 'FQ im Land';
             const taxaUrl = `https://www.inaturalist.org/taxa/${x.id}`;
             return `<a class="rarity-rare-card ${x._owned ? '' : 'lc-missing'}" href="${taxaUrl}" target="_blank" rel="noopener" style="--type:${t.c}">
                 ${x._owned ? `<span class="lc-have-badge">✓ gesehen</span>` : `<span class="lc-miss-badge">fehlt</span>`}
@@ -11806,7 +11852,7 @@
                 <div class="rarity-rare-info">
                     <div class="rr-name">${x.name}</div>
                     ${x.sci ? `<div class="rr-sci">${x.sci}</div>` : ''}
-                    <div class="rr-meta"><strong>${x.count.toLocaleString('de-DE')}×</strong> FQ im Land</div>
+                    <div class="rr-meta"><strong>${x.count.toLocaleString('de-DE')}×</strong> ${scopeLabel}</div>
                 </div>
             </a>`;
         }
@@ -11827,6 +11873,60 @@
                 });
             }
             if (lcPlace && lcPool[lcGroup]) lcRender();
+        }
+
+        // ============================================================
+        // ===== GALERIE: alle Fotos als Leinwand, 5 Test-Layouts =====
+        // ============================================================
+        const GAL_CAP = 1600;            // max. Kacheln (Performance); Rest per „alle laden"
+        let galShowAll = false;
+        let galList = null;              // gemischte Beobachtungen mit Foto (einmal pro Reiterbesuch)
+
+        // Beobachtungen mit Foto, einmalig zufällig gemischt (stabil über Re-Renders)
+        function galData() {
+            const n = (allObservations || []).length;
+            if (galList && galList._n === n) return galList;
+            const arr = (allObservations || []).filter(o => o.image && o.taxonId);
+            for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+            arr._n = n;
+            galList = arr;
+            return arr;
+        }
+        // iNat-Thumbnail: medium -> square (75px, schnell für die dichte Wand)
+        function galThumb(url, size) { return (url || '').replace('medium', size); }
+
+        function galTile(o) {
+            const nm = escapeHtml(o.name || '');
+            return `<div class="gal-t" title="${nm}" onclick="galOpenCard(${o.id})">`
+                + `<img src="${galThumb(o.image, 'square')}" alt="${nm}" loading="lazy" decoding="async" onerror="this.closest('.gal-t').style.display='none'">`
+                + `<span class="gal-cap">${nm}</span></div>`;
+        }
+
+        // Klick auf eine Kachel: Sammelkarte mit genau DIESER Beobachtung (angeklicktes Foto) öffnen
+        function galOpenCard(obsId) {
+            const o = (allObservations || []).find(x => x.id === obsId);
+            if (!o) return;
+            if (typeof redesignOn === 'function' && redesignOn() && typeof openUnifiedCard === 'function') {
+                openUnifiedCard(o);                       // Hero = angeklicktes Foto
+            } else {
+                openSpeciesCard(o.taxonId, o.image);      // klassische Karte mit Override-Bild
+            }
+        }
+
+        function renderGalerie() {
+            const stage = document.getElementById('galStage'); if (!stage) return;
+            const data = galData();
+            const cntEl = document.getElementById('galCount');
+            if (!data.length) { stage.innerHTML = `<div class="gal-empty">Noch keine Fotos geladen.</div>`; if (cntEl) cntEl.textContent = ''; return; }
+
+            const list = galShowAll ? data : data.slice(0, GAL_CAP);
+            if (cntEl) {
+                const base = `${list.length.toLocaleString('de-DE')} von ${data.length.toLocaleString('de-DE')} Fotos`;
+                cntEl.innerHTML = (!galShowAll && data.length > GAL_CAP)
+                    ? `${base} · <a href="#" onclick="galShowAll=true;renderGalerie();return false" style="color:var(--accent)">alle laden</a>`
+                    : base;
+            }
+            stage.innerHTML = `<div class="gal-squares">` + list.map(galTile).join('') + `</div>`;
         }
 
         // ============================================================
