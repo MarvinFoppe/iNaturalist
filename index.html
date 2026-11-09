@@ -3088,7 +3088,7 @@
         <button class="main-tab" id="tabBtnRarity" role="tab" aria-controls="tab-rarity" aria-selected="false" onclick="switchMainTab('rarity')">⭐ Seltenheit</button>
         <button class="main-tab" id="tabBtnNearby" role="tab" aria-controls="tab-nearby" aria-selected="false" onclick="switchMainTab('nearby')">📍 In meiner Nähe</button>
         <button class="main-tab" id="tabBtnLands" role="tab" aria-controls="tab-lands" aria-selected="false" onclick="switchMainTab('lands')" style="display:none">🗺️ Länder</button>
-        <button class="main-tab" id="tabBtnGalerie" role="tab" aria-controls="tab-galerie" aria-selected="false" onclick="switchMainTab('galerie')" style="display:none">🖼️ Galerie</button>
+        <button class="main-tab" id="tabBtnGalerie" role="tab" aria-controls="tab-galerie" aria-selected="false" onclick="switchMainTab('galerie')" style="display:none">🖼️ Galerie & Quiz</button>
         <button class="main-tab" id="tabBtnFriends" role="tab" aria-controls="tab-friends" aria-selected="false" onclick="switchMainTab('friends')">👥 Freunde</button>
         <button class="main-tab" id="tabBtnReisen" role="tab" aria-controls="tab-reisen" aria-selected="false" onclick="switchMainTab('reisen')" style="display:none">🧳 Reisen</button>
         <button class="main-tab" id="tabBtnNerd" role="tab" aria-controls="tab-nerd" aria-selected="false" onclick="switchMainTab('nerd')" style="display:none">🔬 Nerd</button>
@@ -3804,10 +3804,10 @@
             #tab-galerie .gal-empty{color:var(--text-muted);text-align:center;padding:60px 20px}
         </style>
         <div class="gal-head">
-            <h2 class="gal-title">🖼️ Galerie</h2>
+            <h2 class="gal-title">🖼️ Galerie & Quiz</h2>
         </div>
-        <p class="gal-sub">Alle Fotos als eine riesige Leinwand – unsortiert, zufällig gemischt. Tippe auf ein Bild, um die
-            Sammelkarte zu öffnen (mit genau diesem Foto).</p>
+        <p class="gal-sub">Alle Fotos als eine riesige Leinwand – unsortiert, zufällig gemischt. Tippe auf ein Bild für ein
+            kleines Rate-Quiz (überspringbar) und danach die Sammelkarte – mit genau diesem Foto und rotem Marker auf der Karte.</p>
         <div class="gal-meta"><span id="galCount"></span></div>
         <div id="galStage"><div class="gal-empty">Lade deine Fotos …</div></div>
     </div><!-- /tab-galerie -->
@@ -11906,6 +11906,8 @@
         function galOpenCard(obsId) {
             const o = (allObservations || []).find(x => x.id === obsId);
             if (!o) return;
+            // Erst das Mini-Quiz (Gimmick) – es öffnet danach selbst die Karte
+            if (typeof window.openObsQuiz === 'function') { window.openObsQuiz(o); return; }
             if (typeof redesignOn === 'function' && redesignOn() && typeof openUnifiedCard === 'function') {
                 openUnifiedCard(o);                       // Hero = angeklicktes Foto
             } else {
@@ -12967,8 +12969,39 @@
   .uc-inat{display:block; text-align:center; margin-top:14px; color:var(--accent); font-size:.9rem; text-decoration:none; font-weight:600}
   @media (prefers-reduced-motion:reduce){ .uc-ribbon,.uc-holo,.uc-inner::before,.uc-cardwrap,.uc-back-inner img{animation:none !important} .uc-flip-inner{transition:none !important} }
   @media (max-width:560px){ .uc-chero{height:180px} .uc-ctitle h3{font-size:1.28rem} }
+  /* Mini-Quiz vor der Sammelkarte (Gimmick, keine Punkte) */
+  .quiz-overlay{position:fixed; inset:0; z-index:2147483010; display:none; align-items:flex-start; justify-content:center; padding:28px 14px; overflow-y:auto; background:rgba(6,11,8,.82); -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px)}
+  .quiz-overlay.open{display:flex}
+  .quiz-card{width:100%; max-width:430px; background:linear-gradient(180deg,#16241b,#0d1410); border:1px solid var(--border); border-radius:20px; overflow:hidden; box-shadow:0 22px 48px rgba(0,0,0,.55); animation:ucPop .2s ease}
+  .quiz-photo{position:relative; height:190px}
+  .quiz-photo>img{width:100%; height:100%; object-fit:cover; display:block}
+  .quiz-photo::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg,transparent 45%,rgba(13,20,16,.96))}
+  .quiz-badge{position:absolute; z-index:2; top:12px; left:14px; font-size:.7rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#fff; padding:4px 11px; border-radius:999px; background:rgba(13,20,16,.72); border:1px solid rgba(255,255,255,.35)}
+  .quiz-body{padding:16px 18px 20px}
+  .quiz-intro{text-align:center; color:var(--text-secondary); font-size:.86rem; margin:0 0 6px; line-height:1.5}
+  .quiz-q{margin-top:14px}
+  .quiz-q label{display:block; font-size:.8rem; font-weight:700; color:var(--accent-light); margin-bottom:6px}
+  .quiz-in{width:100%; box-sizing:border-box; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--text-primary); font-size:.95rem}
+  .quiz-in:focus{outline:none; border-color:var(--accent)}
+  .quiz-in:disabled{opacity:.7}
+  .quiz-row{display:flex; gap:8px}
+  .quiz-row .quiz-in{flex:1}
+  .quiz-answer{margin-top:7px; font-size:.82rem; display:none}
+  .quiz-answer.show{display:block}
+  .quiz-answer .ok{color:#6fcf7f; font-weight:700}
+  .quiz-answer .no{color:#e8505b; font-weight:700}
+  .quiz-answer b{color:#fff}
+  .quiz-actions{display:flex; gap:10px; margin-top:20px}
+  .quiz-btn{flex:1; padding:12px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--text-primary); font-size:.9rem; font-weight:700; cursor:pointer}
+  .quiz-btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+  .quiz-btn:hover{filter:brightness(1.1)}
+  /* Roter Marker auf der Sammelkarten-Map (markiert genau diese Beobachtung) */
+  .uc-red-pin{filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+  .uc-red-pin svg{animation:ucPinPulse 1.4s ease-in-out infinite; transform-origin:50% 100%}
+  @keyframes ucPinPulse{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 </style>
 <div class="uc-overlay" id="ucOverlay" role="dialog" aria-modal="true" aria-label="Arten-Detail"><button class="uc-close" id="ucCloseBtn" aria-label="Schließen">×</button><div class="uc-cardwrap" id="ucInner"></div></div>
+<div class="quiz-overlay" id="quizOverlay" role="dialog" aria-modal="true" aria-label="Mini-Quiz"><div class="quiz-card" id="quizInner"></div></div>
 <script>
 (function(){
   "use strict";
@@ -12981,6 +13014,8 @@
       return true;
     }catch(e){ return true; }
   }
+  // Auch im Hauptskript verfügbar machen (z.B. galOpenCard in der Galerie prüft `typeof redesignOn`).
+  window.redesignOn = redesignOn;
 
   /* ---------- IUCN-Bonus (mit dir abgestimmt) ---------- */
   const UC_RARITY_COLORS = {1:'#6b7d6b',2:'#5f9455',3:'#4a9d43',4:'#3a93a6',5:'#3f80c4',6:'#5e5ac9',7:'#8e44ad',8:'#c65b23',9:'#e67e22',10:'#f39c12'};
@@ -13128,7 +13163,7 @@
               <div class="uc-ctext" id="ucInfo">Lade Beschreibung…</div>
             </div>
             <div class="uc-csec" id="ucMapSec">
-              <div class="uc-clabel">Fundort${userObs.length>1?` · ${userObs.length} Beobachtungen`:''}</div>
+              <div class="uc-clabel">Fundort${userObs.length>1?` · ${userObs.length} Beobachtungen · <span style="color:#e8505b">● diese</span>`:''}</div>
               <div id="ucMap"></div>
             </div>
             <div class="uc-csec">
@@ -13191,14 +13226,20 @@
     if(!pts.length){ if(mapSec) mapSec.style.display='none'; }
     else{
       try{
+        // Roter Pin markiert GENAU die angeklickte Beobachtung (bei mehreren der gleichen Art)
+        const redIcon=L.divIcon({className:'uc-red-pin', html:'<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40"><path d="M14 0C6.3 0 0 6.3 0 14c0 10.2 14 26 14 26s14-15.8 14-26C28 6.3 21.7 0 14 0z" fill="#e8505b" stroke="#fff" stroke-width="2.5"/><circle cx="14" cy="14" r="5.3" fill="#fff"/></svg>', iconSize:[28,40], iconAnchor:[14,39], popupAnchor:[0,-34]});
+        let redMarker=null;
         ucMap=L.map('ucMap',{attributionControl:false, worldCopyJump:true, minZoom:1}).setView([pts[0].lat,pts[0].lon],9);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{noWrap:true}).addTo(ucMap);
         const group=L.featureGroup(pts.map(o=>{
-          const m=L.marker([o.lat,o.lon]);
+          const sel = !!(primary && o.id!=null && o.id===primary.id);
+          const m = sel ? L.marker([o.lat,o.lon],{icon:redIcon, zIndexOffset:1000}) : L.marker([o.lat,o.lon]);
           m.bindPopup(`<b>${ucEsc(o.name||name)}</b><br>${ucEsc(o.date||'')}<br>${ucEsc(o.place||'')}`);
+          if(sel) redMarker=m;
           return m;
         })).addTo(ucMap);
         if(pts.length>1) ucMap.fitBounds(group.getBounds().pad(0.35));
+        if(redMarker){ setTimeout(()=>{ try{ redMarker.openPopup(); }catch(e){} },140); }
         setTimeout(()=>{ if(ucMap) ucMap.invalidateSize(); },70);
       }catch(e){ if(mapSec) mapSec.style.display='none'; }
     }
@@ -13233,6 +13274,101 @@
     if(tot && level){ tot.textContent = level + (bonus?(' (+'+bonus+')'):''); }
   }
   window.openUnifiedCard = openUnifiedCard;
+
+  /* ---------- Mini-Quiz vor der Sammelkarte (Gimmick, keine Punkte) ---------- */
+  const QUIZ_MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  function quizNorm(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9äöüß ]/gi,'').trim().replace(/\s+/g,' '); }
+  function quizMatch(guess, answers){
+    const g=quizNorm(guess); if(g.length<2) return false;
+    return (answers||[]).some(a=>{ const n=quizNorm(a); return n && (n===g || n.includes(g) || g.includes(n)); });
+  }
+  function openObsQuiz(o){
+    if(!o) return;
+    const go=document.getElementById('quizOverlay'), gi=document.getElementById('quizInner');
+    // Kein Overlay -> direkt zur Karte (defensiv)
+    if(!go||!gi){ openUnifiedCard(o); return; }
+    const img=(o.image||'').replace('square','medium');
+    const name=o.name||'', sci=o.scientific||o.sci||'';
+    const country=o.country||'';
+    const year=(o.date||'').slice(0,4);
+    const mNum=parseInt((o.date||'').slice(5,7),10);
+    const month=(mNum>=1&&mNum<=12)?QUIZ_MONTHS[mNum-1]:'';
+
+    function toCard(){
+      go.classList.remove('open');
+      document.body.style.overflow='';
+      if(redesignOn()){ openUnifiedCard(o); }
+      else if(typeof window.openSpeciesCard==='function'){ window.openSpeciesCard(o.taxonId, o.image); }
+    }
+
+    const qs=[];
+    qs.push({key:'art', label:'Welche Art ist das? (deutscher oder lateinischer Name zählt)', answers:[name,sci].filter(Boolean), show:[name,sci].filter(Boolean).join(' · ')||'—'});
+    if(country) qs.push({key:'land', label:'In welchem Land wurde das beobachtet?', answers:[country], show:country});
+    if(year) qs.push({key:'jahr', label:'In welchem Jahr? (Bonus: welcher Monat?)', answers:[year], show:month?(month+' '+year):year, year, month});
+
+    let html=''
+      + '<div class="quiz-photo"><img src="'+ucEsc(img)+'" alt="" onerror="this.style.display=\'none\'"><span class="quiz-badge">🧩 Mini-Quiz</span></div>'
+      + '<div class="quiz-body">'
+      + '<p class="quiz-intro">Rate mal – oder überspring’s einfach. Nur zum Spaß, keine Punkte.</p>';
+    qs.forEach(q=>{
+      if(q.key==='jahr'){
+        html+='<div class="quiz-q"><label>'+ucEsc(q.label)+'</label>'
+          + '<div class="quiz-row"><input class="quiz-in" id="quizIn_jahr" inputmode="numeric" placeholder="Jahr, z.B. 2024" autocomplete="off">'
+          + '<input class="quiz-in" id="quizIn_monat" placeholder="Monat (optional)" autocomplete="off"></div>'
+          + '<div class="quiz-answer" id="quizAns_jahr"></div></div>';
+      } else {
+        html+='<div class="quiz-q"><label>'+ucEsc(q.label)+'</label>'
+          + '<input class="quiz-in" id="quizIn_'+q.key+'" placeholder="Deine Vermutung…" autocomplete="off">'
+          + '<div class="quiz-answer" id="quizAns_'+q.key+'"></div></div>';
+      }
+    });
+    html+='<div class="quiz-actions"><button class="quiz-btn" id="quizSkip" type="button">Überspringen →</button>'
+      + '<button class="quiz-btn primary" id="quizSolve" type="button">Auflösen</button></div></div>';
+    gi.innerHTML=html;
+    go.classList.add('open'); document.body.style.overflow='hidden';
+
+    let solved=false;
+    const skipBtn=document.getElementById('quizSkip');
+    const solveBtn=document.getElementById('quizSolve');
+    if(skipBtn) skipBtn.onclick=toCard;
+    if(solveBtn) solveBtn.onclick=function(){
+      if(solved){ toCard(); return; }
+      solved=true;
+      qs.forEach(q=>{
+        const ans=document.getElementById('quizAns_'+q.key); if(!ans) return;
+        if(q.key==='jahr'){
+          const gy=(document.getElementById('quizIn_jahr')||{}).value||'';
+          const gm=(document.getElementById('quizIn_monat')||{}).value||'';
+          const okY=quizMatch(gy,[q.year]);
+          const okM=q.month ? quizMatch(gm,[q.month, String(mNum)]) : false;
+          let t=(okY?'<span class="ok">✓ Jahr richtig</span>':'<span class="no">✗ Jahr daneben</span>')+' — <b>'+ucEsc(q.show)+'</b>';
+          if(q.month && gm) t+= okM?' · <span class="ok">Monat ✓</span>':' · <span class="no">Monat ✗</span>';
+          ans.innerHTML=t;
+        } else {
+          const g=(document.getElementById('quizIn_'+q.key)||{}).value||'';
+          const ok=quizMatch(g,q.answers);
+          ans.innerHTML=(ok?'<span class="ok">✓ Richtig</span>':'<span class="no">✗ Daneben</span>')+' — <b>'+ucEsc(q.show)+'</b>';
+        }
+        ans.classList.add('show');
+      });
+      document.querySelectorAll('#quizInner .quiz-in').forEach(el=>el.disabled=true);
+      this.textContent='Weiter zur Karte →';
+    };
+    // Fokus auf die erste Frage
+    const first=document.getElementById('quizIn_art'); if(first){ try{ first.focus(); }catch(e){} }
+  }
+  window.openObsQuiz = openObsQuiz;
+
+  /* Quiz schließen: Backdrop-Klick geht direkt zur Karte; Escape ebenso */
+  (function(){
+    const go=document.getElementById('quizOverlay');
+    if(!go) return;
+    go.addEventListener('click', e=>{ if(e.target===go){ const b=document.getElementById('quizSkip'); if(b) b.click(); } });
+    document.addEventListener('keydown', e=>{
+      if(e.key!=='Escape') return;
+      if(go.classList.contains('open')){ e.stopPropagation(); const b=document.getElementById('quizSkip'); if(b) b.click(); }
+    });
+  })();
 
   /* Overlay schließen: Button + Backdrop + Escape */
   const ucCloseBtn=document.getElementById('ucCloseBtn'); if(ucCloseBtn) ucCloseBtn.onclick=ucClose;
