@@ -3921,6 +3921,13 @@
                 --gold:#c9a24a;--gold-hi:#eccd7f;--paper:#f4ecd6;--paper2:#ece0c4;--paper-edge:#d7c69e;
                 --ink:#3a3327;--ink-soft:#655843;--ink-mute:#8d7d5f;--pline2:rgba(96,72,38,.40);
                 --pserif:'Playfair Display',Georgia,serif;--pscript:'Snell Roundhand','Apple Chancery','Brush Script MT',cursive;--pmono:ui-monospace,'SF Mono',Menlo,monospace}
+            #tab-reisen .trsa{overflow-x:clip}
+            #tab-reisen .trsa-titlebar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:26px 0 12px}
+            #tab-reisen .trsa-titlebar .trsa-title{margin:0}
+            #tab-reisen .trsa-pdfbtn{flex:0 0 auto;cursor:pointer;font:inherit;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;
+                border:1px solid rgba(233,200,120,.4);background:rgba(40,26,14,.55);color:var(--gold-strong);border-radius:999px;padding:8px 15px;transition:.15s}
+            #tab-reisen .trsa-pdfbtn:hover:not(:disabled){background:rgba(60,40,18,.8);border-color:var(--gold-strong)}
+            #tab-reisen .trsa-pdfbtn:disabled{opacity:.55;cursor:progress}
             #tab-reisen .trsa-title{font-family:var(--pserif,serif);margin:26px 0 12px;color:var(--text-primary)}
             #tab-reisen .trsa-cover{position:relative;cursor:pointer;width:min(100%,680px);height:min(74svh,720px);margin:6px auto 0;border-radius:5px 10px 10px 5px;transition:transform .15s,box-shadow .2s;
                 background:repeating-linear-gradient(93deg,rgba(255,240,210,.045) 0 2px,transparent 2px 6px),radial-gradient(135% 120% at 32% 10%,var(--lea-hi),var(--lea) 46%,var(--lea-lo));
@@ -3928,12 +3935,12 @@
             #tab-reisen .trsa-cover:hover{transform:translateY(-3px)}
             #tab-reisen .trsa-cover::before{content:"";position:absolute;left:0;top:0;bottom:0;width:20px;border-radius:5px 0 0 5px;background:linear-gradient(90deg,var(--lea-lo),rgba(0,0,0,.12) 62%,transparent);box-shadow:inset -6px 0 9px rgba(0,0,0,.45)}
             #tab-reisen .trsa-cover::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 55px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,230,190,.15)}
-            #tab-reisen .trsa-cface{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:22px 20px 22px 34px;text-align:center}
+            #tab-reisen .trsa-cface{position:relative;z-index:1;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:22px 20px 22px 34px;text-align:center}
             #tab-reisen .trsa-cface .med{width:33%;aspect-ratio:1;border-radius:18px;padding:9px;background:linear-gradient(160deg,var(--lea-edge),var(--lea-lo));box-shadow:inset 0 2px 4px rgba(255,230,190,.22),inset 0 -5px 10px rgba(0,0,0,.55),0 8px 18px rgba(0,0,0,.45)}
             #tab-reisen .trsa-cface .med img{width:100%;height:100%;border-radius:11px;display:block;filter:grayscale(1) sepia(1) saturate(2.7) hue-rotate(-6deg) brightness(1.08) contrast(1.06)}
             #tab-reisen .trsa-cface .eyebrow{font-family:var(--pserif);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-hi);opacity:.85}
-            #tab-reisen .trsa-cface .tn{font-family:var(--pscript);font-size:clamp(30px,4.6vw,46px);line-height:1.05;color:var(--paper);text-shadow:0 1px 2px rgba(0,0,0,.6)}
-            #tab-reisen .trsa-cface .rng{font-family:var(--pmono);font-size:10.5px;letter-spacing:.08em;color:var(--gold-hi);opacity:.78}
+            #tab-reisen .trsa-cface .tn{font-family:var(--pscript);font-size:clamp(30px,4.6vw,46px);line-height:1.05;color:var(--paper);text-shadow:0 1px 2px rgba(0,0,0,.6);max-width:100%;overflow-wrap:anywhere}
+            #tab-reisen .trsa-cface .rng{font-family:var(--pmono);font-size:10.5px;letter-spacing:.08em;color:var(--gold-hi);opacity:.78;max-width:100%;overflow-wrap:anywhere}
             #tab-reisen .trsa-cface .cnt{font-family:var(--pserif);font-size:13px;color:var(--gold-hi);border-top:1px solid rgba(233,200,120,.25);padding-top:9px;margin-top:2px}
             #tab-reisen .trsa-cface .open{font-family:var(--pmono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-hi);opacity:.6;margin-top:2px}
             #tab-reisen .trsa-frame{max-width:680px;margin:0 auto;border-radius:12px;padding:13px;box-shadow:0 24px 60px rgba(0,0,0,.6);background:radial-gradient(130% 120% at 25% 8%,var(--lea-hi),var(--lea) 48%,var(--lea-lo))}
@@ -3956,7 +3963,7 @@
             #tab-reisen .trsa-card .no{position:absolute;top:5px;left:5px;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.6);color:#fff;font-variant-numeric:tabular-nums}
             #tab-reisen .trsa-card .multi{position:absolute;bottom:5px;right:5px;font-size:10px;font-weight:800;padding:1px 6px;border-radius:999px;background:var(--gold);color:#3a2c00;box-shadow:0 2px 6px rgba(0,0,0,.4)}
             #tab-reisen .trsa-card .meta{padding:5px 7px 7px;background:#12151b}
-            #tab-reisen .trsa-card .nm{font-size:11px;font-weight:700;color:#e7ebf2;line-height:1.12;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:25px}
+            #tab-reisen .trsa-card .nm{font-size:11px;font-weight:700;color:#e7ebf2;line-height:1.12;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:25px;overflow-wrap:anywhere;hyphens:auto}
             #tab-reisen .trsa-card .sci{font-size:9px;font-style:italic;color:#93a0b4;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
             #tab-reisen .trsa-card .dt{font-size:9px;color:#6b7686;margin-top:2px}
             #tab-reisen .trsa-card.shiny{border-color:var(--gold-hi);box-shadow:0 3px 9px rgba(50,34,14,.4),0 0 14px rgba(240,207,99,.5)}
@@ -3982,9 +3989,21 @@
             #tab-reisen .taxa-grid-mini .taxa-card:hover,#tab-reisen .taxa-grid-mini .taxa-card.active{transform:translateY(-2px)}
             @media(max-width:620px){
                 #tab-reisen .taxa-grid-mini{grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
-                #tab-reisen .trsa-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-                #tab-reisen .trsa-page{padding:16px 14px 26px}
+                /* 3 statt 4 Spalten: Karten groß genug, Namen nicht mehr abgeschnitten */
+                #tab-reisen .trsa-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+                #tab-reisen .trsa-page{padding:16px 12px 24px}
                 #tab-reisen .trday-grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+                /* Cover-Buchrücken schlanker + Breite begrenzen, damit nichts über den Rand steht */
+                #tab-reisen .trsa-cover{width:calc(100% - 22px);
+                    box-shadow:2px 0 0 #eae0c8,4px 0 0 #ddcfac,6px 1px 0 #cdbd92,8px 2px 0 #bda87a,10px 6px 20px rgba(0,0,0,.55)}
+                #tab-reisen .trsa-cface{padding:18px 15px 18px 24px;gap:10px}
+                #tab-reisen .trsa-cface .tn{font-size:clamp(24px,8.5vw,42px)}
+                #tab-reisen .trsa-cface .rng{font-size:9.5px;letter-spacing:.03em}
+                #tab-reisen .trsa-card .nm{font-size:11.5px;min-height:28px}
+                #tab-reisen .trsa-card .sci{font-size:9.5px}
+            }
+            @media(max-width:380px){
+                #tab-reisen .trsa-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
             }
         </style>
         <div class="section">
@@ -4034,7 +4053,10 @@
                     <div class="trsum" id="trdaySummary"></div>
                     <div class="trday-grid" id="trdayGrid"></div>
                 </details>
-                <h3 class="trsa-title">📖 Reise-Sammelalbum</h3>
+                <div class="trsa-titlebar">
+                    <h3 class="trsa-title">📖 Reise-Sammelalbum</h3>
+                    <button class="trsa-pdfbtn" id="trsaPdfBtn" onclick="trsaDownloadPdf()" title="Das ganze Album als PDF speichern">⬇️ Als PDF</button>
+                </div>
                 <div class="trsa" id="trsaAlbum">
                     <div id="trsaStage"></div>
                 </div>
@@ -12780,6 +12802,212 @@
         function trsaGoto(p) { trsa.page = p; trsaRenderAlbum(); const st = document.getElementById('trsaStage'); if (st) st.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
         // Karte angetippt -> Fundort auf der Reisekarte hervorheben (bestehende Logik)
         function trsaOpenCard(id) { travelSelectObs(id); }
+
+        // ---------- Album als PDF exportieren ----------
+        let _jspdfPromise = null;
+        function trsaLoadJsPDF() {
+            if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+            if (_jspdfPromise) return _jspdfPromise;
+            _jspdfPromise = new Promise((res, rej) => {
+                const s = document.createElement('script');
+                s.src = 'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js';
+                s.onload = res;
+                s.onerror = () => { _jspdfPromise = null; rej(new Error('jsPDF konnte nicht geladen werden (Internet?)')); };
+                document.head.appendChild(s);
+            });
+            return _jspdfPromise;
+        }
+        function trsaHexRgb(hex) {
+            const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+            if (!m) return [122, 127, 138];
+            const n = parseInt(m[1], 16);
+            return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+        }
+        // iNat-Fotos senden kein CORS -> über den eigenen /api/img-Proxy laden,
+        // damit das Bild aufs Canvas gezeichnet werden darf (für den PDF-Export).
+        function trsaProxyImg(url) {
+            try {
+                const u = new URL(url, location.href);
+                const h = u.hostname.toLowerCase();
+                if (/(^|\.)inaturalist\.org$/.test(h) || h.includes('inaturalist-open-data') ||
+                    (h.endsWith('.amazonaws.com') && h.includes('inaturalist')))
+                    return '/api/img?u=' + encodeURIComponent(u.toString());
+            } catch (e) { }
+            return url;
+        }
+        // Bild -> {dataURL,w,h}; bei CORS/Fehler null (Platzhalter)
+        function trsaImgData(url) {
+            return new Promise(res => {
+                if (!url) { res(null); return; }
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    try {
+                        const max = 420;
+                        let w = img.naturalWidth || 300, h = img.naturalHeight || 300;
+                        const sc = Math.min(1, max / Math.max(w, h));
+                        const cw = Math.max(1, Math.round(w * sc)), ch = Math.max(1, Math.round(h * sc));
+                        const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+                        cv.getContext('2d').drawImage(img, 0, 0, cw, ch);
+                        res({ dataURL: cv.toDataURL('image/jpeg', 0.82), w: img.naturalWidth, h: img.naturalHeight });
+                    } catch (e) { res(null); }
+                };
+                img.onerror = () => res(null);
+                img.src = trsaProxyImg(url);
+            });
+        }
+        async function trsaDownloadPdf() {
+            const btn = document.getElementById('trsaPdfBtn');
+            const trip = resolveTrip(tripCurrentId);
+            if (!trip) return;
+            const cards = trsaAlbumCards();
+            if (!cards.length) { alert('Für diese Auswahl gibt es keine Karten zum Exportieren.'); return; }
+            const orig = btn ? btn.innerHTML : '';
+            if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Erstelle PDF…'; }
+            try {
+                await trsaLoadJsPDF();
+                const [imgs, medallion] = await Promise.all([
+                    Promise.all(cards.map(c => trsaImgData(c.o && c.o.image))),
+                    trsaImgData('apple-touch-icon.png')
+                ]);
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true });
+                const PW = doc.internal.pageSize.getWidth(), PH = doc.internal.pageSize.getHeight();
+                const M = 42, CW = PW - 2 * M;
+                const paper = [244, 236, 214], leather = [42, 30, 18], gold = [201, 162, 74], goldHi = [236, 205, 127];
+                const ink = [58, 51, 39], inkMute = [141, 125, 95];
+
+                function paintPaper() {
+                    doc.setFillColor(paper[0], paper[1], paper[2]); doc.rect(0, 0, PW, PH, 'F');
+                    doc.setFont('courier', 'normal'); doc.setFontSize(8);
+                    doc.setTextColor(inkMute[0], inkMute[1], inkMute[2]);
+                    doc.text((trip.name || 'Reise') + '  ·  ' + (TRSA_MODE_NAME[tripViewMode] || ''), PW / 2, PH - 24, { align: 'center' });
+                }
+
+                // --- Titelseite (Leder) ---
+                doc.setFillColor(leather[0], leather[1], leather[2]); doc.rect(0, 0, PW, PH, 'F');
+                doc.setDrawColor(gold[0], gold[1], gold[2]); doc.setLineWidth(1.4);
+                doc.rect(M - 8, M - 8, CW + 16, PH - 2 * (M - 8), 'S');
+                doc.setLineWidth(0.5); doc.rect(M - 4, M - 4, CW + 8, PH - 2 * (M - 4), 'S');
+                if (medallion && medallion.dataURL) {
+                    const ms = 96; doc.addImage(medallion.dataURL, 'JPEG', (PW - ms) / 2, PH * 0.26, ms, ms);
+                }
+                doc.setFont('times', 'normal'); doc.setFontSize(11);
+                doc.setTextColor(goldHi[0], goldHi[1], goldHi[2]);
+                doc.text('REISE-SAMMELALBUM', PW / 2, PH * 0.44, { align: 'center', charSpace: 3 });
+                doc.setFont('times', 'italic'); doc.setFontSize(32);
+                doc.setTextColor(paper[0], paper[1], paper[2]);
+                const tl = doc.splitTextToSize(trip.name || 'Reise', CW - 40);
+                doc.text(tl, PW / 2, PH * 0.5, { align: 'center' });
+                const afterT = PH * 0.5 + tl.length * 32 + 14;
+                doc.setFont('courier', 'normal'); doc.setFontSize(10.5);
+                doc.setTextColor(goldHi[0], goldHi[1], goldHi[2]);
+                const range = fmtTripDate(trip.from) + '  –  ' + (trip.to ? fmtTripDate(trip.to) : 'heute');
+                const span = tripDaySpan(trip.from, trip.to || tripTodayStr());
+                doc.text(range + '   ·   ' + span + (span === 1 ? ' Tag' : ' Tage'), PW / 2, afterT, { align: 'center' });
+                const nSp = trsaCountSpecies(tripCurrentObs);
+                doc.setFont('times', 'normal'); doc.setFontSize(13);
+                doc.text(nSp + (nSp === 1 ? ' Art' : ' Arten') + ' gesammelt', PW / 2, afterT + 22, { align: 'center' });
+
+                // --- Kartenseiten ---
+                const cols = 3, gap = 14, cardW = (CW - (cols - 1) * gap) / cols;
+                const imgH = cardW, textH = 52, cardH = imgH + textH;
+                const topY = M + 4;
+                const bottomY = PH - 40;
+                doc.addPage(); paintPaper();
+                let y = topY, col = 0, lastDay = null, no = 0;
+
+                function newPageFlow() { doc.addPage(); paintPaper(); y = topY; col = 0; }
+                function dayHeader(day) {
+                    if (col !== 0) { col = 0; y += cardH + gap; }
+                    if (y + 22 + cardH > bottomY) newPageFlow();
+                    else if (day !== null && lastDay !== null) y += 8;
+                    const dayNum = tripDaySpan(trip.from, day);
+                    const wd = TRSA_WD_LONG[new Date(day + 'T00:00:00').getDay()];
+                    doc.setFont('times', 'bold'); doc.setFontSize(13); doc.setTextColor(ink[0], ink[1], ink[2]);
+                    doc.text('Tag ' + dayNum + '  ·  ' + wd, M, y + 12);
+                    doc.setFont('courier', 'normal'); doc.setFontSize(9); doc.setTextColor(inkMute[0], inkMute[1], inkMute[2]);
+                    doc.text(fmtTripDate(day), PW - M, y + 12, { align: 'right' });
+                    doc.setDrawColor(gold[0], gold[1], gold[2]); doc.setLineWidth(0.7);
+                    doc.line(M, y + 18, PW - M, y + 18);
+                    y += 28;
+                }
+                function drawCard(c, imgd, n) {
+                    const o = c.o, t = rwIconicType(o.taxon);
+                    const x = M + col * (cardW + gap);
+                    if (col === 0 && y + cardH > bottomY) newPageFlow();
+                    const cx = M + col * (cardW + gap);
+                    // Rahmen
+                    const tc = trsaHexRgb(t.c);
+                    doc.setFillColor(255, 253, 247); doc.setDrawColor(tc[0], tc[1], tc[2]); doc.setLineWidth(1);
+                    doc.roundedRect(cx, y, cardW, cardH, 5, 5, 'FD');
+                    // Bildbereich (dunkle Letterbox wie in der App)
+                    doc.setFillColor(24, 26, 34); doc.rect(cx + 1, y + 1, cardW - 2, imgH - 1, 'F');
+                    if (imgd && imgd.dataURL) {
+                        const sc = Math.min((cardW - 2) / imgd.w, (imgH - 2) / imgd.h);
+                        const dw = imgd.w * sc, dh = imgd.h * sc;
+                        doc.addImage(imgd.dataURL, 'JPEG', cx + 1 + (cardW - 2 - dw) / 2, y + 1 + (imgH - 2 - dh) / 2, dw, dh);
+                    } else {
+                        doc.setFillColor(tc[0], tc[1], tc[2]); doc.rect(cx + 1, y + 1, cardW - 2, imgH - 1, 'F');
+                    }
+                    // Nummer
+                    doc.setFillColor(0, 0, 0); doc.setTextColor(255, 255, 255);
+                    doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+                    const noTxt = '#' + n, nw = doc.getTextWidth(noTxt) + 8;
+                    doc.roundedRect(cx + 5, y + 5, nw, 12, 3, 3, 'F');
+                    doc.text(noTxt, cx + 5 + nw / 2, y + 13, { align: 'center' });
+                    // Anzahl / NEU
+                    if (tripViewMode !== 'observations' && c.count > 1) {
+                        doc.setFillColor(201, 162, 74); doc.setTextColor(40, 28, 0);
+                        const ct = c.count + '×', cwid = doc.getTextWidth(ct) + 8;
+                        doc.roundedRect(cx + cardW - 5 - cwid, y + imgH - 16, cwid, 12, 3, 3, 'F');
+                        doc.text(ct, cx + cardW - 5 - cwid / 2, y + imgH - 8, { align: 'center' });
+                    }
+                    if (c.isNew) {
+                        doc.setFillColor(236, 205, 127); doc.setTextColor(40, 28, 0);
+                        const nt = 'NEU', nwid = doc.getTextWidth(nt) + 8;
+                        doc.roundedRect(cx + 5, y + imgH - 16, nwid, 12, 3, 3, 'F');
+                        doc.text(nt, cx + 5 + nwid / 2, y + imgH - 8, { align: 'center' });
+                    }
+                    // Text
+                    let ty = y + imgH + 13;
+                    doc.setTextColor(30, 32, 38); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+                    const nm = doc.splitTextToSize(o.name || '', cardW - 12).slice(0, 2);
+                    doc.text(nm, cx + 6, ty); ty += nm.length * 10 + 1;
+                    if (o.scientific) {
+                        doc.setFont('helvetica', 'italic'); doc.setFontSize(7.5); doc.setTextColor(120, 130, 142);
+                        doc.text(doc.splitTextToSize(o.scientific, cardW - 12)[0], cx + 6, ty);
+                    }
+                    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(120, 120, 130);
+                    doc.text(fmtTripDate(c.day || o.date) + (o.quality === 'research' ? '  ·  FQ' : ''), cx + 6, y + cardH - 6);
+                    // nächste Position
+                    col++;
+                    if (col >= cols) { col = 0; y += cardH + gap; }
+                }
+
+                for (const c of cards) {
+                    if (c.day !== lastDay) { dayHeader(c.day); lastDay = c.day; }
+                    drawCard(c, imgs[no], no + 1);
+                    no++;
+                }
+
+                // Seitenzahlen
+                const total = doc.getNumberOfPages();
+                for (let p = 2; p <= total; p++) {
+                    doc.setPage(p);
+                    doc.setFont('courier', 'normal'); doc.setFontSize(8); doc.setTextColor(inkMute[0], inkMute[1], inkMute[2]);
+                    doc.text('Seite ' + (p - 1) + ' / ' + (total - 1), PW - M, PH - 24, { align: 'right' });
+                }
+
+                const safe = (trip.name || 'Reise').replace(/[^\p{L}\p{N}\-_ ]/gu, '').trim() || 'Reise';
+                doc.save('Reise-Sammelalbum – ' + safe + '.pdf');
+            } catch (e) {
+                console.error(e);
+                alert('PDF-Export fehlgeschlagen: ' + ((e && e.message) || e));
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+            }
+        }
 
         // Karte angeklickt -> Punkt auf der Leaflet-Karte hervorheben & Popup öffnen
         function travelSelectObs(id, opts) {
