@@ -12856,6 +12856,31 @@
                 img.src = trsaProxyImg(url);
             });
         }
+        // jsPDF-Standardfonts können nur Latin-1 — Emoji & Symbole vorher entfernen,
+        // sonst erscheint Müll wie "Ø<ß" (Titel/Fußzeile).
+        function trsaPdfSafe(s) {
+            return (s || '')
+                .replace(/[\u{1F000}-\u{1FFFF}\u{2190}-\u{21FF}\u{2300}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}]/gu, '')
+                .replace(/\s{2,}/g, ' ')
+                .trim();
+        }
+        // Menschlich lesbare Beschreibung der aktiven Album-Auswahl (Modus + Tiergruppen).
+        function trsaFilterDesc() {
+            const modeTxt = {
+                observations: 'Alle Beobachtungen',
+                species: 'Alle Arten',
+                fq: 'Alle Arten in Forschungsqualität',
+                new: 'Neu in Forschungsqualität'
+            }[tripViewMode] || 'Alle Beobachtungen';
+            const grps = [...tripFilterTaxa]
+                .map(k => trsaPdfSafe((typeof rwIconicType === 'function' ? rwIconicType(k).de : k) || k))
+                .filter(Boolean);
+            if (!grps.length) return modeTxt;
+            const grpTxt = grps.length <= 3
+                ? grps.join(' & ')
+                : grps.slice(0, 2).join(', ') + ' & ' + (grps.length - 2) + ' weitere';
+            return grpTxt + '  ·  ' + modeTxt;
+        }
         async function trsaDownloadPdf() {
             const btn = document.getElementById('trsaPdfBtn');
             const trip = resolveTrip(tripCurrentId);
@@ -12881,7 +12906,7 @@
                     doc.setFillColor(paper[0], paper[1], paper[2]); doc.rect(0, 0, PW, PH, 'F');
                     doc.setFont('courier', 'normal'); doc.setFontSize(8);
                     doc.setTextColor(inkMute[0], inkMute[1], inkMute[2]);
-                    doc.text((trip.name || 'Reise') + '  ·  ' + (TRSA_MODE_NAME[tripViewMode] || ''), PW / 2, PH - 24, { align: 'center' });
+                    doc.text((trsaPdfSafe(trip.name) || 'Reise') + '  ·  ' + trsaFilterDesc(), PW / 2, PH - 24, { align: 'center' });
                 }
 
                 // --- Titelseite (Leder) ---
@@ -12890,16 +12915,34 @@
                 doc.rect(M - 8, M - 8, CW + 16, PH - 2 * (M - 8), 'S');
                 doc.setLineWidth(0.5); doc.rect(M - 4, M - 4, CW + 8, PH - 2 * (M - 4), 'S');
                 if (medallion && medallion.dataURL) {
-                    const ms = 96; doc.addImage(medallion.dataURL, 'JPEG', (PW - ms) / 2, PH * 0.26, ms, ms);
+                    const ms = 96, mx = (PW - ms) / 2, my = PH * 0.26;
+                    doc.addImage(medallion.dataURL, 'JPEG', mx, my, ms, ms);
+                    // feiner Goldrahmen ums Emblem
+                    doc.setDrawColor(gold[0], gold[1], gold[2]); doc.setLineWidth(1);
+                    doc.roundedRect(mx - 4, my - 4, ms + 8, ms + 8, 6, 6, 'S');
                 }
                 doc.setFont('times', 'normal'); doc.setFontSize(11);
                 doc.setTextColor(goldHi[0], goldHi[1], goldHi[2]);
                 doc.text('REISE-SAMMELALBUM', PW / 2, PH * 0.44, { align: 'center', charSpace: 3 });
-                doc.setFont('times', 'italic'); doc.setFontSize(32);
+                // Titel: Emoji entfernen + automatisch verkleinern, damit er nie aus dem Blatt läuft
+                const titleRaw = trsaPdfSafe(trip.name) || 'Reise';
+                const titleMaxW = CW - 40;
+                let tfs = 32, tl;
+                doc.setFont('times', 'italic');
+                do {
+                    doc.setFontSize(tfs);
+                    tl = doc.splitTextToSize(titleRaw, titleMaxW);
+                    if (tl.length <= 2 && tl.every(line => doc.getTextWidth(line) <= titleMaxW)) break;
+                    tfs -= 2;
+                } while (tfs > 16);
+                doc.setFontSize(tfs);
+                tl = doc.splitTextToSize(titleRaw, titleMaxW);
                 doc.setTextColor(paper[0], paper[1], paper[2]);
-                const tl = doc.splitTextToSize(trip.name || 'Reise', CW - 40);
                 doc.text(tl, PW / 2, PH * 0.5, { align: 'center' });
-                const afterT = PH * 0.5 + tl.length * 32 + 14;
+                const afterT = PH * 0.5 + tl.length * (tfs + 2) + 20;
+                // Zierlinie
+                doc.setDrawColor(gold[0], gold[1], gold[2]); doc.setLineWidth(0.8);
+                doc.line(PW / 2 - 27, afterT - 14, PW / 2 + 27, afterT - 14);
                 doc.setFont('courier', 'normal'); doc.setFontSize(10.5);
                 doc.setTextColor(goldHi[0], goldHi[1], goldHi[2]);
                 const range = fmtTripDate(trip.from) + '  –  ' + (trip.to ? fmtTripDate(trip.to) : 'heute');
@@ -12908,6 +12951,16 @@
                 const nSp = trsaCountSpecies(tripCurrentObs);
                 doc.setFont('times', 'normal'); doc.setFontSize(13);
                 doc.text(nSp + (nSp === 1 ? ' Art' : ' Arten') + ' gesammelt', PW / 2, afterT + 22, { align: 'center' });
+                // --- Auswahl (aktiver Filter) ---
+                const fy = afterT + 58;
+                doc.setFont('courier', 'normal'); doc.setFontSize(8);
+                doc.setTextColor(gold[0], gold[1], gold[2]);
+                doc.text('AUSWAHL', PW / 2, fy, { align: 'center', charSpace: 3 });
+                doc.setDrawColor(gold[0], gold[1], gold[2]); doc.setLineWidth(0.5);
+                doc.line(PW / 2 - 70, fy + 7, PW / 2 + 70, fy + 7);
+                doc.setFont('times', 'italic'); doc.setFontSize(12);
+                doc.setTextColor(paper[0], paper[1], paper[2]);
+                doc.text(doc.splitTextToSize(trsaFilterDesc(), CW - 60), PW / 2, fy + 20, { align: 'center' });
 
                 // --- Kartenseiten ---
                 const cols = 3, gap = 14, cardW = (CW - (cols - 1) * gap) / cols;
@@ -12917,15 +12970,24 @@
                 doc.addPage(); paintPaper();
                 let y = topY, col = 0, lastDay = null, no = 0;
 
+                const headerH = 28;
                 function newPageFlow() { doc.addPage(); paintPaper(); y = topY; col = 0; }
                 function dayHeader(day) {
                     if (col !== 0) { col = 0; y += cardH + gap; }
-                    if (y + 22 + cardH > bottomY) newPageFlow();
-                    else if (day !== null && lastDay !== null) y += 8;
+                    const gapBefore = (lastDay !== null) ? 10 : 0;
+                    // Tagestitel + erste Karte müssen zusammen passen – sonst beide auf neue Seite
+                    if (y + gapBefore + headerH + cardH > bottomY) newPageFlow();
+                    else y += gapBefore;
                     const dayNum = tripDaySpan(trip.from, day);
                     const wd = TRSA_WD_LONG[new Date(day + 'T00:00:00').getDay()];
-                    doc.setFont('times', 'bold'); doc.setFontSize(13); doc.setTextColor(ink[0], ink[1], ink[2]);
-                    doc.text('Tag ' + dayNum + '  ·  ' + wd, M, y + 12);
+                    doc.setFont('times', 'bold'); doc.setFontSize(13);
+                    let hx = M;
+                    doc.setTextColor(ink[0], ink[1], ink[2]);
+                    doc.text('Tag ', hx, y + 12); hx += doc.getTextWidth('Tag ');
+                    doc.setTextColor(gold[0], gold[1], gold[2]);           // Tag-Nummer betont
+                    doc.text(String(dayNum), hx, y + 12); hx += doc.getTextWidth(String(dayNum));
+                    doc.setTextColor(ink[0], ink[1], ink[2]);
+                    doc.text('  ·  ' + wd, hx, y + 12);
                     doc.setFont('courier', 'normal'); doc.setFontSize(9); doc.setTextColor(inkMute[0], inkMute[1], inkMute[2]);
                     doc.text(fmtTripDate(day), PW - M, y + 12, { align: 'right' });
                     doc.setDrawColor(gold[0], gold[1], gold[2]); doc.setLineWidth(0.7);
