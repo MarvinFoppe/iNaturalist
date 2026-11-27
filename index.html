@@ -12712,6 +12712,14 @@
             }
             return [...by.values()].sort((a, b) => a.firstDate < b.firstDate ? -1 : (a.firstDate > b.firstDate ? 1 : 0)).map(e => ({ o: e.o, day: e.firstDate, count: e.count, isNew: trsaIsNew(e.o) }));
         }
+        // Cover-Zahl passend zur aktiven Auswahl (Modus + Tiergruppe): zählt genau das Album.
+        function trsaCoverCount() {
+            const n = trsaAlbumCards().length;
+            const noun = (tripViewMode === 'observations')
+                ? (n === 1 ? 'Beobachtung' : 'Beobachtungen')
+                : (n === 1 ? 'Art' : 'Arten');
+            return { n, noun };
+        }
         // Seiten: nach Tag gruppiert, jeder Tag beginnt auf neuer Seite (bei >12 Karten mehrere Seiten pro Tag)
         function trsaDayPages() {
             const cards = trsaAlbumCards();
@@ -12731,14 +12739,14 @@
         function trsaCoverHtml() {
             const trip = resolveTrip(tripCurrentId); if (!trip) return '';
             const span = tripDaySpan(trip.from, trip.to || tripTodayStr());
-            const nSp = trsaCountSpecies(tripCurrentObs);
+            const cc = trsaCoverCount();
             return `<div class="trsa-cover" onclick="trsaOpenBook()" title="Album aufschlagen">
                 <div class="trsa-cface">
                     <div class="med"><img src="apple-touch-icon.png" alt=""></div>
                     <div class="eyebrow">Reise-Sammelalbum</div>
                     <div class="tn">${trEsc(trip.name || 'Reise')}</div>
                     <div class="rng">${fmtTripDate(trip.from)} – ${trip.to ? fmtTripDate(trip.to) : 'heute'} · ${span} ${span === 1 ? 'Tag' : 'Tage'}</div>
-                    <div class="cnt">${nSp} ${nSp === 1 ? 'Art' : 'Arten'} gesammelt</div>
+                    <div class="cnt">${cc.n} ${cc.noun} gesammelt</div>
                     <div class="open">Aufschlagen ›</div>
                 </div>
             </div>`;
@@ -12999,9 +13007,9 @@
                 const range = fmtTripDate(trip.from) + '  –  ' + (trip.to ? fmtTripDate(trip.to) : 'heute');
                 const span = tripDaySpan(trip.from, trip.to || tripTodayStr());
                 doc.text(range + '   ·   ' + span + (span === 1 ? ' Tag' : ' Tage'), PW / 2, afterT, { align: 'center' });
-                const nSp = trsaCountSpecies(tripCurrentObs);
+                const cc = trsaCoverCount();
                 doc.setFont('times', 'normal'); doc.setFontSize(13);
-                doc.text(nSp + (nSp === 1 ? ' Art' : ' Arten') + ' gesammelt', PW / 2, afterT + 22, { align: 'center' });
+                doc.text(cc.n + ' ' + cc.noun + ' gesammelt', PW / 2, afterT + 22, { align: 'center' });
                 // --- Auswahl (aktiver Filter) ---
                 const fy = afterT + 58;
                 doc.setFont('courier', 'normal'); doc.setFontSize(8);
