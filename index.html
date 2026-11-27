@@ -12881,6 +12881,38 @@
                 : grps.slice(0, 2).join(', ') + ' & ' + (grps.length - 2) + ' weitere';
             return grpTxt + '  ·  ' + modeTxt;
         }
+        // IUCN-Codes, die über „nicht gefährdet" (LC) liegen – nur diese bekommen ein Badge.
+        const TRSA_IUCN_SHOW = new Set(['NT', 'VU', 'EN', 'CR', 'EW', 'EX']);
+        // Vor dem Druck: fehlende Seltenheits-Level & globale IUCN-Status der gezeigten Arten nachladen.
+        async function trsaEnsureScores(cards) {
+            const taxa = [...new Set(cards.map(c => c.o && c.o.taxonId).filter(Boolean))];
+            // 1) Seltenheits-Level (braucht globale FQ-Zahlen rarityCounts)
+            try {
+                if (typeof rarityCounts !== 'undefined' && typeof fetchRarityCounts === 'function') {
+                    const rg = (typeof rgSpeciesIds === 'function') ? new Set(rgSpeciesIds()) : new Set(taxa);
+                    const miss = taxa.filter(id => rg.has(id) && rarityCounts[id] === undefined);
+                    if (miss.length) await fetchRarityCounts(miss);
+                    if (typeof computeRarityLevels === 'function') computeRarityLevels([...rg]);
+                }
+            } catch (e) { /* ohne Netz: vorhandene Levels nutzen */ }
+            // 2) Globaler IUCN-Status (nur fehlende, gebündelt – wie ensureIucnStatuses, aber reisescoped)
+            try {
+                window.ucIucn = window.ucIucn || {};
+                const miss = taxa.filter(id => !(id in window.ucIucn));
+                for (let i = 0; i < miss.length; i += 30) {
+                    const chunk = miss.slice(i, i + 30);
+                    try {
+                        const res = await inatFetch(`${API_BASE}/taxa/${chunk.join(',')}?locale=de`);
+                        const data = await res.json();
+                        (data.results || []).forEach(t => {
+                            window.ucIucn[t.id] = (typeof window.iucnGlobalCode === 'function' ? window.iucnGlobalCode(t) : null) || 'NE';
+                        });
+                    } catch (e) { /* Rest später */ }
+                    chunk.forEach(id => { if (!(id in window.ucIucn)) window.ucIucn[id] = 'NE'; });
+                }
+                try { localStorage.setItem('inat_iucn_v3', JSON.stringify(window.ucIucn)); } catch (e) { }
+            } catch (e) { /* ohne Netz: vorhandene Codes nutzen */ }
+        }
         async function trsaDownloadPdf() {
             const btn = document.getElementById('trsaPdfBtn');
             const trip = resolveTrip(tripCurrentId);
@@ -12891,6 +12923,9 @@
             if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Erstelle PDF…'; }
             try {
                 await trsaLoadJsPDF();
+                if (btn) btn.innerHTML = '⏳ Lade Status…';
+                await trsaEnsureScores(cards);
+                if (btn) btn.innerHTML = '⏳ Erstelle PDF…';
                 const [imgs, medallion] = await Promise.all([
                     Promise.all(cards.map(c => trsaImgData(c.o && c.o.image))),
                     trsaImgData('apple-touch-icon.png')
@@ -12901,6 +12936,22 @@
                 const M = 42, CW = PW - 2 * M;
                 const paper = [244, 236, 214], leather = [42, 30, 18], gold = [201, 162, 74], goldHi = [236, 205, 127];
                 const ink = [58, 51, 39], inkMute = [141, 125, 95];
+                // Seltenheits-Level-Farben (wie in der App, lvl 1→10 grau→gold)
+                const RARITY_COLORS = { 1: [107, 125, 107], 2: [95, 148, 85], 3: [74, 157, 67], 4: [58, 147, 166], 5: [63, 128, 196], 6: [94, 90, 201], 7: [142, 68, 173], 8: [198, 91, 35], 9: [230, 126, 34], 10: [243, 156, 18] };
+                // dunkler Hintergrund? -> weiße Schrift, sonst dunkle
+                function trsaOnDark(rgb) { return (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) < 150; }
+                // gefüllter 5-zackiger Stern (jsPDF kann das ★-Zeichen nicht rendern)
+                function trsaStar(cx0, cy0, rOut, rIn, fill) {
+                    const pts = [];
+                    for (let i = 0; i < 10; i++) {
+                        const r = (i % 2 === 0) ? rOut : rIn, a = -Math.PI / 2 + i * Math.PI / 5;
+                        pts.push([cx0 + r * Math.cos(a), cy0 + r * Math.sin(a)]);
+                    }
+                    const rel = [];
+                    for (let i = 1; i < pts.length; i++) rel.push([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]);
+                    doc.setFillColor(fill[0], fill[1], fill[2]);
+                    doc.lines(rel, pts[0][0], pts[0][1], [1, 1], 'F', true);
+                }
 
                 function paintPaper() {
                     doc.setFillColor(paper[0], paper[1], paper[2]); doc.rect(0, 0, PW, PH, 'F');
@@ -13030,6 +13081,32 @@
                         const nt = 'NEU', nwid = doc.getTextWidth(nt) + 8;
                         doc.roundedRect(cx + 5, y + imgH - 16, nwid, 12, 3, 3, 'F');
                         doc.text(nt, cx + 5 + nwid / 2, y + imgH - 8, { align: 'center' });
+                    }
+                    // Seltenheits-Score (★ Level 1–10) – oben rechts
+                    const lvl = (typeof rarityLevels !== 'undefined') ? rarityLevels[o.taxonId] : null;
+                    if (lvl) {
+                        const rc = RARITY_COLORS[lvl] || [120, 120, 120];
+                        doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+                        const ls = String(lvl), lw = doc.getTextWidth(ls), pillW = 11 + lw + 6;
+                        const px = cx + cardW - 5 - pillW, py = y + 5;
+                        doc.setFillColor(rc[0], rc[1], rc[2]);
+                        doc.roundedRect(px, py, pillW, 12, 3, 3, 'F');
+                        trsaStar(px + 7, py + 6, 3.3, 1.45, [255, 255, 255]);
+                        doc.setTextColor(255, 255, 255);
+                        doc.text(ls, px + 12, py + 8.4);
+                    }
+                    // Gefährdungsstatus als Badge – nur über „nicht gefährdet" (LC)
+                    const iuc = (window.ucIucn || {})[o.taxonId];
+                    if (iuc && TRSA_IUCN_SHOW.has(iuc)) {
+                        const info = (typeof iucnStatusMap !== 'undefined' && iucnStatusMap[iuc]) ? iucnStatusMap[iuc] : { color: '#607d8b' };
+                        const bg = trsaHexRgb(info.color);
+                        doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
+                        const iw = doc.getTextWidth(iuc) + 8;
+                        doc.setFillColor(bg[0], bg[1], bg[2]);
+                        doc.roundedRect(cx + 5, y + 20, iw, 11, 3, 3, 'F');
+                        const txc = trsaOnDark(bg) ? [255, 255, 255] : [25, 18, 0];
+                        doc.setTextColor(txc[0], txc[1], txc[2]);
+                        doc.text(iuc, cx + 5 + iw / 2, y + 27.5, { align: 'center' });
                     }
                     // Text
                     let ty = y + imgH + 13;
