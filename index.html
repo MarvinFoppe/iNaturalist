@@ -13095,18 +13095,21 @@
                         doc.setTextColor(255, 255, 255);
                         doc.text(ls, px + 12, py + 8.4);
                     }
-                    // Gefährdungsstatus als Badge – nur über „nicht gefährdet" (LC)
+                    // Gefährdungsstatus als Badge – nur über „nicht gefährdet" (LC), deutscher Klartext
                     const iuc = (window.ucIucn || {})[o.taxonId];
                     if (iuc && TRSA_IUCN_SHOW.has(iuc)) {
-                        const info = (typeof iucnStatusMap !== 'undefined' && iucnStatusMap[iuc]) ? iucnStatusMap[iuc] : { color: '#607d8b' };
+                        const info = (typeof iucnStatusMap !== 'undefined' && iucnStatusMap[iuc]) ? iucnStatusMap[iuc] : { color: '#607d8b', name: iuc };
+                        const label = info.name || iuc;
                         const bg = trsaHexRgb(info.color);
-                        doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
-                        const iw = doc.getTextWidth(iuc) + 8;
+                        doc.setFont('helvetica', 'bold');
+                        let ifs = 6.5; doc.setFontSize(ifs);
+                        let iw = doc.getTextWidth(label) + 8;
+                        if (iw > cardW - 10) { ifs = 5.5; doc.setFontSize(ifs); iw = doc.getTextWidth(label) + 8; }
                         doc.setFillColor(bg[0], bg[1], bg[2]);
                         doc.roundedRect(cx + 5, y + 20, iw, 11, 3, 3, 'F');
                         const txc = trsaOnDark(bg) ? [255, 255, 255] : [25, 18, 0];
                         doc.setTextColor(txc[0], txc[1], txc[2]);
-                        doc.text(iuc, cx + 5 + iw / 2, y + 27.5, { align: 'center' });
+                        doc.text(label, cx + 5 + iw / 2, y + 27.5, { align: 'center' });
                     }
                     // Text
                     let ty = y + imgH + 13;
