@@ -3755,7 +3755,7 @@
         </style>
         <div class="section">
             <h2 class="section-title">🗺️ Länder-Vollständigkeit</h2>
-            <p class="lc-intro">Wie viel Prozent der Vögel, Säugetiere, Reptilien und Amphibien eines Landes – oder weltweit – hast du schon gesehen? Grundlage
+            <p class="lc-intro">Wie viel Prozent der Vögel, Säugetiere, Reptilien, Amphibien und Falter eines Landes – oder weltweit – hast du schon gesehen? Grundlage
                 sind alle Arten, die dort in <strong>Forschungsqualität</strong> beobachtet wurden. Mit dem Regler blendest du
                 seltene Ausreißer aus (Mindestzahl an Beobachtungen im Land) – so zählen nur realistisch auffindbare Arten.
                 Noch fehlende Arten erscheinen <em>ausgegraut</em> als Sammelkarten.</p>
@@ -4055,6 +4055,9 @@
                 </details>
                 <div class="trsa-titlebar">
                     <h3 class="trsa-title">📖 Reise-Sammelalbum</h3>
+                    <label class="trsa-pdfopt" title="Deine Tagesüberschriften mit ins PDF aufnehmen" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;opacity:.9;cursor:pointer">
+                        <input type="checkbox" id="trsaPdfDayTitles" checked> Tagestitel ins PDF
+                    </label>
                     <button class="trsa-pdfbtn" id="trsaPdfBtn" onclick="trsaDownloadPdf()" title="Das ganze Album als PDF speichern">⬇️ Als PDF</button>
                 </div>
                 <div class="trsa" id="trsaAlbum">
@@ -11606,17 +11609,25 @@
         // ===== LÄNDER-COUNTER: % der Arten je Land gesehen ==========
         // ============================================================
         const LC_GROUPS = [
-            { key: 'birds',      taxonId: 3,     iconic: 'Aves' },
-            { key: 'mammals',    taxonId: 40151, iconic: 'Mammalia' },
-            { key: 'reptiles',   taxonId: 26036, iconic: 'Reptilia' },
-            { key: 'amphibians', taxonId: 20978, iconic: 'Amphibia' }
+            { key: 'birds',       taxonId: 3,     iconic: 'Aves' },
+            { key: 'mammals',     taxonId: 40151, iconic: 'Mammalia' },
+            { key: 'reptiles',    taxonId: 26036, iconic: 'Reptilia' },
+            { key: 'amphibians',  taxonId: 20978, iconic: 'Amphibia' },
+            // Falter (Lepidoptera) – kein echtes iconic taxon, daher eigene Anzeige-Metadaten.
+            // optional: Kachel erscheint nur, wenn genug Arten den Schwellenwert erreichen (siehe lcVisibleGroups).
+            { key: 'butterflies', taxonId: 47157, iconic: 'Insecta', label: 'Falter', emoji: '🦋', color: '#b56fb0', optional: true, min: 15 }
         ];
         const LC_GLOBAL_ID = -1;                 // Sentinel-„Place" für die weltweite Ansicht
         const LC_RENDER_CAP = 600;               // max. Sammelkarten im Grid (Prozente nutzen weiterhin alle Arten)
         function lcEmptyPool() { const p = {}; for (const g of LC_GROUPS) p[g.key] = null; return p; }
+        // Anzeige-Metadaten einer Gruppe (Gruppen-Overrides schlagen das iconic taxon)
+        function lcGroupMeta(g) {
+            const base = rwIconicType(g.iconic);
+            return { de: g.label || base.de, emoji: g.emoji || base.emoji, c: g.color || base.c };
+        }
         const LC_CACHE_KEY = 'inat_landcounter_v2';
         const LC_CACHE_TTL = 1000 * 60 * 60 * 24 * 30;   // 30 Tage
-        const LC_CACHE_MAX = 8;                           // max. gecachte (Land×Gruppe)-Einträge
+        const LC_CACHE_MAX = 40;                          // max. gecachte (Land×Gruppe)-Einträge (5 Gruppen × ~8 Länder)
 
         let lcPlace = null;              // { id, name }
         let lcThreshold = (() => { const v = +localStorage.getItem('inat_lc_thresh'); return v >= 5 ? v : 50; })();
@@ -11732,29 +11743,52 @@
             lcFetch();
         }
 
+        // Parallelitäts-Bremse: iNat/Proxy nicht mit zu vielen gleichzeitigen Requests überrollen (429)
+        const LC_MAX_CONC = 6;
+        let _lcActive = 0; const _lcWaiters = [];
+        function lcAcquire() { return new Promise(res => { if (_lcActive < LC_MAX_CONC) { _lcActive++; res(); } else _lcWaiters.push(res); }); }
+        function lcRelease() { if (_lcWaiters.length) { _lcWaiters.shift()(); } else { _lcActive = Math.max(0, _lcActive - 1); } }
+
+        // Eine Seite der species_counts abrufen (JSON) – durch die Parallelitäts-Bremse geschützt
+        async function lcFetchPage(placeParam, taxonId, PER, page) {
+            await lcAcquire();
+            try {
+                const url = `${API_BASE}/observations/species_counts?${placeParam}taxon_id=${taxonId}&quality_grade=research&locale=de&per_page=${PER}&page=${page}`;
+                const r = await inatFetch(url);
+                return await r.json();
+            } finally { lcRelease(); }
+        }
+        function lcMapRows(results) {
+            const out = [];
+            for (const row of (results || [])) {
+                if (!row.taxon?.id) continue;
+                out.push({
+                    id: row.taxon.id,
+                    name: row.taxon.preferred_common_name || row.taxon.name || 'Unbekannt',
+                    sci: row.taxon.name || '',
+                    image: row.taxon.default_photo?.medium_url || row.taxon.default_photo?.square_url || '',
+                    count: row.count || 0
+                });
+            }
+            return out;
+        }
+
         async function lcFetchGroup(placeId, g) {
             const cached = lcGetCached(placeId, g.key);
             if (cached) return cached;
             const isGlobal = placeId === LC_GLOBAL_ID;
             const PER = 500, MAX_PAGES = isGlobal ? 20 : 12;   // weltweit mehr Seiten (größere Artenpools)
             const placeParam = isGlobal ? '' : `place_id=${placeId}&`;
-            let rows = [], total = Infinity;
-            for (let p = 1; p <= MAX_PAGES; p++) {
-                const url = `${API_BASE}/observations/species_counts?${placeParam}taxon_id=${g.taxonId}&quality_grade=research&locale=de&per_page=${PER}&page=${p}`;
-                const r = await inatFetch(url);
-                const j = await r.json();
-                total = j.total_results ?? rows.length;
-                for (const row of (j.results || [])) {
-                    if (!row.taxon?.id) continue;
-                    rows.push({
-                        id: row.taxon.id,
-                        name: row.taxon.preferred_common_name || row.taxon.name || 'Unbekannt',
-                        sci: row.taxon.name || '',
-                        image: row.taxon.default_photo?.medium_url || row.taxon.default_photo?.square_url || '',
-                        count: row.count || 0
-                    });
-                }
-                if (rows.length >= total || (j.results || []).length < PER) break;
+            // Seite 1 zuerst – liefert total_results, damit wir die Restseiten parallel holen können
+            const first = await lcFetchPage(placeParam, g.taxonId, PER, 1);
+            const total = first.total_results ?? 0;
+            let rows = lcMapRows(first.results);
+            const lastPage = Math.min(MAX_PAGES, Math.max(1, Math.ceil(total / PER)));
+            if (lastPage > 1 && (first.results || []).length >= PER) {
+                const reqs = [];
+                for (let p = 2; p <= lastPage; p++) reqs.push(lcFetchPage(placeParam, g.taxonId, PER, p));
+                const pages = await Promise.all(reqs);
+                for (const j of pages) rows = rows.concat(lcMapRows(j.results));
             }
             lcPutCached(placeId, g.key, rows);
             return rows;
@@ -11769,12 +11803,14 @@
             if (statsEl) statsEl.style.display = 'none';
             document.getElementById('lcShowSeg').style.display = 'none';
             document.getElementById('lcMeta').textContent = '';
-            if (resEl) resEl.innerHTML = `<div class="lc-status">🔎 Lade Arten in <strong>${lcPlace.name}</strong> …</div>`;
+            let done = 0;
+            const status = () => { if (resEl) resEl.innerHTML = `<div class="lc-status">🔎 Lade Arten in <strong>${lcPlace.name}</strong> … (${done}/${LC_GROUPS.length})</div>`; };
+            status();
             try {
-                for (const g of LC_GROUPS) {
-                    lcPool[g.key] = await lcFetchGroup(lcPlace.id, g);
-                    if (resEl) resEl.innerHTML = `<div class="lc-status">🔎 Lade Arten in <strong>${lcPlace.name}</strong> … ${rwIconicType(g.iconic).de} ✓</div>`;
-                }
+                // Alle Gruppen parallel laden (jede Gruppe parallelisiert intern ihre Seiten)
+                await Promise.all(LC_GROUPS.map(g =>
+                    lcFetchGroup(lcPlace.id, g).then(rows => { lcPool[g.key] = rows; done++; status(); })
+                ));
                 lcRender();
             } catch (e) {
                 if (resEl) resEl.innerHTML = `<div class="lc-status">⚠️ Fehler beim Laden: ${String(e)}</div>`;
@@ -11812,15 +11848,27 @@
             return { have, total, pct, eligible, owned };
         }
 
+        // Sichtbare Gruppen: optionale (z. B. Falter) nur, wenn genug Arten den Schwellenwert erreichen
+        function lcVisibleGroups() {
+            return LC_GROUPS.filter(g => {
+                if (!g.optional) return true;
+                return lcGroupStats(g.key).total >= (g.min || 1);
+            });
+        }
+
         function lcRender() {
             const statsEl = document.getElementById('lcStats');
             const resEl = document.getElementById('lcResults');
             if (!statsEl || !resEl) return;
 
+            // Aktive Gruppe korrigieren, falls sie gerade nicht sichtbar ist (z. B. Falter unter der Mindestzahl)
+            const visible = lcVisibleGroups();
+            if (!visible.some(g => g.key === lcGroup)) lcGroup = (visible[0] && visible[0].key) || 'birds';
+
             // --- Stat-Kacheln ---
             statsEl.style.display = '';
-            statsEl.innerHTML = LC_GROUPS.map(g => {
-                const t = rwIconicType(g.iconic);
+            statsEl.innerHTML = visible.map(g => {
+                const t = lcGroupMeta(g);
                 const s = lcGroupStats(g.key);
                 const pctTxt = s.pct == null ? '–' : s.pct.toFixed(s.pct < 10 ? 1 : 0).replace('.', ',') + ' %';
                 const w = s.pct == null ? 0 : s.pct;
@@ -11836,7 +11884,7 @@
 
             // --- Karten-Grid der aktiven Gruppe ---
             const g = LC_GROUPS.find(x => x.key === lcGroup);
-            const t = rwIconicType(g.iconic);
+            const t = lcGroupMeta(g);
             const s = lcGroupStats(lcGroup);
             let list = s.eligible.map(x => ({ ...x, _owned: s.owned.has(x.id) }));
             if (lcShowMode === 'missing') list = list.filter(x => !x._owned);
@@ -12243,7 +12291,7 @@
                 await fetch('api/trips?user=' + encodeURIComponent(tripUserLogin()), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ trip: { id: trip.id, name: trip.name, from: trip.from, to: trip.to || '', excluded: trip.excluded || [], coverId: trip.coverId || '' } })
+                    body: JSON.stringify({ trip: { id: trip.id, name: trip.name, from: trip.from, to: trip.to || '', excluded: trip.excluded || [], coverId: trip.coverId || '', dayTitles: trip.dayTitles || {} } })
                 });
             } catch (e) {}
         }
@@ -12617,6 +12665,26 @@
         function trsaWeekday(d) { return TRSA_WD[new Date(d + 'T00:00:00').getDay()]; }
         function trsaAddDays(d, n) { const x = new Date(d + 'T00:00:00'); x.setDate(x.getDate() + n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; }
 
+        // ---------- Tagesüberschriften (optional, je Reise) ----------
+        function tripDayTitle(trip, date) {
+            return (trip && trip.dayTitles && trip.dayTitles[date]) ? String(trip.dayTitles[date]) : '';
+        }
+        // Owner: Überschrift für einen Tag setzen/ändern/entfernen
+        function tripSetDayTitle(date) {
+            if (!tripEditable) return;
+            const list = loadTrips();
+            const trip = list.find(x => x.id === tripCurrentId); if (!trip) return;
+            const cur = (trip.dayTitles && trip.dayTitles[date]) || '';
+            const input = prompt('Überschrift für ' + fmtTripDate(date) + '\n(leer lassen = entfernen):', cur);
+            if (input == null) return;
+            const val = input.trim().slice(0, 80);
+            if (!trip.dayTitles) trip.dayTitles = {};
+            if (val) trip.dayTitles[date] = val; else delete trip.dayTitles[date];
+            saveTrips(list);
+            publishTrip(trip);
+            trsaRenderAlbum(); trsaRenderDays();
+        }
+
         function trsaRenderDays() {
             const grid = document.getElementById('trdayGrid'); if (!grid) return;
             const trip = resolveTrip(tripCurrentId); if (!trip) { grid.innerHTML = ''; return; }
@@ -12656,7 +12724,9 @@
             ].join('');
 
             grid.innerHTML = perDay.map(d => {
-                const top = `<div class="trday-top"><span class="dd">${trsaShort(d.date)}</span><span class="dn">T${d.idx + 1}</span></div><div class="trday-dw">${trsaWeekday(d.date)}</div>`;
+                const dTitle = tripDayTitle(trip, d.date);
+                const titleHtml = dTitle ? `<div class="trday-title" title="${trEsc(dTitle)}" style="font-size:10px;font-weight:700;color:var(--gold,#c9a24a);line-height:1.2;margin:2px 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${trEsc(dTitle)}</div>` : '';
+                const top = `<div class="trday-top"><span class="dd">${trsaShort(d.date)}</span><span class="dn">T${d.idx + 1}</span></div><div class="trday-dw">${trsaWeekday(d.date)}</div>${titleHtml}`;
                 const hero = heroOf(d);
                 if (hero === 0) return `<div class="trday empty">${top}<div class="trday-empty-label">–</div></div>`;
                 const taxaIcons = Object.entries(d.taxa).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k]) => { const t = rwIconicType(k); return `<span title="${trEsc(t.de)}">${t.emoji}</span>`; }).join('');
@@ -12776,10 +12846,21 @@
             const g = pg.cards.map((c, i) => trsaCardHtml(c, before + i + 1)).join('');   // keine leeren Platzhalter – Rest bleibt frei
             let dots = ''; for (let i = 0; i < pages.length; i++) dots += `<div class="trsa-dot ${i === trsa.page ? 'on' : ''}" onclick="trsaGoto(${i})" title="${fmtTripDate(pages[i].date)}"></div>`;
 
+            // optionale Tagesüberschrift (anzeigen; Owner kann bearbeiten)
+            const dTitle = tripDayTitle(trip, pg.date);
+            const editPencil = tripEditable ? `<button class="trsa-daytitle-btn" onclick="tripSetDayTitle('${pg.date}')" title="Tagesüberschrift bearbeiten" style="background:none;border:1px solid var(--border,#5a4a2a);border-radius:6px;color:inherit;cursor:pointer;padding:2px 9px;font-size:12px;flex:0 0 auto">✎</button>` : '';
+            const dTitleText = dTitle
+                ? `<span style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;color:var(--gold,#c9a24a);font-weight:600;flex:1 1 auto">${trEsc(dTitle)}</span>`
+                : (tripEditable ? `<span onclick="tripSetDayTitle('${pg.date}')" style="opacity:.55;cursor:pointer;font-size:13px;flex:1 1 auto">+ Tagesüberschrift hinzufügen</span>` : '');
+            const dTitleRow = (dTitle || tripEditable)
+                ? `<div class="trsa-daytitle" style="display:flex;align-items:center;gap:8px;margin:0 2px 10px;min-height:22px">${dTitleText}${editPencil}</div>`
+                : '';
+
             stage.innerHTML = `
               <div class="trsa-frame">
                 <div class="trsa-page">
                   <div class="trsa-pagehead"><span class="t">Tag ${dayNum} · ${wd}${partLbl}</span><span class="s">${fmtTripDate(pg.date)} · ${pg.cards.length} ${pg.cards.length === 1 ? 'Karte' : 'Karten'}</span></div>
+                  ${dTitleRow}
                   <div class="trsa-grid">${g}</div>
                   <div class="trsa-pfoot">${trEsc(trip.name || 'Reise')} · ${TRSA_MODE_NAME[tripViewMode]}</div>
                 </div>
@@ -12927,6 +13008,7 @@
             if (!trip) return;
             const cards = trsaAlbumCards();
             if (!cards.length) { alert('Für diese Auswahl gibt es keine Karten zum Exportieren.'); return; }
+            const pdfDayTitles = (() => { const cb = document.getElementById('trsaPdfDayTitles'); return cb ? cb.checked : true; })();
             const orig = btn ? btn.innerHTML : '';
             if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Erstelle PDF…'; }
             try {
@@ -13029,11 +13111,18 @@
                 doc.addPage(); paintPaper();
                 let y = topY, col = 0, lastDay = null, no = 0;
 
-                const headerH = 28;
                 function newPageFlow() { doc.addPage(); paintPaper(); y = topY; col = 0; }
                 function dayHeader(day) {
                     if (col !== 0) { col = 0; y += cardH + gap; }
                     const gapBefore = (lastDay !== null) ? 10 : 0;
+                    // optionale Tagesüberschrift vorbereiten (max. 2 Zeilen auf Seitenbreite)
+                    const titleRaw = pdfDayTitles ? trsaPdfSafe(tripDayTitle(trip, day)) : '';
+                    let titleLines = [];
+                    if (titleRaw) {
+                        doc.setFont('times', 'italic'); doc.setFontSize(12);
+                        titleLines = doc.splitTextToSize(titleRaw, CW).slice(0, 2);
+                    }
+                    const headerH = 28 + (titleLines.length ? titleLines.length * 15 + 2 : 0);
                     // Tagestitel + erste Karte müssen zusammen passen – sonst beide auf neue Seite
                     if (y + gapBefore + headerH + cardH > bottomY) newPageFlow();
                     else y += gapBefore;
@@ -13052,6 +13141,13 @@
                     doc.setDrawColor(gold[0], gold[1], gold[2]); doc.setLineWidth(0.7);
                     doc.line(M, y + 18, PW - M, y + 18);
                     y += 28;
+                    // optionale Tagesüberschrift unter der Goldlinie (kursiv, Tinte)
+                    if (titleLines.length) {
+                        doc.setFont('times', 'italic'); doc.setFontSize(12);
+                        doc.setTextColor(ink[0], ink[1], ink[2]);
+                        doc.text(titleLines, M, y + 11);
+                        y += titleLines.length * 15 + 2;
+                    }
                 }
                 function drawCard(c, imgd, n) {
                     const o = c.o, t = rwIconicType(o.taxon);

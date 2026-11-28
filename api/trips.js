@@ -1,7 +1,7 @@
 // Reisen (Trips) des Owners server-seitig speichern, damit sie teilbar + geräteübergreifend sind.
 // GET  ?id=<id>&user=<u>  -> einzelne Reise (öffentlich, für geteilte Links)
 // GET  ?user=<u>          -> alle Reisen des Nutzers (öffentlich lesbar)
-// POST (Owner-Token)      -> Reise anlegen/aktualisieren { trip:{id,name,from,to} }
+// POST (Owner-Token)      -> Reise anlegen/aktualisieren { trip:{id,name,from,to,excluded,coverId,dayTitles} }
 // DELETE ?id=<id> (Owner) -> Reise löschen
 // Die Reise speichert nur Name + Zeitraum + Nutzer; die Beobachtungen holt der
 // Browser des Betrachters live von iNaturalist (immer aktueller Stand).
@@ -18,8 +18,19 @@ function cleanTrip(t, user) {
     ? [...new Set(t.excluded.filter(x => x != null).map(x => x))].slice(0, 5000)   // manuell ausgeblendete Beobachtungs-IDs
     : [];
   const coverId = (t.coverId != null && String(t.coverId).length <= 40) ? String(t.coverId) : '';   // gewähltes Titelbild
+  // optionale Tagesüberschriften: { 'YYYY-MM-DD': 'Titel' }
+  const dayTitles = {};
+  if (t.dayTitles && typeof t.dayTitles === 'object') {
+    let n = 0;
+    for (const [k, v] of Object.entries(t.dayTitles)) {
+      if (n >= 1000) break;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
+      const title = String(v == null ? '' : v).trim().slice(0, 80);
+      if (title) { dayTitles[k] = title; n++; }
+    }
+  }
   if (!id || !name || !from) return null;
-  return { id, name, from, to, excluded, coverId, user };
+  return { id, name, from, to, excluded, coverId, dayTitles, user };
 }
 
 export default async function handler(req, res) {
